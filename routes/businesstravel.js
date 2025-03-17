@@ -1,0 +1,46 @@
+const express = require("express");
+const businesstravelController = require("../controller/businesstravelController");
+const auth = require("../middleware/auth");
+
+const router = express.Router();
+
+router.get("/AllvehicleType", businesstravelController.AllvehicleType);
+router.post("/flightTravel", auth, businesstravelController.flightTravel);
+router.post("/subvehicleType", auth, businesstravelController.subvehicleType);
+router.post("/Othermodes_of_transport", auth, businesstravelController.Othermodes_of_transport);
+router.post("/hotelStay", auth, businesstravelController.hotelStay);
+router.get("/flight_types", businesstravelController.flight_types);
+router.get("/getflightairportcode", auth, businesstravelController.getflightairportcode);
+router.post("/Addbusinessunit", auth, businesstravelController.Addbusinessunit);
+router.get("/getAllbussinessUnit", auth, businesstravelController.getAllbussinessUnit);
+router.post("/AddemployeeCommuting", auth, businesstravelController.AddemployeeCommuting);
+router.get("/typeof_homeoffice", businesstravelController.typeof_homeoffice);
+router.post("/AddhomeofficeCategory", auth, businesstravelController.AddhomeofficeCategory);
+router.get("/gethomeofficeCategory", auth, businesstravelController.gethomeofficeCategory);
+router.get("/getemployeecommutingCategory", auth, businesstravelController.getemployeecommutingCategory);
+router.get("/gethotel_stay", auth, businesstravelController.gethotel_stay);
+router.get("/getothermodesofTransport", auth, businesstravelController.getothermodesofTransport);
+router.get("/getflight_travel", auth, businesstravelController.getflight_travel);
+router.post("/AddSoldProductsCategory", auth, businesstravelController.AddSoldProductsCategory);
+router.post("/getsoldproductCategory", auth, businesstravelController.getsoldproductCategory);
+router.get("/getrefrigents", auth, businesstravelController.getrefrigents);
+router.get("/getsoldproductFuelType", auth, businesstravelController.getsoldproductFuelType);
+router.get("/getAllsoldproductCategory", auth, businesstravelController.getAllsoldproductCategory);
+router.get("/getendoflife_waste_type", auth, businesstravelController.getendoflife_waste_type);
+router.post("/getendoflife_waste_type_subcategory", auth, businesstravelController.getendoflife_waste_type_subcategory);
+router.post("/AddendoflifeCategory", auth, businesstravelController.AddendoflifeCategory);
+router.get("/getendof_lifetreatment_category", auth, businesstravelController.getendof_lifetreatment_category);
+router.post("/AddwatersupplytreatmentCategory", auth, businesstravelController.AddwatersupplytreatmentCategory);
+router.get("/getwatersupplytreatmentCategory", auth, businesstravelController.getwatersupplytreatmentCategory);
+router.get("/getintermediateCategory", auth, businesstravelController.getintermediateCategory);
+router.post("/getsectorCategory", auth, businesstravelController.getsectorCategory);
+router.post("/getsubsectorCategory", auth, businesstravelController.getsubsectorCategory);
+router.post("/Addprocessing_of_sold_productsCategory", auth, businesstravelController.Addprocessing_of_sold_productsCategory);
+router.get("/getprocessing_of_sold_productsCategory", auth, businesstravelController.getprocessing_of_sold_productsCategory);
+router.get("/vehicleCategories_lease", auth, businesstravelController.vehicleCategories_lease);
+router.get("/vehicleSubCategories_lease", auth, businesstravelController.vehicleSubCategories_lease);
+router.get("/employeeCommunityCategory", businesstravelController.employeeCommunityCategory);
+router.get("/employeeCommunitySubCategory/:category", businesstravelController.employeeCommunitySubCategory);
+router.post("/getcurrencyByfacilities", auth, businesstravelController.getcurrencyByfacilities);
+
+module.exports = router;
