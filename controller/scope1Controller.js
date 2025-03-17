@@ -42,12 +42,6 @@ exports.electricitygridType = async (req, res) => {
         success: true,
       });
     } else {
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
-
       let countrydata = await country_check(facilities);
 
       // console.log(countrydata[0].CountryId);
@@ -191,7 +185,7 @@ exports.GetUnits = async (req, res) => {
       });
     }
 
-    const user_id = req.user.user_id; 
+    const user_id = req.user.user_id;
 
     let where = `WHERE seedsubcatID = '${id}'`;
     const units = await getSelectedColumn("`dbo.units`", where, "*");
@@ -224,16 +218,6 @@ exports.GetUnits = async (req, res) => {
 
 exports.getBlendType = async (req, res) => {
   try {
-    // Ensure authentication middleware has set req.user
-    const user_id = req.user?.user_id;
-    if (!user_id) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Missing or invalid token",
-        status: 401,
-      });
-    }
-
     // Fetch blend types
     const blendtype = await getSelectedColumn("`dbo.blendtype`", "", "*");
 
@@ -482,16 +466,6 @@ exports.getmanageDataPointbyfacility = async (req, res) => {
       });
     }
 
-    // Use authentication middleware's user info
-    const user_id = req.user?.user_id;
-    if (!user_id) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Missing or invalid token",
-        status: 401,
-      });
-    }
-
     let where = ` LEFT JOIN dbo.scopeseed S ON S.ID = MD.ScopeID WHERE MD.facilityId = '${facilityId}' AND MD.ScopeID = '${ScopeID}'`;
     const facilities = await getSelectedColumn("dbo.managedatapoint MD", where, "MD.*, S.scopeName");
 
@@ -570,12 +544,8 @@ exports.AddassignedDataPointbyfacility = async (req, res) => {
         success: true,
       });
     } else {
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
+      const user_id = req.user.user_id;
       let array = [];
-
 
       const array1 = FacilityId.split(",").map(item => item.trim());
       let facilities = "";
@@ -1356,10 +1326,7 @@ exports.AddstationarycombustionLiquid = async (req, res) => {
         success: true,
       });
     } else {
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
+      const user_id = req.user.user_id;
 
       let category = {
         ReadingValue: ReadingValue ? ReadingValue : "",
@@ -1416,29 +1383,8 @@ exports.AddstationarycombustionLiquid = async (req, res) => {
 
 exports.Addrefrigerant = async (req, res) => {
   try {
-    // -------------------------------
-    // JWT Authentication
-    // -------------------------------
-    const authHeader = req.headers.auth;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Missing or invalid token",
-        status: 401,
-      });
-    }
-    const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
-    if (!decoded || !decoded.user_id) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Invalid token",
-        status: 401,
-      });
-    }
-    let user_id = decoded.user_id;
-    // -------------------------------
-    
+    let user_id = req.user.user_id;
+
     let allinsertedID = [];
     const { refAmount, unit, note, year, months, SubCategorySeedID, subCategoryTypeId, facilities } = req.body;
     const schema = Joi.alternatives(
@@ -1555,31 +1501,7 @@ exports.Addrefrigerant = async (req, res) => {
 
 exports.Allrefrigerant = async (req, res) => {
   try {
-    // ----------------------------------
-    // JWT Authentication
-    // ----------------------------------
-    const authHeader = req.headers.auth;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Missing or invalid token",
-        status: 401,
-      });
-    }
-
-    const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
-
-    if (!decoded || !decoded.user_id) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Invalid token",
-        status: 401,
-      });
-    }
-
-    let user_id = decoded.user_id;
-    // ----------------------------------
+    let user_id = req.user.user_id;
 
     // Fetch all refrigerants for the user
     const Allrefrigerant = await Allrefrigerants(user_id);
@@ -1611,56 +1533,6 @@ exports.Allrefrigerant = async (req, res) => {
 
 exports.getrefrigents = async (req, res) => {
   try {
-    // ------------------------------
-    // Validate Request Parameters
-    // ------------------------------
-    const schema = Joi.object({
-      SubCategorySeedID: Joi.string().trim().required(),
-    });
-
-    const { error } = schema.validate(req.params);
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message: error.details[0].message,
-        status: 400,
-      });
-    }
-
-    const { SubCategorySeedID } = req.params;
-
-    // ------------------------------
-    // Authenticate User
-    // ------------------------------
-    const authHeader = req.headers.auth;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Missing or invalid token",
-        status: 401,
-      });
-    }
-
-    const jwtToken = authHeader.replace("Bearer ", "");
-    let decoded;
-    try {
-      decoded = jwt.decode(jwtToken);
-      if (!decoded || !decoded.user_id) {
-        throw new Error("Invalid token");
-      }
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Invalid token",
-        status: 401,
-      });
-    }
-
-    const user_id = decoded.user_id;
-
-    // ------------------------------
-    // Fetch Data from Database
-    // ------------------------------
     let where = `WHERE SubCategorySeedID = '${SubCategorySeedID}'`;
     const getSoldproduct = await getSelectedColumn("`dbo.refrigents`", where, "*");
 
@@ -1717,11 +1589,7 @@ exports.Addfireextinguisher = async (req, res) => {
         success: true,
       });
     } else {
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      let user_id = decoded.user_id;
+      let user_id = req.user.user_id;
 
       let countrydata = await country_check(facilities);
 
@@ -1823,38 +1691,8 @@ exports.Addfireextinguisher = async (req, res) => {
 
 exports.Getfireextinguisher = async (req, res) => {
   try {
-    // ------------------------------
-    // Authenticate User
-    // ------------------------------
-    const authHeader = req.headers.auth;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Missing or invalid token",
-        status: 401,
-      });
-    }
+    const user_id = req.user.user_id;
 
-    const jwtToken = authHeader.replace("Bearer ", "");
-    let decoded;
-    try {
-      decoded = jwt.decode(jwtToken);
-      if (!decoded || !decoded.user_id) {
-        throw new Error("Invalid token");
-      }
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Invalid token",
-        status: 401,
-      });
-    }
-
-    const user_id = decoded.user_id;
-
-    // ------------------------------
-    // Fetch Fire Extinguishers Data
-    // ------------------------------
     const Allfireexting = await Allfireextinguisher(user_id);
 
     if (Allfireexting && Allfireexting.length > 0) {
@@ -1884,34 +1722,7 @@ exports.Getfireextinguisher = async (req, res) => {
 
 exports.Getpassengervehicletypes = async (req, res) => {
   try {
-    // ------------------------------
-    // Authenticate User
-    // ------------------------------
-    const authHeader = req.headers.auth;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Missing or invalid token",
-        status: 401,
-      });
-    }
-
-    const jwtToken = authHeader.replace("Bearer ", "");
-    let decoded;
-    try {
-      decoded = jwt.decode(jwtToken);
-      if (!decoded || !decoded.user_id) {
-        throw new Error("Invalid token");
-      }
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Invalid token",
-        status: 401,
-      });
-    }
-
-    const user_id = decoded.user_id;
+    const user_id = req.user.user_id;
 
     // ------------------------------
     // Fetch Passenger Vehicle Types
@@ -1945,35 +1756,6 @@ exports.Getpassengervehicletypes = async (req, res) => {
 
 exports.Getdeliveryvehicletypes = async (req, res) => {
   try {
-    // ------------------------------
-    // Authenticate User
-    // ------------------------------
-    const authHeader = req.headers.auth;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Missing or invalid token",
-        status: 401,
-      });
-    }
-
-    const jwtToken = authHeader.replace("Bearer ", "");
-    let decoded;
-    try {
-      decoded = jwt.decode(jwtToken);
-      if (!decoded || !decoded.user_id) {
-        throw new Error("Invalid token");
-      }
-    } catch (err) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized: Invalid token",
-        status: 401,
-      });
-    }
-
-    const user_id = decoded.user_id;
-
     // ------------------------------
     // Fetch Delivery Vehicle Types
     // ------------------------------
@@ -2037,15 +1819,7 @@ exports.Addcompanyownedvehicles = async (req, res) => {
       });
     }
 
-    // Extract JWT Token
-    const authHeader = req.headers.auth;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
-    const user_id = decoded?.user_id;
+    const user_id = req.user.user_id;
 
     if (!user_id) {
       return res.status(401).json({ success: false, message: "Invalid token" });
@@ -2180,11 +1954,7 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
     } else {
       const vehicles = JSON.parse(jsonData);
       let allinsertedID = [];
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      let user_id = decoded.user_id;
+      let user_id = req.user.user_id;
 
       let countrydata = await country_check(facilityId);
       if (!countrydata.length) {
@@ -2334,10 +2104,7 @@ exports.getAllcompanyownedvehicles = async (req, res) => {
         success: true,
       });
     } else {
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
+      const user_id = req.user.user_id;
 
       const deliveryvehicletypes = await getAllcompanyownedvehicles(user_id, ModeofDEID);
       if (deliveryvehicletypes.length > 0) {
@@ -2386,11 +2153,6 @@ exports.getAllcategoryByfacility = async (req, res) => {
         success: true,
       });
     } else {
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
       let subcategory = [];
       let array = [];
       let where = " LEFT JOIN `dbo.scopeseed` S ON S.ID = MD.ScopeID where MD.facilityId = '" + id + "' ORDER BY MD.ScopeID ASC";
