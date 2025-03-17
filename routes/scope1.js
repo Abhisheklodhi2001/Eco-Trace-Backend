@@ -4,9 +4,9 @@ const auth = require("../middleware/auth");
 
 const router = express.Router();
 
-router.get("/GetSubCategoryTypes/:id", scope1Controller.GetSubCategoryTypes);
-router.get("/Getfacilities", scope1Controller.Getfacilities);
-router.get("/GetScope", scope1Controller.GetScope);
+router.get("/GetSubCategoryTypes/:id", auth, scope1Controller.GetSubCategoryTypes);
+router.get("/Getfacilities", auth, scope1Controller.Getfacilities);
+router.get("/GetScope", auth, scope1Controller.GetScope);
 router.get("/GetAllcategoryByScope", scope1Controller.GetAllcategoryByScope);
 router.get("/getAssignedDataPointbyfacility/:facilityId", scope1Controller.getAssignedDataPointbyfacility);
 router.get("/GetUnits/:id", scope1Controller.GetUnits);

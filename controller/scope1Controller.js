@@ -115,10 +115,7 @@ exports.GetSubCategoryTypes = async (req, res) => {
         success: false,
       });
     } else {
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
+      const user_id = req.user.user_id;
       let countrydata = await country_check(facilityId);
       let stationarycombustion = [];
       if (id == '7') {
@@ -268,12 +265,6 @@ exports.getBlendType = async (req, res) => {
 
 exports.Getfacilities = async (req, res) => {
   try {
-
-    const authHeader = req.headers.auth;
-    const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
-    const user_id = decoded.user_id;
-
     let where = " LEFT JOIN  `dbo.city` C ON C.ID = F.CityId LEFT JOIN  `dbo.country` CO ON CO.ID = F.CountryId  LEFT JOIN  `dbo.state` S ON S.ID = F.StateId ";
     const facilities = await getSelectedColumn("`dbo.facilities` F ", where, " C.Name as city_name,CO.Name as country_name,S.Name as state_name,F.*");
 
@@ -306,12 +297,6 @@ exports.Getfacilities = async (req, res) => {
 
 exports.GetScope = async (req, res) => {
   try {
-
-    const authHeader = req.headers.auth;
-    const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
-    const user_id = decoded.user_id;
-
     let where = "";
     const scopeseed = await getSelectedColumn("`dbo.scopeseed` ", where, " *");
 
