@@ -171,97 +171,97 @@ exports.GetSubCategoryTypes = async (req, res) => {
 
 exports.GetUnits = async (req, res) => {
   try {
-
     const { id } = req.params;
-    const schema = Joi.alternatives(
-      Joi.object({
-        id: [Joi.number().empty().required()],
-      })
-    );
-    const result = schema.validate(req.params);
-    if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
-      return res.json({
-        message: result.error.details[0].message,
-        error: message,
-        missingParams: result.error.details[0].message,
-        status: 200,
-        success: true,
-      });
-    } else {
 
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
-
-      let where = ` where seedsubcatID ='${id}'`;
-      const units = await getSelectedColumn("`dbo.units`", where, "*");
-
-
-      if (units.length > 0) {
-        return res.json({
-          success: true,
-          message: "Succesfully fetched units",
-          categories: units,
-          status: 200,
-        });
-      } else {
-        return res.json({
-          success: false,
-          message: "Some problem occured while selecting units",
-          status: 400,
-        });
-      }
-    }
-  } catch (err) {
-    console.log(err);
-    return res.json({
-      success: false,
-      message: "Internal server error",
-      error: err,
-      status: 500,
+    const schema = Joi.object({
+      id: Joi.number().required().messages({
+        "number.base": "id must be a number",
+        "any.required": "id is required",
+      }),
     });
-  }
-};
 
-exports.getBlendType = async (req, res) => {
-  try {
+    const result = schema.validate({ id });
 
-    const authHeader = req.headers.auth;
-    const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
-    const user_id = decoded.user_id;
+    if (result.error) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: result.error.details.map((i) => i.message),
+        status: 400,
+        success: false,
+      });
+    }
 
-    let where = ``;
-    const blendtype = await getSelectedColumn("`dbo.blendtype`", where, "*");
+    const user_id = req.user.user_id; 
 
+    let where = `WHERE seedsubcatID = '${id}'`;
+    const units = await getSelectedColumn("`dbo.units`", where, "*");
 
-    if (blendtype.length > 0) {
+    if (units.length > 0) {
       return res.json({
         success: true,
-        message: "Succesfully fetched blendtype",
-        categories: blendtype,
+        message: "Successfully fetched units",
+        categories: units,
         status: 200,
       });
     } else {
       return res.json({
         success: false,
-        message: "Some problem occured while selecting blendtype",
-        status: 400,
+        message: "No units found for the given id",
+        status: 404,
       });
     }
-
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error(err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
+      error: err.message,
       status: 500,
     });
   }
 };
+
+
+exports.getBlendType = async (req, res) => {
+  try {
+    // Ensure authentication middleware has set req.user
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing or invalid token",
+        status: 401,
+      });
+    }
+
+    // Fetch blend types
+    const blendtype = await getSelectedColumn("`dbo.blendtype`", "", "*");
+
+    if (blendtype.length > 0) {
+      return res.status(200).json({
+        success: true,
+        message: "Successfully fetched blend types",
+        categories: blendtype,
+        status: 200,
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "No blend types found",
+        status: 404,
+      });
+    }
+  } catch (err) {
+    console.error("Error fetching blend types:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: err.message,
+      status: 500,
+    });
+  }
+};
+
 
 exports.Getfacilities = async (req, res) => {
   try {
@@ -329,17 +329,18 @@ exports.GetScope = async (req, res) => {
 
 exports.GetAllcategoryByScope = async (req, res) => {
   try {
+    const user_id = req.user.user_id; // Authentication like GetSubCategoryTypes
 
-    const authHeader = req.headers.auth;
-    const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
-    const user_id = decoded.user_id;
+    const category = await getSelectedColumn(
+      "`dbo.categoryseeddata`",
+      ` `,
+      "Id as id,CatName as catName,ManageScopeId as managescopeid,ScopeId as scopeid,ScopeSeedId as scopeseedid"
+    );
 
-    const category = await getSelectedColumn("`dbo.categoryseeddata`", ` `, "Id as id,CatName as catName,ManageScopeId as managescopeid,ScopeId as scopeid,ScopeSeedId as scopeseedid");
     // await Promise.all(
     //   category.map(async (item) => {
     //     let where = ` where CategorySeedDataId ='${item.Id}'`;
-    //     const category1 = await getSelectedColumn("`subcategoryseeddata`",where,"*" );
+    //     const category1 = await getSelectedColumn("`subcategoryseeddata`", where, "*" );
     //     item.subCategory = category1;
     //   }));
 
@@ -348,11 +349,10 @@ exports.GetAllcategoryByScope = async (req, res) => {
     } else {
       return res.json({
         success: false,
-        message: "Some problem occured while selecting category",
+        message: "Some problem occurred while selecting category",
         status: 400,
       });
     }
-
   } catch (err) {
     console.log(err);
     return res.json({
@@ -366,162 +366,179 @@ exports.GetAllcategoryByScope = async (req, res) => {
 
 exports.getAssignedDataPointbyfacility = async (req, res) => {
   try {
-
     const { facilityId } = req.params;
-    const schema = Joi.alternatives(
-      Joi.object({
-        facilityId: [Joi.number().empty().required()],
+
+    const schema = Joi.object({
+      facilityId: Joi.number().required().messages({
+        "number.base": "facilityId must be a number",
+        "any.required": "facilityId is required",
+      }),
+    });
+
+    const result = schema.validate({ facilityId });
+
+    if (result.error) {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: result.error.details.map((i) => i.message),
+        status: 400,
+        success: false,
+      });
+    }
+
+    const user_id = req.user.user_id; // Authentication handled like GetSubCategoryTypes
+
+    let array = [];
+    let where = ` LEFT JOIN dbo.scopeseed S ON S.ID = MD.ScopeID WHERE MD.facilityId = '${facilityId}' ORDER BY MD.ScopeID ASC`;
+    const facilities = await getSelectedColumn(
+      "`dbo.managedatapoint` MD",
+      where,
+      "MD.*, S.scopeName"
+    );
+
+    await Promise.all(
+      facilities.map(async (item) => {
+        let where = ` JOIN dbo.categoryseeddata C ON MD.ManageDataPointCategorySeedID = C.Id WHERE MD.ManageDataPointId = '${item.ID}'`;
+        const managePointCategories = await getSelectedColumn(
+          "`dbo.managedatapointcategory` MD",
+          where,
+          "C.CatName as catName, MD.*, MD.ManageDataPointCategorySeedID as manageDataPointCategorySeedID"
+        );
+
+        item.manageDataPointCategories = managePointCategories;
+        let subcategory = [];
+
+        await Promise.all(
+          managePointCategories.map(async (item1) => {
+            let where1 = ` LEFT JOIN subcategoryseeddata C ON MD.ManageDataPointSubCategorySeedID = C.Id WHERE MD.ManageDataPointCategoriesId = '${item1.ID}'`;
+            let manageDataPointSubCategories = await getSelectedColumn(
+              "`dbo.managedatapointsubcategory` MD",
+              where1,
+              "C.Item as subCatName, MD.*, MD.ManageDataPointSubCategorySeedID as manageDataPointSubCategorySeedID"
+            );
+
+            item1.manageDataPointSubCategories = manageDataPointSubCategories;
+            if (manageDataPointSubCategories.length > 0) {
+              subcategory.push(item1.manageDataPointSubCategories);
+            }
+          })
+        );
+
+        if (subcategory.length > 0) {
+          array.push(item);
+        }
       })
     );
-    const result = schema.validate(req.params);
-    if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
+
+    if (array.length > 0) {
       return res.json({
-        message: result.error.details[0].message,
-        error: message,
-        missingParams: result.error.details[0].message,
-        status: 200,
         success: true,
+        message: "Successfully fetched facilities",
+        categories: array,
+        status: 200,
       });
     } else {
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
-      let subcategory = [];
-      let array = [];
-      let where = " LEFT JOIN `dbo.scopeseed` S ON S.ID = MD.ScopeID where MD.facilityId = '" + facilityId + "' ORDER BY MD.ScopeID ASC";
-      const facilities = await getSelectedColumn("`dbo.managedatapoint` MD  ", where, "MD.*,S.scopeName");
-
-
-      await Promise.all(
-        facilities.map(async (item) => {
-          //item.FacilityId = facilityId 
-          let where = " JOIN `dbo.categoryseeddata` C ON  MD.ManageDataPointCategorySeedID = C.Id  where  MD.ManageDataPointId = '" + item.ID + "'";
-          const managePointCategories = await getSelectedColumn("`dbo.managedatapointcategory` MD ", where, "C.CatName as catName,MD.*,MD.ManageDataPointCategorySeedID as manageDataPointCategorySeedID ");
-
-          item.manageDataPointCategories = managePointCategories;
-          let subcategory = [];
-          await Promise.all(
-            managePointCategories.map(async (item1) => {
-              let where1 = " LEFT JOIN `subcategoryseeddata` C ON  MD.ManageDataPointSubCategorySeedID = C.Id  where  MD.ManageDataPointCategoriesId = '" + item1.ID + "'";
-              let manageDataPointSubCategories = await getSelectedColumn("`dbo.managedatapointsubcategory` MD ", where1, "C.Item as subCatName,MD.*,MD.ManageDataPointSubCategorySeedID as manageDataPointSubCategorySeedID");
-              item1.manageDataPointSubCategories = manageDataPointSubCategories
-              if (manageDataPointSubCategories.length > 0) {
-                subcategory.push(item1.manageDataPointSubCategories)
-              }
-            })
-          );
-
-
-          // console.log(subcategory,"subcategorysubcategorysubcategorysubcategory");
-
-          if (subcategory.length > 0) {
-            array.push(item)
-          }
-
-        })
-      );
-
-
-      if (array.length > 0) {
-        return res.json({
-          success: true,
-          message: "Succesfully fetched facilities",
-          categories: array,
-          status: 200,
-        });
-      } else {
-        return res.json({
-          success: false,
-          message: "Some problem occured while selecting facilities",
-          status: 400,
-        });
-      }
+      return res.json({
+        success: false,
+        message: "Some problem occurred while selecting facilities",
+        status: 400,
+      });
     }
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error(err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
+      error: err.message,
       status: 500,
     });
   }
 };
 
+
 exports.getmanageDataPointbyfacility = async (req, res) => {
   try {
-
     const { facilityId, ScopeID } = req.params;
-    const schema = Joi.alternatives(
-      Joi.object({
-        facilityId: [Joi.string().empty().required()],
-        ScopeID: [Joi.string().empty().required()],
+
+    const schema = Joi.object({
+      facilityId: Joi.string().required().messages({
+        "string.base": "facilityId must be a string",
+        "any.required": "facilityId is required",
+      }),
+      ScopeID: Joi.string().required().messages({
+        "string.base": "ScopeID must be a string",
+        "any.required": "ScopeID is required",
+      }),
+    });
+
+    const { error } = schema.validate({ facilityId, ScopeID });
+    if (error) {
+      const message = error.details.map((i) => i.message).join(", ");
+      return res.status(400).json({
+        message: "Validation error",
+        errors: error.details.map((i) => i.message),
+        status: 400,
+        success: false,
+      });
+    }
+
+    // Use authentication middleware's user info
+    const user_id = req.user?.user_id;
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing or invalid token",
+        status: 401,
+      });
+    }
+
+    let where = ` LEFT JOIN dbo.scopeseed S ON S.ID = MD.ScopeID WHERE MD.facilityId = '${facilityId}' AND MD.ScopeID = '${ScopeID}'`;
+    const facilities = await getSelectedColumn("dbo.managedatapoint MD", where, "MD.*, S.scopeName");
+
+    await Promise.all(
+      facilities.map(async (item) => {
+        let catWhere = ` JOIN dbo.categoryseeddata C ON MD.ManageDataPointCategorySeedID = C.Id WHERE MD.ManageDataPointId = '${item.ID}'`;
+        const managePointCategories = await getSelectedColumn(
+          "dbo.managedatapointcategory MD",
+          catWhere,
+          "C.CatName as catName, MD.*, MD.ManageDataPointCategorySeedID as manageDataPointCategorySeedID"
+        );
+
+        item.manageDataPointCategories = managePointCategories;
+
+        await Promise.all(
+          managePointCategories.map(async (item1) => {
+            let subCatWhere = ` LEFT JOIN subcategoryseeddata C ON MD.ManageDataPointSubCategorySeedID = C.Id WHERE MD.ManageDataPointCategoriesId = '${item1.ID}'`;
+            item1.manageDataPointSubCategories = await getSelectedColumn(
+              "dbo.managedatapointsubcategory MD",
+              subCatWhere,
+              "C.Item as subCatName, MD.*, MD.ManageDataPointSubCategorySeedID as manageDataPointSubCategorySeedID"
+            );
+          })
+        );
       })
     );
-    const result = schema.validate(req.params);
-    if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
-      return res.json({
-        message: result.error.details[0].message,
-        error: message,
-        missingParams: result.error.details[0].message,
-        status: 200,
+
+    if (facilities.length > 0) {
+      return res.status(200).json({
         success: true,
+        message: "Successfully fetched facilities",
+        categories: facilities,
+        status: 200,
       });
     } else {
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
-
-      let where = " LEFT JOIN `dbo.scopeseed` S ON S.ID = MD.ScopeID where MD.facilityId = '" + facilityId + "' and MD.ScopeID = '" + ScopeID + "'";
-      const facilities = await getSelectedColumn("`dbo.managedatapoint` MD  ", where, "MD.*,S.scopeName");
-
-
-      await Promise.all(
-        facilities.map(async (item) => {
-          let where = " JOIN `dbo.categoryseeddata` C ON  MD.ManageDataPointCategorySeedID = C.Id  where  MD.ManageDataPointId = '" + item.ID + "'";
-          const managePointCategories = await getSelectedColumn("`dbo.managedatapointcategory` MD ", where, "C.CatName as catName,MD.*,MD.ManageDataPointCategorySeedID as manageDataPointCategorySeedID ");
-
-          item.manageDataPointCategories = managePointCategories;
-
-          await Promise.all(
-            managePointCategories.map(async (item1) => {
-              let where1 = " LEFT JOIN `subcategoryseeddata` C ON  MD.ManageDataPointSubCategorySeedID = C.Id  where  MD.ManageDataPointCategoriesId = '" + item1.ID + "'";
-              item1.manageDataPointSubCategories = await getSelectedColumn("`dbo.managedatapointsubcategory` MD ", where1, "C.Item as subCatName,MD.*,MD.ManageDataPointSubCategorySeedID as manageDataPointSubCategorySeedID");
-            })
-          );
-
-
-        })
-      );
-
-
-      if (facilities.length > 0) {
-        return res.json({
-          success: true,
-          message: "Succesfully fetched facilities",
-          categories: facilities,
-          status: 200,
-        });
-      } else {
-        return res.json({
-          success: false,
-          message: "Some problem occured while selecting facilities",
-          status: 400,
-        });
-      }
+      return res.status(404).json({
+        success: false,
+        message: "No facilities found",
+        status: 404,
+      });
     }
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error(err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
+      error: err.message,
       status: 500,
     });
   }
@@ -1399,6 +1416,29 @@ exports.AddstationarycombustionLiquid = async (req, res) => {
 
 exports.Addrefrigerant = async (req, res) => {
   try {
+    // -------------------------------
+    // JWT Authentication
+    // -------------------------------
+    const authHeader = req.headers.auth;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing or invalid token",
+        status: 401,
+      });
+    }
+    const jwtToken = authHeader.replace("Bearer ", "");
+    const decoded = jwt.decode(jwtToken);
+    if (!decoded || !decoded.user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid token",
+        status: 401,
+      });
+    }
+    let user_id = decoded.user_id;
+    // -------------------------------
+    
     let allinsertedID = [];
     const { refAmount, unit, note, year, months, SubCategorySeedID, subCategoryTypeId, facilities } = req.body;
     const schema = Joi.alternatives(
@@ -1424,16 +1464,8 @@ exports.Addrefrigerant = async (req, res) => {
         success: true,
       });
     } else {
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      let user_id = decoded.user_id;
-
-
       let countrydata = await country_check(facilities);
 
-      // console.log(countrydata[0].CountryId);
       if (countrydata.length == 0) {
         return res.json({
           success: false,
@@ -1442,9 +1474,8 @@ exports.Addrefrigerant = async (req, res) => {
         });
       }
       const refunit = await getrefrigerant(subCategoryTypeId, countrydata[0].CountryId);
-      let GHGEmission = ""
+      let GHGEmission = "";
       if (refunit.length > 0) {
-
         let yearRange = refunit[0]?.Fiscal_Year; // The string representing the year range
         let [startYear, endYear] = yearRange.split('-').map(Number);
 
@@ -1459,10 +1490,7 @@ exports.Addrefrigerant = async (req, res) => {
             status: 400,
           });
         }
-
-
       } else {
-        // GHGEmission = 0;
         return res.json({
           success: false,
           message: "EF not Found while Adding refrigents",
@@ -1481,39 +1509,35 @@ exports.Addrefrigerant = async (req, res) => {
         year: year ? year : "",
         facilities: facilities ? facilities : "",
         user_id: user_id,
-        CreatedDate: moment().format('YYYY-MM-DD'),
+        CreatedDate: moment().format("YYYY-MM-DD"),
         TenantID: 4,
         Active: 1,
-        SendForApproval: 'yes'
-      }
-
-
+        SendForApproval: "yes",
+      };
 
       let month = JSON.parse(months);
       for (let monthdata of month) {
         category.months = monthdata;
         const refrigerant = await Addrefrigerant(category);
         if (refrigerant.affectedRows > 0) {
-          let insertId = refrigerant.insertId
+          let insertId = refrigerant.insertId;
           allinsertedID.push(insertId);
         }
       }
 
-
       if (allinsertedID.length > 0) {
-
         let where = ` where user_id ='${user_id}' and facilities = '${facilities}'`;
         const refrigents = await getSelectedColumn("`dbo.refrigerantde`", where, "*");
         return res.json({
           success: true,
-          message: "Succesfully Added refrigents",
+          message: "Successfully Added refrigents",
           categories: refrigents,
           status: 200,
         });
       } else {
         return res.json({
           success: false,
-          message: "Some problem occured while Adding refrigents",
+          message: "Some problem occurred while Adding refrigents",
           status: 500,
         });
       }
@@ -1531,32 +1555,55 @@ exports.Addrefrigerant = async (req, res) => {
 
 exports.Allrefrigerant = async (req, res) => {
   try {
+    // ----------------------------------
+    // JWT Authentication
+    // ----------------------------------
     const authHeader = req.headers.auth;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing or invalid token",
+        status: 401,
+      });
+    }
+
     const jwtToken = authHeader.replace("Bearer ", "");
     const decoded = jwt.decode(jwtToken);
-    const user_id = decoded.user_id;
 
+    if (!decoded || !decoded.user_id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid token",
+        status: 401,
+      });
+    }
+
+    let user_id = decoded.user_id;
+    // ----------------------------------
+
+    // Fetch all refrigerants for the user
     const Allrefrigerant = await Allrefrigerants(user_id);
+
     if (Allrefrigerant.length > 0) {
       return res.json({
         success: true,
-        message: "Succesfully fetched refrigerants",
+        message: "Successfully fetched refrigerants",
         categories: Allrefrigerant,
         status: 200,
       });
     } else {
       return res.json({
         success: false,
-        message: "Some problem occured while selecting refrigerants",
-        status: 400,
+        message: "No refrigerants found",
+        status: 404,
       });
     }
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error(err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
+      error: err.message,
       status: 500,
     });
   }
@@ -1564,55 +1611,79 @@ exports.Allrefrigerant = async (req, res) => {
 
 exports.getrefrigents = async (req, res) => {
   try {
-    //SubCategorySeedID
+    // ------------------------------
+    // Validate Request Parameters
+    // ------------------------------
+    const schema = Joi.object({
+      SubCategorySeedID: Joi.string().trim().required(),
+    });
+
+    const { error } = schema.validate(req.params);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        status: 400,
+      });
+    }
+
     const { SubCategorySeedID } = req.params;
-    const schema = Joi.alternatives(
-      Joi.object({
-        SubCategorySeedID: [Joi.string().empty().required()],
-      })
-    );
-    const result = schema.validate(req.params);
-    if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
-      return res.json({
-        message: result.error.details[0].message,
-        error: message,
-        missingParams: result.error.details[0].message,
-        status: 200,
+
+    // ------------------------------
+    // Authenticate User
+    // ------------------------------
+    const authHeader = req.headers.auth;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing or invalid token",
+        status: 401,
+      });
+    }
+
+    const jwtToken = authHeader.replace("Bearer ", "");
+    let decoded;
+    try {
+      decoded = jwt.decode(jwtToken);
+      if (!decoded || !decoded.user_id) {
+        throw new Error("Invalid token");
+      }
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid token",
+        status: 401,
+      });
+    }
+
+    const user_id = decoded.user_id;
+
+    // ------------------------------
+    // Fetch Data from Database
+    // ------------------------------
+    let where = `WHERE SubCategorySeedID = '${SubCategorySeedID}'`;
+    const getSoldproduct = await getSelectedColumn("`dbo.refrigents`", where, "*");
+
+    if (getSoldproduct.length > 0) {
+      return res.status(200).json({
         success: true,
+        message: "Successfully fetched refrigerants",
+        categories: getSoldproduct,
+        status: 200,
       });
     } else {
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      const user_id = decoded.user_id;
-
-      let where = ` where SubCategorySeedID = '${SubCategorySeedID}'`;
-      const getSoldproduct = await getSelectedColumn("`dbo.refrigents`", where, "*");
-
-
-      if (getSoldproduct.length > 0) {
-        return res.json({
-          success: true,
-          message: "Succesfully fetched refrigents",
-          categories: getSoldproduct,
-          status: 200,
-        });
-      } else {
-        return res.json({
-          success: false,
-          message: "Some problem occured while selecting refrigents",
-          status: 400,
-        });
-      }
+      return res.status(404).json({
+        success: false,
+        message: "No refrigerants found for the given SubCategorySeedID",
+        status: 404,
+      });
     }
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error("Error fetching refrigerants:", err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
+      error: err.message,
       status: 500,
     });
   }
@@ -1752,32 +1823,60 @@ exports.Addfireextinguisher = async (req, res) => {
 
 exports.Getfireextinguisher = async (req, res) => {
   try {
+    // ------------------------------
+    // Authenticate User
+    // ------------------------------
     const authHeader = req.headers.auth;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing or invalid token",
+        status: 401,
+      });
+    }
+
     const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
+    let decoded;
+    try {
+      decoded = jwt.decode(jwtToken);
+      if (!decoded || !decoded.user_id) {
+        throw new Error("Invalid token");
+      }
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid token",
+        status: 401,
+      });
+    }
+
     const user_id = decoded.user_id;
 
+    // ------------------------------
+    // Fetch Fire Extinguishers Data
+    // ------------------------------
     const Allfireexting = await Allfireextinguisher(user_id);
-    if (Allfireexting.length > 0) {
-      return res.json({
+
+    if (Allfireexting && Allfireexting.length > 0) {
+      return res.status(200).json({
         success: true,
-        message: "Succesfully fetched fireextinguisher",
+        message: "Successfully fetched fire extinguishers",
         categories: Allfireexting,
         status: 200,
       });
     } else {
-      return res.json({
+      return res.status(404).json({
         success: false,
-        message: "Some problem occured while selecting fireextinguisher",
-        status: 400,
+        message: "No fire extinguishers found",
+        status: 404,
       });
     }
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error("Error fetching fire extinguishers:", err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
+      error: err.message,
       status: 500,
     });
   }
@@ -1785,32 +1884,60 @@ exports.Getfireextinguisher = async (req, res) => {
 
 exports.Getpassengervehicletypes = async (req, res) => {
   try {
+    // ------------------------------
+    // Authenticate User
+    // ------------------------------
     const authHeader = req.headers.auth;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing or invalid token",
+        status: 401,
+      });
+    }
+
     const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
+    let decoded;
+    try {
+      decoded = jwt.decode(jwtToken);
+      if (!decoded || !decoded.user_id) {
+        throw new Error("Invalid token");
+      }
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid token",
+        status: 401,
+      });
+    }
+
     const user_id = decoded.user_id;
 
+    // ------------------------------
+    // Fetch Passenger Vehicle Types
+    // ------------------------------
     const passengervehicletypes = await getpassengervehicletypes(user_id);
-    if (passengervehicletypes.length > 0) {
-      return res.json({
+
+    if (Array.isArray(passengervehicletypes) && passengervehicletypes.length > 0) {
+      return res.status(200).json({
         success: true,
-        message: "Succesfully fetched passengervehicletypes",
+        message: "Successfully fetched passenger vehicle types",
         categories: passengervehicletypes,
         status: 200,
       });
     } else {
-      return res.json({
+      return res.status(404).json({
         success: false,
-        message: "Some problem occured while selecting passengervehicletypes",
-        status: 400,
+        message: "No passenger vehicle types found",
+        status: 404,
       });
     }
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error("Error fetching passenger vehicle types:", err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
+      error: err.message,
       status: 500,
     });
   }
@@ -1818,32 +1945,60 @@ exports.Getpassengervehicletypes = async (req, res) => {
 
 exports.Getdeliveryvehicletypes = async (req, res) => {
   try {
+    // ------------------------------
+    // Authenticate User
+    // ------------------------------
     const authHeader = req.headers.auth;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Missing or invalid token",
+        status: 401,
+      });
+    }
+
     const jwtToken = authHeader.replace("Bearer ", "");
-    const decoded = jwt.decode(jwtToken);
+    let decoded;
+    try {
+      decoded = jwt.decode(jwtToken);
+      if (!decoded || !decoded.user_id) {
+        throw new Error("Invalid token");
+      }
+    } catch (err) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid token",
+        status: 401,
+      });
+    }
+
     const user_id = decoded.user_id;
 
+    // ------------------------------
+    // Fetch Delivery Vehicle Types
+    // ------------------------------
     const deliveryvehicletypes = await getdeliveryvehicletypes();
-    if (deliveryvehicletypes.length > 0) {
-      return res.json({
+
+    if (Array.isArray(deliveryvehicletypes) && deliveryvehicletypes.length > 0) {
+      return res.status(200).json({
         success: true,
-        message: "Succesfully fetched deliveryvehicletypes",
+        message: "Successfully fetched delivery vehicle types",
         categories: deliveryvehicletypes,
         status: 200,
       });
     } else {
-      return res.json({
+      return res.status(404).json({
         success: false,
-        message: "Some problem occured while selecting passengervehicletypes",
-        status: 400,
+        message: "No delivery vehicle types found",
+        status: 404,
       });
     }
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error("Error fetching delivery vehicle types:", err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: err,
+      error: err.message,
       status: 500,
     });
   }
@@ -1851,178 +2006,137 @@ exports.Getdeliveryvehicletypes = async (req, res) => {
 
 exports.Addcompanyownedvehicles = async (req, res) => {
   try {
-    let allinsertedID = [];
-    const { NoOfVehicles, unit, note, year, months, SubCategorySeedID,
-      TotalnoOftripsPerVehicle, vehicleTypeID, Value, facilities, ModeofDEID, charging_outside } = req.body;
-    const schema = Joi.alternatives(
-      Joi.object({
-        NoOfVehicles: [Joi.string().empty().required()],
-        TotalnoOftripsPerVehicle: [Joi.string().empty().required()],
-        unit: [Joi.string().empty().required()],
-        note: [Joi.optional().allow("")],
-        year: [Joi.string().empty().required()],
-        months: [Joi.string().empty().required()],
-        SubCategorySeedID: [Joi.string().empty().required()],
-        facilities: [Joi.string().empty().required()],
-        vehicleTypeID: [Joi.string().empty().required()], //
-        Value: [Joi.string().empty().required()],
-        ModeofDEID: [Joi.string().empty().required()],
-        charging_outside: [Joi.optional().allow("")],
-      })
-    );
-    const result = schema.validate(req.body);
-    if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
-      return res.json({
-        message: result.error.details[0].message,
-        error: message,
-        missingParams: result.error.details[0].message,
-        status: 200,
+    let allInsertedIDs = [];
+    const {
+      NoOfVehicles, unit, note, year, months, SubCategorySeedID,
+      TotalnoOftripsPerVehicle, vehicleTypeID, Value, facilities, ModeofDEID, charging_outside
+    } = req.body;
+
+    // Joi Validation Schema
+    const schema = Joi.object({
+      NoOfVehicles: Joi.string().required(),
+      TotalnoOftripsPerVehicle: Joi.string().required(),
+      unit: Joi.string().required(),
+      note: Joi.string().optional().allow(""),
+      year: Joi.string().required(),
+      months: Joi.string().required(),
+      SubCategorySeedID: Joi.string().required(),
+      facilities: Joi.string().required(),
+      vehicleTypeID: Joi.string().required(),
+      Value: Joi.string().required(),
+      ModeofDEID: Joi.string().required(),
+      charging_outside: Joi.string().optional().allow("")
+    });
+
+    const { error } = schema.validate(req.body);
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+        status: 400,
+      });
+    }
+
+    // Extract JWT Token
+    const authHeader = req.headers.auth;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    const jwtToken = authHeader.replace("Bearer ", "");
+    const decoded = jwt.decode(jwtToken);
+    const user_id = decoded?.user_id;
+
+    if (!user_id) {
+      return res.status(401).json({ success: false, message: "Invalid token" });
+    }
+
+    // Fetch Country Data
+    const countryData = await country_check(facilities);
+    if (countryData.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "EF not found while adding company-owned vehicles",
+      });
+    }
+
+    const countryId = countryData[0].CountryId;
+    const refUnit = await getvehicletypes(vehicleTypeID, SubCategorySeedID, countryId);
+
+    if (refUnit.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "EF not found for this vehicle type and category",
+      });
+    }
+
+    // GHG Emission Calculation
+    const calculateGHGEmission = (refUnit, unit, noOfVehicles, totalTrips, value, chargingOutside) => {
+      let efs = unit === 'Km' ? parseFloat(refUnit.kgCO2e_km) : parseFloat(refUnit.kgCO2e_litre);
+      if (chargingOutside) {
+        let emissionFactor = efs + (parseFloat(chargingOutside) / 100) * parseFloat(refUnit.kgCO2e_kg);
+        return parseFloat(noOfVehicles) * parseFloat(totalTrips) * parseFloat(value) * emissionFactor;
+      }
+      return parseFloat(noOfVehicles) * parseFloat(totalTrips) * parseFloat(value) * efs;
+    };
+
+    const { Fiscal_Year } = refUnit[0];
+    const [startYear, endYear] = Fiscal_Year.split('-').map(Number);
+
+    if (year < startYear || year > endYear) {
+      return res.status(400).json({
+        success: false,
+        message: "EF not found for this year",
+      });
+    }
+
+    let GHGEmission = calculateGHGEmission(refUnit[0], unit, NoOfVehicles, TotalnoOftripsPerVehicle, Value, charging_outside);
+
+    // Insert Data
+    let category = {
+      NoOfVehicles, Unit: unit, note, GHGEmission, SubCategorySeedID,
+      TotalnoOftripsPerVehicle, Value, vehicleTypeID, year, facilities,
+      user_id, CreatedDate: moment().format('YYYY-MM-DD'), TenantID: 4,
+      Active: 1, SendForApproval: 'yes', ModeofDEID
+    };
+
+    try {
+      let parsedMonths = JSON.parse(months);
+      for (let month of parsedMonths) {
+        category.months = month;
+        const result = await Addcompanyownedvehicles(category);
+        if (result.affectedRows > 0) {
+          allInsertedIDs.push(result.insertId);
+        }
+      }
+    } catch (parseError) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid months format",
+      });
+    }
+
+    if (allInsertedIDs.length > 0) {
+      const whereClause = ` WHERE user_id ='${user_id}' AND facilities = '${facilities}'`;
+      const refrigents = await getSelectedColumn("`dbo.vehiclede`", whereClause, "*");
+
+      return res.status(200).json({
         success: true,
+        message: "Successfully added company-owned vehicles",
+        categories: refrigents,
       });
     } else {
-
-      const authHeader = req.headers.auth;
-      const jwtToken = authHeader.replace("Bearer ", "");
-      const decoded = jwt.decode(jwtToken);
-      let user_id = decoded.user_id;
-
-      let countrydata = await country_check(facilities);
-      // console.log(countrydata[0].CountryId);
-      if (countrydata.length == 0) {
-        return res.json({
-          success: false,
-          message: "EF not found while adding company owned vehicles",
-          status: 400,
-        });
-      }
-
-      const refunit = await getvehicletypes(vehicleTypeID, SubCategorySeedID, countrydata[0].CountryId);
-      let GHGEmission = ""
-      if (refunit.length > 0) {
-        let yearRange = refunit[0]?.Fiscal_Year; // The string representing the year range
-        let [startYear, endYear] = yearRange.split('-').map(Number);
-
-        if (year >= startYear && year <= endYear) {
-          if (charging_outside != "undefined") {
-            let efs = 0;
-            if (unit == 'Km') {
-              efs = parseFloat(refunit[0].kgCO2e_km);
-            }
-            if (unit == 'Litre') {
-              efs = parseFloat(refunit[0].kgCO2e_litre);
-            }
-
-            let emissionef = efs + parseFloat(charging_outside) / 100 * parseFloat(refunit[0].kgCO2e_kg);
-
-
-            GHGEmission = parseFloat(NoOfVehicles) * parseFloat(TotalnoOftripsPerVehicle) * parseFloat(Value) * parseFloat(emissionef)
-
-          } else {
-            if (unit == 'Km') {
-              GHGEmission = (parseFloat(refunit[0].kgCO2e_km) * parseFloat(NoOfVehicles) * parseFloat(TotalnoOftripsPerVehicle) * parseFloat(Value));
-            }
-            if (unit == 'Litre') {
-              GHGEmission = (parseFloat(refunit[0].kgCO2e_litre) * parseFloat(NoOfVehicles) * parseFloat(TotalnoOftripsPerVehicle) * parseFloat(Value));
-            }
-
-          }
-        } else if (year == startYear) {
-          if (charging_outside != "undefined") {
-            let efs = 0;
-            if (unit == 'Km') {
-              efs = parseFloat(refunit[0].kgCO2e_km);
-            }
-            if (unit == 'Litre') {
-              efs = parseFloat(refunit[0].kgCO2e_litre);
-            }
-
-            let emissionef = efs + parseFloat(charging_outside) / 100 * parseFloat(refunit[0].kgCO2e_kg);
-
-
-            GHGEmission = parseFloat(NoOfVehicles) * parseFloat(TotalnoOftripsPerVehicle) * parseFloat(Value) * parseFloat(emissionef)
-
-          } else {
-            if (unit == 'Km') {
-              GHGEmission = (parseFloat(refunit[0].kgCO2e_km) * parseFloat(NoOfVehicles) * parseFloat(TotalnoOftripsPerVehicle) * parseFloat(Value));
-            }
-            if (unit == 'Litre') {
-              GHGEmission = (parseFloat(refunit[0].kgCO2e_litre) * parseFloat(NoOfVehicles) * parseFloat(TotalnoOftripsPerVehicle) * parseFloat(Value));
-            }
-
-          }
-        } else {
-          return res.json({
-            success: false,
-            message: "EF not Found for this year",
-            status: 400,
-          });
-        }
-
-      } else {
-
-        //  console.log(countrydata[0].CountryId);
-
-        return res.json({
-          success: false,
-          message: "EF not found while adding company owned vehicles",
-          status: 400,
-        });
-
-        //  GHGEmission = 0;
-      }
-
-      let category = {
-        NoOfVehicles: NoOfVehicles ? NoOfVehicles : "",
-        Unit: unit ? unit : "",
-        note: note ? note : "",
-        GHGEmission: GHGEmission,
-        SubCategorySeedID: SubCategorySeedID ? SubCategorySeedID : "",
-        TotalnoOftripsPerVehicle: TotalnoOftripsPerVehicle ? TotalnoOftripsPerVehicle : "",
-        Value: Value ? Value : 0,
-        vehicleTypeID: vehicleTypeID ? vehicleTypeID : 0,
-        year: year ? year : "",
-        facilities: facilities ? facilities : "",
-        user_id: user_id,
-        CreatedDate: moment().format('YYYY-MM-DD'),
-        TenantID: 4,
-        Active: 1,
-        SendForApproval: 'yes',
-        ModeofDEID: ModeofDEID ? ModeofDEID : ""
-      }
-      let month = JSON.parse(months);
-      for (let monthdata of month) {
-        category.months = monthdata;
-        const fireextinguisher = await Addcompanyownedvehicles(category);
-        if (fireextinguisher.affectedRows > 0) {
-          let insertId = fireextinguisher.insertId
-          allinsertedID.push(insertId);
-        }
-      }
-      if (allinsertedID.length > 0) {
-        let where = ` where user_id ='${user_id}' and facilities = '${facilities}'`;
-        const refrigents = await getSelectedColumn("`dbo.vehiclede`", where, "*");
-        return res.json({
-          success: true,
-          message: "Succesfully Added company owned vehicles",
-          categories: refrigents,
-          status: 200,
-        });
-      } else {
-        return res.json({
-          success: false,
-          message: "Some problem occured while Adding company owned vehicles",
-          status: 500,
-        });
-      }
+      return res.status(500).json({
+        success: false,
+        message: "Error occurred while adding company-owned vehicles",
+      });
     }
   } catch (err) {
-    console.log(err);
-    return res.json({
+    console.error(err);
+    return res.status(500).json({
       success: false,
       message: "Internal server error",
       error: err,
-      status: 500,
     });
   }
 };
