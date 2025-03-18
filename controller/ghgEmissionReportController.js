@@ -1,7 +1,7 @@
 
 const Joi = require("joi");
 
-const { getCombustionEmission, Allrefrigerants, Allfireextinguisher, getAllcompanyownedvehicles, getAllelectricity, getAllheatandsteam, purchaseGoodsDetails, flight_travelDetails, hotel_stayDetails, other_modes_of_transportDetails, processing_of_sold_products_categoryDetails, sold_product_categoryDetails, endoflife_waste_typeDetails, water_supply_treatment_categoryDetails, employee_commuting_categoryDetails, homeoffice_categoryDetails, waste_generated_emissionsDetails, upstreamLease_emissionDetails, downstreamLease_emissionDetails, franchise_categories_emissionDetails, investment_emissionsDetails, upstream_vehicle_storage_emissions, downstream_vehicle_storage_emissions, waste_generated_emissionsDetailsEmssion, waste_generated_emissionsDetailsEmssionByMethodemission } = require("../models/ghgEmissionReport");
+const { getCombustionEmission, Allrefrigerants, Allfireextinguisher, getAllcompanyownedvehicles, getAllelectricity, getAllheatandsteam, purchaseGoodsDetails, flight_travelDetails, hotel_stayDetails, other_modes_of_transportDetails, processing_of_sold_products_categoryDetails, sold_product_categoryDetails, endoflife_waste_typeDetails, water_supply_treatment_categoryDetails, employee_commuting_categoryDetails, homeoffice_categoryDetails, waste_generated_emissionsDetails, upstreamLease_emissionDetails, downstreamLease_emissionDetails, franchise_categories_emissionDetails, investment_emissionsDetails, upstream_vehicle_storage_emissions, downstream_vehicle_storage_emissions, waste_generated_emissionsDetailsEmssion, waste_generated_emissionsDetailsEmssionByMethodemission, getTop3CombustionEmission, getEmissionData } = require("../models/ghgEmissionReport");
 
 exports.GhgScopewiseEmssion = async (req, res) => {
     try {
@@ -428,3 +428,87 @@ exports.GhgdashboardWasteTotal = async (req, res) => {
         });
     }
 };
+
+
+exports.getTopCombustionEmission = async (req, res) => {
+    try {
+        const { facilities, year } = req.body;
+
+        const schema = Joi.object({
+            facilities: Joi.string().empty().required(),
+            year: Joi.string().empty().required(),
+        });
+
+        const result = schema.validate(req.body);
+        if (result.error) {
+            const message = result.error.details.map((i) => i.message).join(",");
+            return res.json({
+                message: result.error.details[0].message,
+                error: message,
+                missingParams: result.error.details[0].message,
+                status: 200,
+                success: true,
+            });
+        }
+
+        let myArray = facilities.split(",");
+        let topEmissions = [];
+
+        for (let item of myArray) {
+            let top = await getTop3CombustionEmission(item, year);
+            if (top.length > 0) {
+                topEmissions.push(...top);
+            }
+        }
+
+        // Summing emissions by TypeName
+        const summedEmissions = topEmissions.reduce((acc, curr) => {
+            let existing = acc.find(item => item.TypeName === curr.TypeName);
+            if (existing) {
+                existing.Total_GHGEmission += parseFloat(curr.Total_GHGEmission);
+            } else {
+                acc.push({
+                    TypeName: curr.TypeName,
+                    Total_GHGEmission: parseFloat(curr.Total_GHGEmission)
+                });
+            }
+            return acc;
+        }, []);
+
+        // Sorting and selecting top 3 emissions
+        const top3SummedEmissions = summedEmissions
+            .sort((a, b) => b.Total_GHGEmission - a.Total_GHGEmission)
+            .slice(0, 3);
+
+        return res.status(200).json({
+            success: true,
+            message: "Top 3 GHG Emission records fetched successfully",
+            data: top3SummedEmissions
+        });
+
+    } catch (error) {
+        console.error("Error fetching top combustion emissions:", error);
+        return res.status(500).json({ success: false, message: "Internal server error", error });
+    }
+
+}
+
+
+
+exports.fetchEmissionData = async (req, res) => {
+    try {
+        // Extract parameters from query
+        const facilityIds = req.query.facilities ? req.query.facilities.split(",").map(Number) : [];
+        const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+
+        // Fetch emission data
+        const data = await getEmissionData(facilityIds, year);
+
+        // Send response
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        console.error("API Error:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error", error });
+    }
+};
+
