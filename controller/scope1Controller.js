@@ -373,7 +373,7 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
     const user_id = req.user.user_id; // Authentication handled like GetSubCategoryTypes
 
     let array = [];
-    let where = ` LEFT JOIN dbo.scopeseed S ON S.ID = MD.ScopeID WHERE MD.facilityId = '${facilityId}' ORDER BY MD.ScopeID ASC`;
+    let where = ` LEFT JOIN \`dbo.scopeseed\` S ON S.ID = MD.ScopeID WHERE MD.facilityId = '${facilityId}' ORDER BY MD.ScopeID ASC`;
     const facilities = await getSelectedColumn(
       "`dbo.managedatapoint` MD",
       where,
@@ -382,9 +382,9 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
 
     await Promise.all(
       facilities.map(async (item) => {
-        let where = ` JOIN dbo.categoryseeddata C ON MD.ManageDataPointCategorySeedID = C.Id WHERE MD.ManageDataPointId = '${item.ID}'`;
+        let where = ` JOIN \`dbo.categoryseeddata\` C ON MD.ManageDataPointCategorySeedID = C.Id WHERE MD.ManageDataPointId = '${item.ID}'`;
         const managePointCategories = await getSelectedColumn(
-          "`dbo.managedatapointcategory` MD",
+          "\`dbo.managedatapointcategory`\ MD",
           where,
           "C.CatName as catName, MD.*, MD.ManageDataPointCategorySeedID as manageDataPointCategorySeedID"
         );
@@ -396,7 +396,7 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
           managePointCategories.map(async (item1) => {
             let where1 = ` LEFT JOIN subcategoryseeddata C ON MD.ManageDataPointSubCategorySeedID = C.Id WHERE MD.ManageDataPointCategoriesId = '${item1.ID}'`;
             let manageDataPointSubCategories = await getSelectedColumn(
-              "`dbo.managedatapointsubcategory` MD",
+              "\`dbo.managedatapointsubcategory\` MD",
               where1,
               "C.Item as subCatName, MD.*, MD.ManageDataPointSubCategorySeedID as manageDataPointSubCategorySeedID"
             );
@@ -1846,9 +1846,9 @@ exports.Addcompanyownedvehicles = async (req, res) => {
 
     // GHG Emission Calculation
     const calculateGHGEmission = (refUnit, unit, noOfVehicles, totalTrips, value, chargingOutside) => {
-      let efs = unit === 'Km' ? parseFloat(refUnit.kgCO2e_km) : parseFloat(refUnit.kgCO2e_litre);
+      let efs = unit === 'Km' ? parseFloat(refUnit.kgCO2e_km) : unit === 'Litre' ? parseFloat(refUnit.kgCO2e_litre) : parseFloat(refUnit.kgCO2e_ccy);      
       if (chargingOutside) {
-        let emissionFactor = efs + (parseFloat(chargingOutside) / 100) * parseFloat(refUnit.kgCO2e_kg);
+        let emissionFactor = efs * parseFloat(refUnit.kgCO2e_kg);
         return parseFloat(noOfVehicles) * parseFloat(totalTrips) * parseFloat(value) * emissionFactor;
       }
       return parseFloat(noOfVehicles) * parseFloat(totalTrips) * parseFloat(value) * efs;
@@ -1874,20 +1874,13 @@ exports.Addcompanyownedvehicles = async (req, res) => {
       Active: 1, SendForApproval: 'yes', ModeofDEID
     };
 
-    try {
-      let parsedMonths = JSON.parse(months);
-      for (let month of parsedMonths) {
-        category.months = month;
-        const result = await Addcompanyownedvehicles(category);
-        if (result.affectedRows > 0) {
-          allInsertedIDs.push(result.insertId);
-        }
+    let parsedMonths = JSON.parse(months);
+    for (let month of parsedMonths) {
+      category.months = month;
+      const result = await Addcompanyownedvehicles(category);
+      if (result.affectedRows > 0) {
+        allInsertedIDs.push(result.insertId);
       }
-    } catch (parseError) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid months format",
-      });
     }
 
     if (allInsertedIDs.length > 0) {

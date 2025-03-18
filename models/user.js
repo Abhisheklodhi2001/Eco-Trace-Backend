@@ -17,7 +17,7 @@ module.exports = {
         return db.query('select * from  `dbo.aspnetusers`  where Email = ?', [Email]);
     }),
     fetchUserByEmail: (async (Email) => {
-        return db.query('select A.companyName,A.Email as companyEmail,A.numberOfUserAllowed,A.licenseExpired,B.refreshToken,B.tenantID,A.Id,B.userName,A.licenseType, B.refreshTokenExpiryTime as expiration from `dbo.tenants` A JOIN  `dbo.aspnetusers` B ON B.email = A.Email where A.Email = ? and B.email = "' + Email + '"', [Email]);
+        return db.query('select A.logoName, A.companyName,A.Email as companyEmail,A.numberOfUserAllowed,A.licenseExpired,B.refreshToken,B.tenantID,A.Id,B.userName,A.licenseType, B.refreshTokenExpiryTime as expiration from `dbo.tenants` A JOIN  `dbo.aspnetusers` B ON B.email = A.Email where A.Email = ? and B.email = "' + Email + '"', [Email]);
     }),
 
 
