@@ -1,21 +1,21 @@
 const mysql = require('mysql2');
 const util = require('util');
 
-var db_config = {
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    port:3306,
-    database: 'CarbonEmission'
-};
-
 // var db_config = {
-//   host: '13.200.247.29',
-//   user: 'jerry',
-//   password: 'jerrypassword',
-//   port:3306,
-//   database: 'CarbonEmission'
+//     host: 'localhost',
+//     user: 'root',
+//     password: '',
+//     port:3306,
+//     database: 'CarbonEmission'
 // };
+
+var db_config = {
+  host: '13.200.247.29',
+  user: 'jerry',
+  password: 'jerrypassword',
+  port:3306,
+  database: 'CarbonEmission'
+};
 
 
 var connection;

@@ -1,7 +1,7 @@
 
 const Joi = require("joi");
 
-const { getCombustionEmission, Allrefrigerants, Allfireextinguisher, getAllcompanyownedvehicles, getAllelectricity, getAllheatandsteam, purchaseGoodsDetails, flight_travelDetails, hotel_stayDetails, other_modes_of_transportDetails, processing_of_sold_products_categoryDetails, sold_product_categoryDetails, endoflife_waste_typeDetails, water_supply_treatment_categoryDetails, employee_commuting_categoryDetails, homeoffice_categoryDetails, waste_generated_emissionsDetails, upstreamLease_emissionDetails, downstreamLease_emissionDetails, franchise_categories_emissionDetails, investment_emissionsDetails, upstream_vehicle_storage_emissions, downstream_vehicle_storage_emissions, waste_generated_emissionsDetailsEmssion, waste_generated_emissionsDetailsEmssionByMethodemission, getTop3CombustionEmission, getEmissionData } = require("../models/ghgEmissionReport");
+const { getCombustionEmission, Allrefrigerants, Allfireextinguisher, getAllcompanyownedvehicles, getAllelectricity, getAllheatandsteam, purchaseGoodsDetails, flight_travelDetails, hotel_stayDetails, other_modes_of_transportDetails, processing_of_sold_products_categoryDetails, sold_product_categoryDetails, endoflife_waste_typeDetails, water_supply_treatment_categoryDetails, employee_commuting_categoryDetails, homeoffice_categoryDetails, waste_generated_emissionsDetails, upstreamLease_emissionDetails, downstreamLease_emissionDetails, franchise_categories_emissionDetails, investment_emissionsDetails, upstream_vehicle_storage_emissions, downstream_vehicle_storage_emissions, waste_generated_emissionsDetailsEmssion, waste_generated_emissionsDetailsEmssionByMethodemission, getTop3CombustionEmission,getCombustionEmissionData ,getRefrigerantEmissionData,getExtinguisherEmissionData,getDieselPassengerData,getDieselDeliveryData } = require("../models/ghgEmissionReport");
 
 exports.GhgScopewiseEmssion = async (req, res) => {
     try {
@@ -498,14 +498,17 @@ exports.getTopCombustionEmission = async (req, res) => {
 exports.fetchEmissionData = async (req, res) => {
     try {
         // Extract parameters from query
-        const facilityIds = req.query.facilities ? req.query.facilities.split(",").map(Number) : [];
+        const facilityIds = req.query.facilities
         const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
 
         // Fetch emission data
-        const data = await getEmissionData(facilityIds, year);
-
+        const CombustionEmissionData = await getCombustionEmissionData(facilityIds, year);
+        const  RefrigerantEmissionData = await getRefrigerantEmissionData(facilityIds, year);
+        const ExtinguisherEmissionData = await getExtinguisherEmissionData(facilityIds, year);
+        const DieselPassengerData = await getDieselPassengerData(facilityIds, year);
+        const DieselDeliveryData = await getDieselDeliveryData(facilityIds, year);
         // Send response
-        res.status(200).json({ success: true, data });
+        res.status(200).json({ success: true, CombustionEmissionData ,RefrigerantEmissionData,ExtinguisherEmissionData,DieselPassengerData,DieselDeliveryData});
     } catch (error) {
         console.error("API Error:", error);
         res.status(500).json({ success: false, message: "Internal Server Error", error });

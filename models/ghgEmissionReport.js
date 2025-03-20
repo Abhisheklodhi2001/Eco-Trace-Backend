@@ -380,104 +380,173 @@ ORDER BY Total_GHGEmission DESC   \
 LIMIT 1; ', [facility_id, year]);
     },
 
-    getEmissionData: async (facilityIds, year) => {
-        try {
-            // Define queries
-            const queries = {
-                combustionEmission: `
-                    SELECT SUM(A.GHGEmission) AS Total_GHGEmission, A.TypeName 
+
+    getCombustionEmissionData: async (facility_id, year) => {
+        return db.query(` SELECT SUM(A.GHGEmission) AS Total_GHGEmission, A.TypeName 
                     FROM stationarycombustionde A 
                     WHERE A.facility_id IN (?) AND Year = ?
                     GROUP BY A.TypeName 
-                    ORDER BY Total_GHGEmission DESC LIMIT 3;
-                `,
-                refrigerantEmission: `
-                    SELECT r.TypeName, SUM(r.GHGEmission) AS Total_GHGEmission, ref.Item   
+                    ORDER BY Total_GHGEmission DESC LIMIT 3;`, [facility_id, year]);
+    },
+
+    getRefrigerantEmissionData: async (facility_id, year) => {
+        console.log('>>>>>>>>>>', facility_id)
+        try {
+            const query = `
+                 SELECT r.TypeName, SUM(r.GHGEmission) AS Total_GHGEmission, ref.Item   
                     FROM \`dbo.refrigerantde\` r  
                     LEFT JOIN \`dbo.refrigents\` ref ON r.subCategoryTypeId = ref.ID  
                     WHERE r.facilities IN (?)    
                     GROUP BY r.TypeName, ref.Item   
                     ORDER BY Total_GHGEmission DESC LIMIT 1;
-                `,
-                extinguisherEmission: `
-                    SELECT SUM(GHGEmission) AS Total_GHGEmission, facilities, year 
-                    FROM \`dbo.fireextinguisherde\` 
-                    WHERE facilities IN (?) AND year = ? AND status = 'S'  
-                    GROUP BY facilities, year;
-                `,
-                // petrolVehicles: `
-                //     SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
-                //     FROM \`dbo.vehiclede v\`
-                //     LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-                //     WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%'
-                //     GROUP BY v.facilities, p.VehicleType;
-                // `,
-                dieselPassenger: `
-                    SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
-                    FROM \`dbo.vehiclede\` v
-                    LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-                    WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Diesel%' 
-                    AND v.Status = 'S' AND v.SubCategorySeedID = 10
-                    GROUP BY v.facilities, p.VehicleType;
-                `,
-                dieselDelivery: `
-                    SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
-                    FROM \`dbo.vehiclede\` v
-                    LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-                    WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Diesel%' 
-                    AND v.Status = 'S' AND v.SubCategorySeedID = 11
-                    GROUP BY v.facilities, p.VehicleType;
-                `,
-                petrolPassenger: `
-                    SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
-                    FROM \`dbo.vehiclede\` v
-                    LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-                    WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%' 
-                    AND v.Status = 'S' AND v.SubCategorySeedID = 11
-                    GROUP BY v.facilities, p.VehicleType;
-                `,
-                petrolDelivery: `
-                    SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
-                    FROM \`dbo.vehiclede\` v
-                    LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-                    WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%' 
-                    AND v.Status = 'S' AND v.SubCategorySeedID = 11
-                    GROUP BY v.facilities, p.VehicleType;
-                `
-            };
-    
-            // Execute all queries asynchronously
-            const results = await Promise.all([
-                db.query(queries.combustionEmission, [facilityIds, year]),
-                db.query(queries.refrigerantEmission, [facilityIds]),
-                db.query(queries.extinguisherEmission, [facilityIds, year]),
-                // db.query(queries.petrolVehicles, [facilityIds]),
-                db.query(queries.dieselPassenger, [facilityIds]),
-                db.query(queries.dieselDelivery, [facilityIds]),
-                db.query(queries.petrolPassenger, [facilityIds]),
-                db.query(queries.petrolDelivery, [facilityIds])
-            ]);
-    
-            // Return structured response
-            return {
-                success: true,
-                message: "GHG Emission data fetched successfully",
-                data: {
-                    combustionEmission: results[0],
-                    refrigerantEmission: results[1],
-                    extinguisherEmission: results[2],
-                    petrolVehicles: results[3],
-                    dieselPassenger: results[4],
-                    dieselDelivery: results[5],
-                    petrolPassenger: results[6],
-                    petrolDelivery: results[7]
-                }
-            };
-    
+            `;
+
+            const [results] = await db.query(query, [facility_id]); // Correct parameterized query execution
+            return results;
         } catch (error) {
-            console.error("Database error:", error);
-            return { success: false, message: "Error fetching emission data", error };
+            console.error("Database Error:", error);
+            throw error;
         }
     },
-    
+
+    getExtinguisherEmissionData: async (facility_id, year) => {
+        try {
+            const query = `
+                SELECT SUM(GHGEmission) AS Total_GHGEmission, facilities, year 
+FROM \`dbo.fireextinguisherde\` 
+WHERE facilities IN (?)
+AND year = ? 
+AND status = 'P'  
+GROUP BY facilities, year;
+            `;
+
+            const [results] = await db.query(query, [facility_id, year]); // Corrected parameterized query execution
+            return results;
+        } catch (error) {
+            console.error("Database Error:", error);
+            throw error;
+        }
+    },
+
+    getDieselPassengerData: async (facility_id, year) => {
+        try {
+            const query = `
+               SELECT 
+    SUM(v.GHGEmission) AS Total_GHGEmission, 
+    v.facilities, 
+    p.VehicleType 
+FROM \`dbo.vehiclede\` v
+LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
+WHERE v.facilities IN (1,2,33,3,4,5,6,7,8,9,10,11,12,13,14,15) 
+AND p.VehicleType LIKE '%Diesel%' AND v.Status = 'P' and v.SubCategorySeedID = 10
+GROUP BY v.facilities, p.VehicleType;
+            `;
+
+            const [results] = await db.query(query, [facility_id, year]); // Correct syntax
+            return results;
+        } catch (error) {
+            console.error("Database Error:", error);
+            throw error;
+        }
+    },
+
+
+    getDieselDeliveryData: async (facility_id, year) => {
+        try {
+            const query = `
+                SELECT 
+    SUM(v.GHGEmission) AS Total_GHGEmission, 
+    v.facilities, 
+    p.VehicleType 
+FROM \`dbo.vehiclede\` v
+LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
+WHERE v.facilities IN (1,2,33,3,4,5,6,7,8,9,10,11,12,13,14,15) 
+AND p.VehicleType LIKE '%Diesel%' AND v.Status = 'P' and v.SubCategorySeedID = 11
+GROUP BY v.facilities, p.VehicleType;
+            `;
+
+            const [results] = await db.query(query, [facility_id]);  // ✅ Correct parameter binding
+            return results;
+        } catch (error) {
+            console.error("Database Error:", error);
+            throw error;
+        }
+    },
+
+    // getEmissionData: async (facilityIds, year) => {
+    //     try {
+    //         // Define queries
+    //         const queries = {
+    //             combustionEmission: `
+
+    //             `,
+    //             refrigerantEmission: `
+
+    //             `,
+    //             extinguisherEmission: `
+
+    //             `,
+    //             // petrolVehicles: `
+    //             //     SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
+    //             //     FROM \`dbo.vehiclede v\`
+    //             //     LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
+    //             //     WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%'
+    //             //     GROUP BY v.facilities, p.VehicleType;
+    //             // `,
+    //             dieselPassenger: `
+
+    //             `,
+    //             dieselDelivery: ,
+    //             petrolPassenger: `
+    //                 SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
+    //                 FROM \`dbo.vehiclede\` v
+    //                 LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
+    //                 WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%' 
+    //                 AND v.Status = 'S' AND v.SubCategorySeedID = 11
+    //                 GROUP BY v.facilities, p.VehicleType;
+    //             `,
+    //             petrolDelivery: `
+    //                 SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
+    //                 FROM \`dbo.vehiclede\` v
+    //                 LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
+    //                 WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%' 
+    //                 AND v.Status = 'S' AND v.SubCategorySeedID = 11
+    //                 GROUP BY v.facilities, p.VehicleType;
+    //             `
+    //         };
+
+    //         // Execute all queries asynchronously
+    //         const results = await Promise.all([
+    //             db.query(queries.combustionEmission, [facilityIds, year]),
+    //             db.query(queries.refrigerantEmission, [facilityIds]),
+    //             db.query(queries.extinguisherEmission, [facilityIds, year]),
+    //             // db.query(queries.petrolVehicles, [facilityIds]),
+    //             db.query(queries.dieselPassenger, [facilityIds]),
+    //             db.query(queries.dieselDelivery, [facilityIds]),
+    //             db.query(queries.petrolPassenger, [facilityIds]),
+    //             db.query(queries.petrolDelivery, [facilityIds])
+    //         ]);
+
+    //         // Return structured response
+    //         return {
+    //             success: true,
+    //             message: "GHG Emission data fetched successfully",
+    //             data: {
+    //                 combustionEmission: results[0],
+    //                 refrigerantEmission: results[1],
+    //                 extinguisherEmission: results[2],
+    //                 petrolVehicles: results[3],
+    //                 dieselPassenger: results[4],
+    //                 dieselDelivery: results[5],
+    //                 petrolPassenger: results[6],
+    //                 petrolDelivery: results[7]
+    //             }
+    //         };
+
+    //     } catch (error) {
+    //         console.error("Database error:", error);
+    //         return { success: false, message: "Error fetching emission data", error };
+    //     }
+    // },
+
 }
