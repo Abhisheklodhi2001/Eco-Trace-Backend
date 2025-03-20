@@ -473,6 +473,49 @@ GROUP BY v.facilities, p.VehicleType;
         }
     },
 
+    getWasteData: async (facility_id, year) => {
+        console.log("Received parameters:", facility_id, year); // Debugging facility_id & year
+    
+        try {
+            const query = `
+             SELECT method, SUM(emission) AS total_emission 
+            FROM waste_generated_emissions 
+            WHERE facility_id = ? AND year = ? AND status = "S"
+            GROUP BY method;
+            `;
+    
+            console.log("Executing Query:", query, "with values:", facility_id, year);
+    
+            const results = await db.query(query, [facility_id, year]);  // Remove array destructuring
+            console.log("Query Results:", results);
+    
+            return results;
+        } catch (error) {
+            console.error("Database Error:", error);
+            throw error;
+        }
+    },
+
+    getTotalEmissionWasteLoopClosed: async () => {
+        const query = `
+            SELECT SUM(emission) AS total_emission 
+            FROM waste_generated_emissions 
+            WHERE waste_loop = 0;
+        `;
+        const results = await db.query(query)
+        return results;
+    },
+
+    getTotalEmissionWasteLoopOpen: async () => {
+        const query = `
+            SELECT SUM(emission) AS total_emission 
+            FROM waste_generated_emissions 
+            WHERE waste_loop = 1;
+        `;
+        const results = await db.query(query)
+        return results;
+    }
+
     // getEmissionData: async (facilityIds, year) => {
     //     try {
     //         // Define queries

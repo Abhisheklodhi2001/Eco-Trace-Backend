@@ -1,7 +1,7 @@
 
 const Joi = require("joi");
 
-const { getCombustionEmission, Allrefrigerants, Allfireextinguisher, getAllcompanyownedvehicles, getAllelectricity, getAllheatandsteam, purchaseGoodsDetails, flight_travelDetails, hotel_stayDetails, other_modes_of_transportDetails, processing_of_sold_products_categoryDetails, sold_product_categoryDetails, endoflife_waste_typeDetails, water_supply_treatment_categoryDetails, employee_commuting_categoryDetails, homeoffice_categoryDetails, waste_generated_emissionsDetails, upstreamLease_emissionDetails, downstreamLease_emissionDetails, franchise_categories_emissionDetails, investment_emissionsDetails, upstream_vehicle_storage_emissions, downstream_vehicle_storage_emissions, waste_generated_emissionsDetailsEmssion, waste_generated_emissionsDetailsEmssionByMethodemission, getTop3CombustionEmission,getCombustionEmissionData ,getRefrigerantEmissionData,getExtinguisherEmissionData,getDieselPassengerData,getDieselDeliveryData } = require("../models/ghgEmissionReport");
+const { getCombustionEmission, Allrefrigerants, Allfireextinguisher, getAllcompanyownedvehicles, getAllelectricity, getAllheatandsteam, purchaseGoodsDetails, flight_travelDetails, hotel_stayDetails, other_modes_of_transportDetails, processing_of_sold_products_categoryDetails, sold_product_categoryDetails, endoflife_waste_typeDetails, water_supply_treatment_categoryDetails, employee_commuting_categoryDetails, homeoffice_categoryDetails, waste_generated_emissionsDetails, upstreamLease_emissionDetails, downstreamLease_emissionDetails, franchise_categories_emissionDetails, investment_emissionsDetails, upstream_vehicle_storage_emissions, downstream_vehicle_storage_emissions, waste_generated_emissionsDetailsEmssion, waste_generated_emissionsDetailsEmssionByMethodemission, getTop3CombustionEmission,getCombustionEmissionData ,getRefrigerantEmissionData,getExtinguisherEmissionData,getDieselPassengerData,getDieselDeliveryData,getWasteData ,getTotalEmissionWasteLoopClosed,getTotalEmissionWasteLoopOpen} = require("../models/ghgEmissionReport");
 
 exports.GhgScopewiseEmssion = async (req, res) => {
     try {
@@ -515,3 +515,29 @@ exports.fetchEmissionData = async (req, res) => {
     }
 };
 
+
+exports.getWasteEmissionData = async (req, res) => {
+    try {
+        const { facility_id, year } = req.body; // Extract data from request body
+        
+        if (!facility_id || !year) {
+            return res.status(400).json({ message: "facility_id and year are required." });
+        }
+
+        // Call the required functions
+        const wasteData = await getWasteData(facility_id, year);
+        const TotalOpenEmission = await getTotalEmissionWasteLoopOpen();
+        const TotalClosedEmission = await getTotalEmissionWasteLoopClosed();
+
+        return res.status(200).json({
+            success: true,
+            data: wasteData,
+            TotalOpenEmission: TotalOpenEmission,
+            TotalClosedEmission: TotalClosedEmission
+        });
+
+    } catch (error) {
+        console.error("API Error:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};

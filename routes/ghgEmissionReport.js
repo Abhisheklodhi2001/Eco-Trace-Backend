@@ -8,5 +8,7 @@ router.post("/GhgScopewiseEmssion", auth, ghgEmissionReportController.GhgScopewi
 router.post('/GhgdashboardWasteTotal', auth, ghgEmissionReportController.GhgdashboardWasteTotal);
 router.get("/top-combustion-emissions", ghgEmissionReportController.getTopCombustionEmission);
 router.get("/emissions", ghgEmissionReportController.fetchEmissionData);
+router.get("/get-waste-data", ghgEmissionReportController.getWasteEmissionData);
+
 
 module.exports = router;
