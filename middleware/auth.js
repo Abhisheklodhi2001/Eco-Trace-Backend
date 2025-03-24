@@ -14,26 +14,26 @@ const auth = async (req, res, next) => {
         req.user = verifyUser;
         next();
       } else {
-        return res.status(401).json({
+        return res.status(408).json({
           message: "Access Forbidden",
-          status: 401,
-          success: "0",
+          status: 408,
+          success: false,
         });
       }
     } else {
-      return res.status(400).json({
+      return res.status(408).json({
         message: "Token Not Provided",
-        status: 400,
-        success: "0",
+        status: 408,
+        success: false,
       });
     }
   }
   catch (err) {
     console.error("JWT Verification Error:", err);
-    return res.status(401).json({
+    return res.status(408).json({
       message: "Access Forbidden",
-      status: 401,
-      success: "0",
+      status: 408,
+      success: false,
       error: err.message,
     });
   }

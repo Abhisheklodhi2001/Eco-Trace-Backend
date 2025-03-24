@@ -131,7 +131,7 @@ router.post('/add-vehicle-feet', auth, userController.addVehicleFeet);
 router.post('/update-vehicle-feet', auth, userController.updateVehicleFeet);
 router.post('/update-vehicle-feet-by-id', auth, userController.updateVehicleFeetById);
 router.post('/get-vehicle-fleet-by-facility-id', auth, userController.getVehicleFleetByFacilityId);
-router.get('/download-excel-vehicle-fleet-by-facility-id', auth, userController.downloadExcelVehicleFleetByFacilityId);
-router.get('/download-excel-vehicle-fleet-by-facility-category-id', auth, userController.downloadExcelVehicleFleetByFacilityCategoryId);
+router.get('/download-excel-vehicle-fleet-by-facility-id', userController.downloadExcelVehicleFleetByFacilityId);
+router.get('/download-excel-vehicle-fleet-by-facility-category-id', userController.downloadExcelVehicleFleetByFacilityCategoryId);
 
 module.exports = router;

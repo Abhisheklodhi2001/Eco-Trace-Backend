@@ -5238,7 +5238,7 @@ exports.addpackageBySuperadmin = async (req, res) => {
       });
     } else {
       let array = [];
-     
+
       const user_id = req.user.user_id;
 
       let where = `where  tenantID = '${tenantID}'`;
@@ -6133,7 +6133,7 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
     }
 
     const unitColumnIndex = 2;
-    const unitColumnIndex1 = 5;
+    const unitColumnIndex1 = 3;
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
@@ -6170,10 +6170,11 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
       }
     });
 
-    const updatedFilePath = "company_owned_vehicles.xlsx";
+    let updatedFilePath = categoryID == 1 ? "passenger_vehicles.xlsx" : "delivery_vehicles.xlsx";
+
     await workbook.xlsx.writeFile(updatedFilePath);
 
-    res.download(updatedFilePath, "company_owned_vehicles.xlsx", (err) => {
+    res.download(updatedFilePath, updatedFilePath, (err) => {
       if (err) {
         console.error("Error while downloading file:", err);
         return res.status(500).json({ error: true, message: "File download error", success: false });

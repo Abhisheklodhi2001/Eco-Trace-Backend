@@ -275,7 +275,7 @@ module.exports = {
         return await db.query('SELECT purchase_goods_categories_ef.*, B.typesofpurchasename FROM purchase_goods_categories_ef LEFT JOIN `dbo.typesofpurchase` AS B ON B.id = purchase_goods_categories_ef.typeofpurchase')
     },
 
-    findCompanyOwnedVehicleByItemType: async (vehicle_type, CountryId) => {
+    findCompanyOwnedVehicleByItemType: async (vehicle_type, CountryId) => {  
         const searchPattern = `%${vehicle_type}%`;
         return await db.query('SELECT * FROM `companyownedvehicles` WHERE ItemType LIKE ? AND country_id = ?', [searchPattern, CountryId]);
     },

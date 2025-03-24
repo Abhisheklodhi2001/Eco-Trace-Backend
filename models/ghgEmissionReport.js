@@ -106,6 +106,34 @@ module.exports = {
         return db.query("select SUM(A.emission) as emission,A.month AS month_number,COALESCE('Purchased goods and services', '')  as  category from purchase_goods_categories A " + where);
     },
 
+    goodsServicesDetails: async (facilities, year, finalyeardata) => {
+        let where = "";
+        where = ` where  A.year = '${year}' AND A.status = 'S' AND A.typeofpurchase IN (1,3)`;
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities})` //
+        }
+        if (finalyeardata == '2') {
+            where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
+        } else {
+            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
+        }
+        return db.query("select SUM(A.emission) as emission,A.month AS month_number,COALESCE('Standard goods & services', '')  as  category from purchase_goods_categories A " + where);
+    },
+
+    capitalGoodsDetails: async (facilities, year, finalyeardata) => {
+        let where = "";
+        where = ` where  A.year = '${year}'  and A.status = 'S' AND A.typeofpurchase = '2'`;
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities})` //
+        }
+        if (finalyeardata == '2') {
+            where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
+        } else {
+            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
+        }
+        return db.query("select SUM(A.emission) as emission,A.month AS month_number,COALESCE('Capital goods', '')  as  category from purchase_goods_categories A " + where);
+    },
+
     flight_travelDetails: async (facilities, year, finalyeardata) => {
         let where = "";
         where = ` where  A.year = '${year}' and status = 'S'`;
@@ -164,6 +192,20 @@ module.exports = {
             where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
         }
         return db.query("select  SUM(A.emission) as emission,A.month AS month_number,COALESCE('Processing of Sold Products', '')  as  category from processing_of_sold_products_category A " + where);
+    },
+
+    getAllCoal: async (facilities, year, finalyeardata) => {
+        let where = "";
+        where = ` where  A.Year = '${year}' and A.Status = 'S' AND A.TypeName LIKE '%Coal%'`;
+        if (facilities != '0') {
+            where += `  and  A.facility_id IN (${facilities})`
+        }
+        if (finalyeardata == '2') {
+            where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
+        } else {
+            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
+        }
+        return db.query("select  SUM(A.GHGEmission) as emission,A.month AS month_number,COALESCE('Coal', '')  as  category from stationarycombustionde A " + where);
     },
 
     sold_product_categoryDetails: async (facilities, year, finalyeardata) => {
@@ -357,15 +399,14 @@ module.exports = {
     },
 
     getTop3CombustionEmission: async (facility_id, year) => {
-        return db.query('SELECT SUM(A.GHGEmission) as Total_GHGEmission, A.TypeName \
-    FROM stationarycombustionde A \
+        return db.query('SELECT ROUND(SUM(A.GHGEmission) / 1000, 4) as Total_GHGEmission, A.TypeName \
+       FROM stationarycombustionde A \
     WHERE \
     A.facility_id =? \
     AND Year = ? \
 GROUP BY TypeName \
 ORDER BY Total_GHGEmission DESC LIMIT 3', [facility_id, year]);
     },
-
 
     getTop3ReferenceEmission: async (facility_id, year) => {
         return db.query('SELECT \
@@ -380,29 +421,17 @@ ORDER BY Total_GHGEmission DESC   \
 LIMIT 1; ', [facility_id, year]);
     },
 
-
     getCombustionEmissionData: async (facility_id, year) => {
-        return db.query(` SELECT SUM(A.GHGEmission) AS Total_GHGEmission, A.TypeName 
+        return db.query(`SELECT ROUND(SUM(A.GHGEmission) / 1000, 4) AS Total_GHGEmission, A.TypeName 
                     FROM stationarycombustionde A 
-                    WHERE A.facility_id IN (?) AND Year = ?
+                    WHERE A.facility_id IN (?) AND A.Year = ?
                     GROUP BY A.TypeName 
                     ORDER BY Total_GHGEmission DESC LIMIT 3;`, [facility_id, year]);
     },
 
     getRefrigerantEmissionData: async (facility_id, year) => {
-        console.log('>>>>>>>>>>', facility_id)
         try {
-            const query = `
-                 SELECT r.TypeName, SUM(r.GHGEmission) AS Total_GHGEmission, ref.Item   
-                    FROM \`dbo.refrigerantde\` r  
-                    LEFT JOIN \`dbo.refrigents\` ref ON r.subCategoryTypeId = ref.ID  
-                    WHERE r.facilities IN (?)    
-                    GROUP BY r.TypeName, ref.Item   
-                    ORDER BY Total_GHGEmission DESC LIMIT 1;
-            `;
-
-            const [results] = await db.query(query, [facility_id]); // Correct parameterized query execution
-            return results;
+            return await db.query('SELECT ROUND(SUM(r.GHGEmission) / 1000, 4) AS Total_GHGEmission, ref.Item AS TypeName FROM `dbo.refrigerantde` r LEFT JOIN `dbo.refrigents` ref ON ref.subCatTypeID = r.subCategoryTypeId WHERE r.facilities IN(?) AND r.year = ? GROUP BY ref.Item ORDER BY Total_GHGEmission DESC LIMIT 1;', [facility_id, year])
         } catch (error) {
             console.error("Database Error:", error);
             throw error;
@@ -411,17 +440,7 @@ LIMIT 1; ', [facility_id, year]);
 
     getExtinguisherEmissionData: async (facility_id, year) => {
         try {
-            const query = `
-                SELECT SUM(GHGEmission) AS Total_GHGEmission, facilities, year 
-FROM \`dbo.fireextinguisherde\` 
-WHERE facilities IN (?)
-AND year = ? 
-AND status = 'P'  
-GROUP BY facilities, year;
-            `;
-
-            const [results] = await db.query(query, [facility_id, year]); // Corrected parameterized query execution
-            return results;
+            return await db.query('SELECT ROUND(SUM(GHGEmission) / 1000, 4) AS Total_GHGEmission, facilities, year FROM `dbo.fireextinguisherde` WHERE facilities IN (?) AND year = ? AND STATUS = "S" GROUP BY facilities, year;', [facility_id, year])
         } catch (error) {
             console.error("Database Error:", error);
             throw error;
@@ -429,124 +448,453 @@ GROUP BY facilities, year;
     },
 
     getDieselPassengerData: async (facility_id, year) => {
-        try {
-            const query = `
-               SELECT 
-    SUM(v.GHGEmission) AS Total_GHGEmission, 
-    v.facilities, 
-    p.VehicleType 
-FROM \`dbo.vehiclede\` v
-LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-WHERE v.facilities IN (1,2,33,3,4,5,6,7,8,9,10,11,12,13,14,15) 
-AND p.VehicleType LIKE '%Diesel%' AND v.Status = 'P' and v.SubCategorySeedID = 10
-GROUP BY v.facilities, p.VehicleType;
-            `;
-
-            const [results] = await db.query(query, [facility_id, year]); // Correct syntax
-            return results;
-        } catch (error) {
-            console.error("Database Error:", error);
-            throw error;
-        }
+        return await db.query('SELECT ROUND(SUM(v.GHGEmission) / 1000, 4) AS Total_GHGEmission, v.facilities, p.VehicleType FROM `dbo.vehiclede` AS v LEFT JOIN `dbo.passengervehicletypes` AS p ON v.VehicleTypeId = p.ID WHERE v.facilities IN (?) AND v.year = ? AND p.VehicleType LIKE "%Diesel%" AND v.Status = "S" and v.SubCategorySeedID = 10 GROUP BY v.facilities, p.VehicleType;', [facility_id, year]);
     },
 
+    getPetrolPassengerData: async (facility_id, year) => {
+        return await db.query('SELECT ROUND(SUM(v.GHGEmission) / 1000, 4) AS Total_GHGEmission, v.facilities, p.VehicleType FROM `dbo.vehiclede` AS v LEFT JOIN `dbo.passengervehicletypes` p ON v.VehicleTypeId = p.ID WHERE v.facilities IN (?) AND v.year = ? AND p.VehicleType LIKE "%Petrol%" AND v.Status = "S" and v.SubCategorySeedID = 10 GROUP BY v.facilities, p.VehicleType;', [facility_id, year]);
+    },
 
     getDieselDeliveryData: async (facility_id, year) => {
         try {
-            const query = `
-                SELECT 
-    SUM(v.GHGEmission) AS Total_GHGEmission, 
-    v.facilities, 
-    p.VehicleType 
-FROM \`dbo.vehiclede\` v
-LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-WHERE v.facilities IN (1,2,33,3,4,5,6,7,8,9,10,11,12,13,14,15) 
-AND p.VehicleType LIKE '%Diesel%' AND v.Status = 'P' and v.SubCategorySeedID = 11
-GROUP BY v.facilities, p.VehicleType;
-            `;
-
-            const [results] = await db.query(query, [facility_id]);  // ✅ Correct parameter binding
-            return results;
+            return await db.query('SELECT ROUND(SUM(v.GHGEmission) / 1000, 4) AS Total_GHGEmission, v.facilities, p.VehicleType FROM `dbo.vehiclede` AS v LEFT JOIN `dbo.passengervehicletypes` p ON v.VehicleTypeId = p.ID WHERE v.facilities IN (?) AND v.year = ? AND p.VehicleType LIKE "%Diesel%" AND v.Status = "S" and v.SubCategorySeedID = 11 GROUP BY v.facilities, p.VehicleType;', [facility_id, year]);
         } catch (error) {
             console.error("Database Error:", error);
             throw error;
         }
     },
 
-    // getEmissionData: async (facilityIds, year) => {
-    //     try {
-    //         // Define queries
-    //         const queries = {
-    //             combustionEmission: `
+    getOtherDeliveryData: async (facility_id, year) => {
+        return await db.query('SELECT `dbo.vehiclede`.id, ROUND(SUM(`dbo.vehiclede`.GHGEmission) / 1000, 4) AS Total_GHGEmission, `dbo.vehiclede`.vehicleTypeID, `dbo.deliveryvehicletypes`.VehicleType FROM `dbo.vehiclede` JOIN `dbo.deliveryvehicletypes` ON `dbo.deliveryvehicletypes`.ID = `dbo.vehiclede`.vehicleTypeID WHERE `dbo.vehiclede`.facilities IN(?) AND `dbo.vehiclede`.year = ? AND `dbo.vehiclede`.SubCategorySeedID = 11 AND `dbo.vehiclede`.Status = "S" AND `dbo.deliveryvehicletypes`.VehicleType NOT LIKE "%Diesel%" GROUP BY `dbo.vehiclede`.vehicleTypeID;', [facility_id, year]);
+    },
 
-    //             `,
-    //             refrigerantEmission: `
+    /**
+      * @DEVELOPER KARAN PATEL
+      * @DATE 18-03-2025
+      * 
+       */
 
-    //             `,
-    //             extinguisherEmission: `
+    fetchRenewableElectricityde: async (facilities, year) => {
+        let facilityIds = facilities.split(",").map(Number);
+        if (facilityIds.some(isNaN)) {
+            return { success: false, message: "Invalid facilityId format." };
+        }
+        const placeholders = facilityIds.map(() => '?').join(', ');
+        const query = `
+        SELECT * FROM \`dbo.renewableelectricityde\` 
+        WHERE (facilities IN (${placeholders}) OR year = ?) 
+        AND Status = 'S' 
+        ORDER BY CreatedDate DESC;
+    `;
+        return db.query(query, [...facilityIds, year]);
+    },
 
-    //             `,
-    //             // petrolVehicles: `
-    //             //     SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
-    //             //     FROM \`dbo.vehiclede v\`
-    //             //     LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-    //             //     WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%'
-    //             //     GROUP BY v.facilities, p.VehicleType;
-    //             // `,
-    //             dieselPassenger: `
+    purchaseGoodAndServicesModel: async (facilities, year, typeofpurchase) => {
+        let facilityIds = facilities.split(",").map(Number);
+        if (facilityIds.some(isNaN)) {
+            return { success: false, message: "Invalid facilityId format." };
+        }
+        const placeholders = facilityIds.map(() => '?').join(', ');
+        const query = `
+       SELECT 
+       pgc_ef.product,
+pgc.product_category, 
+ROUND(SUM(pgc.emission) / 1000, 4) AS total_emission
+FROM purchase_goods_categories AS pgc
+JOIN purchase_goods_categories_ef AS pgc_ef 
+ON pgc.product_category = pgc_ef.id
+WHERE pgc.facilities IN (${placeholders}) 
+AND pgc.year = ? 
+AND pgc.typeofpurchase = ?
+GROUP BY pgc.product_category
+ORDER BY total_emission DESC
+LIMIT 5;
 
-    //             `,
-    //             dieselDelivery: ,
-    //             petrolPassenger: `
-    //                 SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
-    //                 FROM \`dbo.vehiclede\` v
-    //                 LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-    //                 WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%' 
-    //                 AND v.Status = 'S' AND v.SubCategorySeedID = 11
-    //                 GROUP BY v.facilities, p.VehicleType;
-    //             `,
-    //             petrolDelivery: `
-    //                 SELECT SUM(v.GHGEmission) AS Total_GHGEmission, v.facilities, p.VehicleType 
-    //                 FROM \`dbo.vehiclede\` v
-    //                 LEFT JOIN \`dbo.passengervehicletypes\` p ON v.VehicleTypeId = p.ID
-    //                 WHERE v.facilities IN (?) AND p.VehicleType LIKE '%Petrol%' 
-    //                 AND v.Status = 'S' AND v.SubCategorySeedID = 11
-    //                 GROUP BY v.facilities, p.VehicleType;
-    //             `
-    //         };
+    `;
+        return db.query(query, [...facilityIds, year, typeofpurchase]);
+    },
 
-    //         // Execute all queries asynchronously
-    //         const results = await Promise.all([
-    //             db.query(queries.combustionEmission, [facilityIds, year]),
-    //             db.query(queries.refrigerantEmission, [facilityIds]),
-    //             db.query(queries.extinguisherEmission, [facilityIds, year]),
-    //             // db.query(queries.petrolVehicles, [facilityIds]),
-    //             db.query(queries.dieselPassenger, [facilityIds]),
-    //             db.query(queries.dieselDelivery, [facilityIds]),
-    //             db.query(queries.petrolPassenger, [facilityIds]),
-    //             db.query(queries.petrolDelivery, [facilityIds])
-    //         ]);
+    getWasteData: async (facility_id, year) => {
+        const waste_type = await db.query('SELECT product, ROUND(SUM(emission) / 1000, 4) AS total_emission FROM waste_generated_emissions WHERE facility_id IN (?) AND YEAR = ? AND STATUS = "S" GROUP BY product ORDER BY total_emission DESC;', [facility_id, year]);
+        const method_type = await db.query('SELECT method, ROUND(SUM(emission) / 1000, 4) AS total_emission FROM waste_generated_emissions WHERE facility_id IN(?) AND YEAR = ? AND STATUS = "S" GROUP BY method;', [facility_id, year]);
+        const open_recycling = await db.query('SELECT method, ROUND(SUM(emission) / 1000, 4) AS total_emission FROM waste_generated_emissions WHERE facility_id IN( ?) AND YEAR = ? AND STATUS = "S" AND method = "recycling" AND waste_loop = 1 GROUP BY method;', [facility_id, year]);
+        const close_recycling = await db.query('SELECT method, ROUND(SUM(emission) / 1000, 4) AS total_emission FROM waste_generated_emissions WHERE facility_id IN (?) AND YEAR = ? AND STATUS = "S" AND method = "recycling" AND waste_loop = 0 GROUP BY method;', [facility_id, year]);
+        return { waste_type, method_type, open_recycling, close_recycling };
+    },
 
-    //         // Return structured response
-    //         return {
-    //             success: true,
-    //             message: "GHG Emission data fetched successfully",
-    //             data: {
-    //                 combustionEmission: results[0],
-    //                 refrigerantEmission: results[1],
-    //                 extinguisherEmission: results[2],
-    //                 petrolVehicles: results[3],
-    //                 dieselPassenger: results[4],
-    //                 dieselDelivery: results[5],
-    //                 petrolPassenger: results[6],
-    //                 petrolDelivery: results[7]
-    //             }
-    //         };
+    flightTravel: async (facilities, year) => {
+        return await db.query(`SELECT flight_travel.*, ROUND(SUM(flight_travel.emission) / 1000, 4) AS total_emission FROM flight_travel WHERE facilities IN (${facilities}) AND year = ? AND status = "S" GROUP BY flight_Type;`, [year]);
+    },
 
-    //     } catch (error) {
-    //         console.error("Database error:", error);
-    //         return { success: false, message: "Error fetching emission data", error };
-    //     }
-    // },
+    modeOfTransport: async (facilities, year) => {
+        return await db.query(`SELECT other_modes_of_transport.*, ROUND(SUM(other_modes_of_transport.emission) / 1000, 4) AS total_emission FROM other_modes_of_transport WHERE facilities IN (${facilities}) AND year = ? AND status = "S" GROUP BY mode_of_trasport;`, [year]);
+    },
+
+    hotelStay: async (facilities, year) => {
+        return await db.query(`SELECT hotel_stay.*, ROUND(SUM(hotel_stay.emission) / 1000, 4) AS total_emission FROM hotel_stay WHERE facilities IN (${facilities}) AND year = ? AND status = "S" GROUP BY type_of_hotel;`, [year]);
+    },
+
+    employeeCommute: async (facilities, year) => {
+        return await db.query(`SELECT employee_commuting_category.*, ROUND(SUM(employee_commuting_category.emission) / 1000, 4) AS subtotal_total_emission, employee_community_typeoftransport.type FROM employee_commuting_category LEFT JOIN employee_community_typeoftransport ON employee_community_typeoftransport.id = employee_commuting_category.typeoftransport WHERE facilities IN(${facilities}) AND STATUS = "S" AND YEAR = ? GROUP BY employee_commuting_category.typeoftransport;`, [year]);
+    },
+
+    getCombustionEmissionDetail: async (facilities, year, SubCategoriesID) => {
+        let where = "";
+        where = ` where  A.Year = '${year}' and Status = 'S' `;
+
+        if (facilities != '0') {
+            where += `  and A.facility_id IN (${facilities})`
+        }
+
+        where += ` and  A.SubCategoriesID = '${SubCategoriesID}'`
+
+        return db.query(`select SUM(A.Scope3GHGEmission) as emission from stationarycombustionde A ${where}`);
+    },
+
+    getCombustionEmissionDetailFixed: async (facilities, year) => {
+        let where = "";
+        where = ` where  A.Year = '${year}' and Status = 'S' `;
+
+        if (facilities != '0') {
+            where += `  and A.facility_id IN (${facilities})`
+        }
+
+        return db.query(`select SUM(A.GHGEmission) as emission from stationarycombustionde A ${where}`);
+    },
+
+    getscope1CombustionEmissionDetail: async (facilities, year, SubCategoriesID) => {
+        let where = "";
+        where = ` where  A.Year = '${year}' and Status = 'S' `;
+
+        if (facilities != '0') {
+            where += `  and A.facility_id IN (${facilities})`
+        }
+
+        where += ` and  A.SubCategoriesID = '${SubCategoriesID}'`
+
+        return db.query(`select SUM(A.GHGEmission) as emission from stationarycombustionde A ${where}`);
+    },
+
+    getCombustionEmissionRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.Status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.Year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and A.facility_id IN (${facilities}) GROUP BY A.Year`
+        }
+
+        return db.query(`select A.Year, ROUND(SUM(A.GHGEmission) / 1000, 4) as emission, ROUND(SUM(A.Scope3GHGEmission) / 1000, 4) as scope3_emission from stationarycombustionde A ${where}`);
+    },
+
+    AllrefrigerantsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.Status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.Year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.Year`
+        }
+
+        return db.query("select A.Year, ROUND(SUM(A.GHGEmission) / 1000, 4) as emission from `dbo.refrigerantde` A " + where);
+    },
+
+    AllfireextinguisherRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.Status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.Year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.Year`
+        }
+
+        return db.query("select A.Year, ROUND(SUM(A.GHGEmission) / 1000, 4) as emission from `dbo.fireextinguisherde` A " + where);
+    },
+
+    getAllcompanyownedvehiclesRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.Status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.Year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.Year`
+        }
+
+        return db.query("select A.Year, ROUND(SUM(A.GHGEmission) / 1000, 4) as emission from `dbo.vehiclede` A  " + where);
+    },
+
+    getAllelectricityRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.Status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.Year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  AND  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.YEAR, ROUND(SUM(A.GHGEmission) / 1000, 4) AS emission from `dbo.renewableelectricityde` A " + where);
+    },
+
+    getAllheatandsteamRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.Status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.Year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  AND  A.facilities IN (${facilities}) GROUP BY A.Year`
+        }
+
+        return db.query("select A.Year, ROUND(SUM(A.GHGEmission) / 1000, 4) as emission from `dbo.heatandsteamde` A " + where);
+    },
+
+    purchaseGoodsDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year` //
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from purchase_goods_categories A " + where);
+    },
+
+    flight_travelDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from flight_travel A " + where);
+    },
+
+    hotel_stayDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year,  ROUND(SUM(A.emission) / 1000, 4) as emission from hotel_stay A " + where);
+    },
+
+    other_modes_of_transportDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from other_modes_of_transport A " + where);
+    },
+
+    processing_of_sold_products_categoryDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from processing_of_sold_products_category A " + where);
+    },
+
+    sold_product_categoryDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from sold_product_category A " + where);
+    },
+
+    endoflife_waste_typeDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from endof_lifetreatment_category A " + where);
+    },
+
+    water_supply_treatment_categoryDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from water_supply_treatment_category A " + where);
+    },
+
+    employee_commuting_categoryDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) Group BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from employee_commuting_category A " + where);
+    },
+
+    homeoffice_categoryDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from homeoffice_category A " + where);
+    },
+
+    waste_generated_emissionsDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+        if (facilities != '0') {
+            where += `  and  A.facility_id IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from waste_generated_emissions A " + where);
+    },
+
+    upstreamLease_emissionDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facility_id IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from upstreamLease_emission A " + where);
+    },
+
+    downstreamLease_emissionDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facility_id IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from downstreamLease_emission A " + where);
+    },
+
+    franchise_categories_emissionDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facility_id IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from franchise_categories_emission A  " + where);
+    },
+
+    investment_emissionsDetailsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}' GROUP BY A.year`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities})`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from investment_emissions A  " + where);
+    },
+
+    upstream_vehicle_storage_emissionsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facility_id IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from upstream_vehicle_storage_emissions A  " + where);
+    },
+
+    downstream_vehicle_storage_emissionsRangeWise: async (facilities, base_year, current_year, finalyeardata) => {
+        let where = "WHERE A.status = 'S'";
+
+        if (base_year && current_year) {
+            where += ` AND A.year BETWEEN '${base_year}' AND '${current_year}'`;
+        }
+
+        if (facilities != '0') {
+            where += `  and  A.facility_id IN (${facilities}) GROUP BY A.year`
+        }
+
+        return db.query("select A.year, ROUND(SUM(A.emission) / 1000, 4) as emission from downstream_vehicle_storage_emissions A  " + where);
+    },
+
+    employeePerEmission: async (facilities, base_year, current_year) => {
+        return await db.query(`SELECT year, ROUND(SUM(emission) / 1000, 4) AS total_emission, SUM(noofemployees) AS total_employees, ROUND(SUM(emission) / SUM(noofemployees) / 1000, 4) AS total_per_employee_emission FROM employee_commuting_category WHERE facilities IN (${facilities}) AND status = "S" AND year BETWEEN ${base_year} AND ${current_year} GROUP BY year;`);
+    }
 
 }

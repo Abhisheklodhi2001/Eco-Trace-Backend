@@ -1846,7 +1846,7 @@ exports.Addcompanyownedvehicles = async (req, res) => {
 
     // GHG Emission Calculation
     const calculateGHGEmission = (refUnit, unit, noOfVehicles, totalTrips, value, chargingOutside) => {
-      let efs = unit === 'Km' ? parseFloat(refUnit.kgCO2e_km) : unit === 'Litre' ? parseFloat(refUnit.kgCO2e_litre) : parseFloat(refUnit.kgCO2e_ccy);      
+      let efs = unit === 'Km' ? parseFloat(refUnit.kgCO2e_km) : unit === 'Litre' ? parseFloat(refUnit.kgCO2e_litre) : parseFloat(refUnit.kgCO2e_ccy);
       if (chargingOutside) {
         let emissionFactor = efs * parseFloat(refUnit.kgCO2e_kg);
         return parseFloat(noOfVehicles) * parseFloat(totalTrips) * parseFloat(value) * emissionFactor;
@@ -1950,6 +1950,7 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
       let user_id = req.user.user_id;
 
       let countrydata = await country_check(facilityId);
+      
       if (!countrydata.length) {
         return res.status(400).json({ error: true, message: "EF not found while adding company owned vehicles", success: false });
       }
@@ -1964,10 +1965,14 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
           refunit = await getvehicletypes(val.vehicle_type, val.sub_category, countrydata[0].CountryId);
         }
         let GHGEmission = ""
+        let no_of_vehicles;
+        let trip_per_vehicle;
         if (refunit.length > 0) {
           let yearRange = refunit[0]?.Fiscal_Year;
           let [startYear, endYear] = yearRange.split('-').map(Number);
-
+          no_of_vehicles = val.no_of_vehicles ? parseFloat(val.no_of_vehicles) : 1;
+          trip_per_vehicle = val.trip_per_vehicle ? parseFloat(val.trip_per_vehicle) : 1;
+          let value = val.value ? parseFloat(val.value) : 0;
           if (year >= startYear && year <= endYear) {
             if (charging_outside != "undefined") {
               let efs = 0;
@@ -1978,16 +1983,16 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
                 efs = parseFloat(refunit[0].kgCO2e_litre);
               }
               let emissionef = efs + parseFloat(charging_outside) / 100 * parseFloat(refunit[0].kgCO2e_kg);
-              GHGEmission = parseFloat(val.no_of_vehicles) * parseFloat(val.trip_per_vehicle) * parseFloat(val.value) * parseFloat(emissionef)
+              GHGEmission = val.is_excel == 1 ? parseFloat(val.value) * parseFloat(emissionef) : no_of_vehicles * trip_per_vehicle * parseFloat(val.value) * parseFloat(emissionef);
             } else {
               if (val.unit == 'Km') {
-                GHGEmission = (parseFloat(refunit[0].kgCO2e_km) * parseFloat(val.no_of_vehicles) * parseFloat(val.trip_per_vehicle) * parseFloat(val.value));
+                GHGEmission = val.is_excel == 1 ? (parseFloat(refunit[0].kgCO2e_km) * parseFloat(val.value)) : (parseFloat(refunit[0].kgCO2e_km) * no_of_vehicles * trip_per_vehicle * parseFloat(val.value));
               }
               if (val.unit == 'Litre') {
-                GHGEmission = (parseFloat(refunit[0].kgCO2e_litre) * parseFloat(val.no_of_vehicles) * parseFloat(val.trip_per_vehicle) * parseFloat(val.value));
+                GHGEmission = val.is_excel == 1 ? (parseFloat(refunit[0].kgCO2e_litre) * parseFloat(val.value)) : (parseFloat(refunit[0].kgCO2e_litre) * no_of_vehicles * trip_per_vehicle * parseFloat(val.value));
               }
               if (val.unit != 'Km' && val.unit != 'Litre') {
-                GHGEmission = (parseFloat(refunit[0].kgCO2e_kg) * parseFloat(val.no_of_vehicles) * parseFloat(val.trip_per_vehicle) * parseFloat(val.value));
+                GHGEmission = val.is_excel == 1 ? (parseFloat(refunit[0].kgCO2e_ccy) * parseFloat(val.value)) : (parseFloat(refunit[0].kgCO2e_ccy) * no_of_vehicles * trip_per_vehicle * parseFloat(val.value));
               }
             }
           } else if (year == startYear) {
@@ -2000,16 +2005,16 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
                 efs = parseFloat(refunit[0].kgCO2e_litre);
               }
               let emissionef = efs + parseFloat(charging_outside) / 100 * parseFloat(refunit[0].kgCO2e_kg);
-              GHGEmission = parseFloat(val.no_of_vehicles) * parseFloat(val.trip_per_vehicle) * parseFloat(val.value) * parseFloat(emissionef)
+              GHGEmission = val.is_excel == 1 ? parseFloat(val.value) * parseFloat(emissionef) : no_of_vehicles * trip_per_vehicle * parseFloat(val.value) * parseFloat(emissionef);
             } else {
               if (val.unit == 'Km') {
-                GHGEmission = (parseFloat(refunit[0].kgCO2e_km) * parseFloat(val.no_of_vehicles) * parseFloat(val.trip_per_vehicle) * parseFloat(val.value));
+                GHGEmission = val.is_excel == 1 ? (parseFloat(refunit[0].kgCO2e_km) * parseFloat(val.value)) : (parseFloat(refunit[0].kgCO2e_km) * no_of_vehicles * trip_per_vehicle * parseFloat(val.value));
               }
               if (val.unit == 'Litre') {
-                GHGEmission = (parseFloat(refunit[0].kgCO2e_litre) * parseFloat(val.no_of_vehicles) * parseFloat(val.trip_per_vehicle) * parseFloat(val.value));
+                GHGEmission = val.is_excel == 1 ? (parseFloat(refunit[0].kgCO2e_litre) * parseFloat(val.value)) : (parseFloat(refunit[0].kgCO2e_litre) * no_of_vehicles * trip_per_vehicle * parseFloat(val.value));
               }
               if (val.unit != 'Km' && val.unit != 'Litre') {
-                GHGEmission = (parseFloat(refunit[0].kgCO2e_kg) * parseFloat(val.no_of_vehicles) * parseFloat(val.trip_per_vehicle) * parseFloat(val.value));
+                GHGEmission = val.is_excel == 1 ? (parseFloat(refunit[0].kgCO2e_ccy) * parseFloat(val.value)) : (parseFloat(refunit[0].kgCO2e_ccy) * no_of_vehicles * trip_per_vehicle * parseFloat(val.value));
               }
             }
           } else {
@@ -2027,13 +2032,15 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
           });
         }
         const months = JSON.parse(month)
+        console.log("no_of_vehicles =>", no_of_vehicles);
+
         let category = {
-          NoOfVehicles: val.no_of_vehicles ? val.no_of_vehicles : "",
+          NoOfVehicles: no_of_vehicles ? no_of_vehicles : "",
           Unit: val.unit ? val.unit : "",
           note: note ? note : "",
           GHGEmission: GHGEmission,
           SubCategorySeedID: val.sub_category ? val.sub_category : "",
-          TotalnoOftripsPerVehicle: val.trip_per_vehicle ? val.trip_per_vehicle : "",
+          TotalnoOftripsPerVehicle: trip_per_vehicle ? trip_per_vehicle : "",
           Value: val.value ? val.value : 0,
           vehicleTypeID: val.is_excel == 1 && refunit.length > 0 ? refunit[0].vehicle_type_id : val.vehicle_type || 0,
           year: year ? year : "",
@@ -2073,7 +2080,6 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-
     return res.status(500).json({ error: true, message: "Internal Server Error " + error.message, success: false });
   }
 };
