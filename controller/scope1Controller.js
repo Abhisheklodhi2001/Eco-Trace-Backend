@@ -394,7 +394,7 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
 
         await Promise.all(
           managePointCategories.map(async (item1) => {
-            let where1 = ` LEFT JOIN subcategoryseeddata C ON MD.ManageDataPointSubCategorySeedID = C.Id WHERE MD.ManageDataPointCategoriesId = '${item1.ID}'`;
+            let where1 = ` LEFT JOIN subcategoryseeddata C ON MD.ManageDataPointSubCategorySeedID = C.Id WHERE MD.ManageDataPointCategoriesId = '${item1.ID}' GROUP BY MD.ManageDataPointSubCategorySeedID`;
             let manageDataPointSubCategories = await getSelectedColumn(
               "\`dbo.managedatapointsubcategory\` MD",
               where1,
@@ -438,7 +438,6 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
     });
   }
 };
-
 
 exports.getmanageDataPointbyfacility = async (req, res) => {
   try {
@@ -559,10 +558,7 @@ exports.AddassignedDataPointbyfacility = async (req, res) => {
 
 
           if (assignedmanagedfacilities.length > 0) {
-
-
             let insertedscope1 = assignedmanagedfacilities[0].ID;
-
             let where = " where MD.ManageDataPointId = '" + insertedscope1 + "' and TenantID = '" + TenantID + "' and  user_id = '" + user_id + "' ";
             const assignedmanagedfacilities1 = await getSelectedColumn("`dbo.managedatapointcategory` MD  ", where, "MD.*");
 
@@ -1950,7 +1946,7 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
       let user_id = req.user.user_id;
 
       let countrydata = await country_check(facilityId);
-      
+
       if (!countrydata.length) {
         return res.status(400).json({ error: true, message: "EF not found while adding company owned vehicles", success: false });
       }
@@ -2032,7 +2028,6 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
           });
         }
         const months = JSON.parse(month)
-        console.log("no_of_vehicles =>", no_of_vehicles);
 
         let category = {
           NoOfVehicles: no_of_vehicles ? no_of_vehicles : "",
@@ -2051,7 +2046,8 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
           TenantID: 4,
           Active: 1,
           SendForApproval: 'yes',
-          ModeofDEID: val.mode_of_data_entry ? val.mode_of_data_entry : ""
+          ModeofDEID: val.mode_of_data_entry ? val.mode_of_data_entry : "",
+          vehicle_model: val.is_excel == 1 ? val.vehicle_type : null
         }
 
         const fireextinguisher = await Addcompanyownedvehicles(category);

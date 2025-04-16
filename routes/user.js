@@ -124,7 +124,7 @@ router.get('/verify-token/:token/', userController.verifyToken);
 router.post('/update-password', userController.updatePassword);
 
 // Abhishek Lodhi
-router.get('/get-excelsheet', auth, userController.getExcelSheet);
+router.get('/get-excelsheet', userController.getExcelSheet);
 router.post('/get-purchase-categories-ef', auth, userController.getPurchaseCategoriesEf);
 router.get('/get-all-purchase-categories-ef', auth, userController.getAllPurchaseCategoriesEf);
 router.post('/add-vehicle-feet', auth, userController.addVehicleFeet);

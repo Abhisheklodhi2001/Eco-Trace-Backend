@@ -44,7 +44,8 @@ const {
   other_modes_of_transportDetailsemssion,
   offsetemission,
   actionsEmission,
-  waste_generated_emissionsByproduct,
+  waste_generated_emissions_by_hazardous,
+  waste_generated_emissions_by_non_hazadrous,
   costcenterData_emission,
   emssionBycostcenter,
   investmentEmissionsFinance,
@@ -427,7 +428,6 @@ exports.dashboardScope = async (req, res) => {
 
                 sum2 +=
                   parseFloat(item.emission) + employeeamount + homecategory;
-                console.log("employeeee", employeeamount);
                 // Add emission value to the corresponding month
               }
             })
@@ -925,14 +925,14 @@ exports.dashboardTop5 = async (req, res) => {
               let emissionFixed = parseFloat(
                 item?.scope3_emission ? item?.scope3_emission : 0
               );
-             // emissionFixed = (emissionFixed/1000).toFixed(3)
+              // emissionFixed = (emissionFixed/1000).toFixed(3)
               let category = item.category;
               if (!categoryTotals3[category]) {
                 categoryTotals3[category] = 0;
               }
               categoryTotals3[category] += emissionFixed;
-            
-              
+
+
               // Add emission value to the corresponding month
             }
           }
@@ -1325,8 +1325,8 @@ exports.ScopewiseEmssion = async (req, res) => {
                 categoryTotals3[category] = 0;
               }
               categoryTotals3[category] += emissionFixed;
-            
-              
+
+
               // Add emission value to the corresponding month
             }
           }
@@ -1740,7 +1740,7 @@ exports.dashboardEmssionByactivities = async (req, res) => {
 
 exports.dashboardEmssionByVendors = async (req, res) => {
   try {
-    const { facilities , year } = req.body;
+    const { facilities, year } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
         facilities: [Joi.string().empty().required()],
@@ -1767,7 +1767,7 @@ exports.dashboardEmssionByVendors = async (req, res) => {
         } else {
           facilitiesdata = "0";
         }
-        let purchaseGoods = await purchaseGoodsBySupplier(facilitiesdata , year);
+        let purchaseGoods = await purchaseGoodsBySupplier(facilitiesdata, year);
         let array = [];
         if (purchaseGoods.length > 0) {
           await Promise.all(
@@ -1930,7 +1930,7 @@ exports.businessdashboardemssionByAir = async (req, res) => {
     } else {
       let array3 = [];
       let array4 = [];
-    
+
       let sum = 0;
 
       if (facilities) {
@@ -2437,7 +2437,7 @@ exports.dashboardWastetop5 = async (req, res) => {
     } else {
       let array3 = [];
       let array = [];
-      
+
       let categorydata15 = "";
       let sum1 = 0;
       let sum4 = 0;
@@ -2714,51 +2714,24 @@ exports.dashboardWasteEmissionhaz = async (req, res) => {
           facilitiesdata = "0";
         }
 
-        let where = `where user_id = '${user_id}'`;
-        const hazadroussetting = await getSelectedColumn(
-          "hazadrous_nonhazadrous_setting",
-          where,
-          "*"
+        let hazadrous = await waste_generated_emissions_by_hazardous(
+          facilitiesdata,
+          year
         );
 
-        if (hazadroussetting.length > 0) {
-          let hazadrous = await waste_generated_emissionsByproduct(
-            facilitiesdata,
-            year,
-            hazadroussetting[0].hazadrous
-          );
-          if (hazadrous.length > 0) {
-            await Promise.all(
-              hazadrous.map(async (item) => {
-                sum1 += parseFloat(item.emission / 1000);
-              })
-            );
-          }
-
-          let non_hazadrous = await waste_generated_emissionsByproduct(
-            facilitiesdata,
-            year,
-            hazadroussetting[0].non_hazadrous
-          );
-          if (non_hazadrous.length > 0) {
-            await Promise.all(
-              non_hazadrous.map(async (item) => {
-                sum2 += parseFloat(item.emission / 1000);
-              })
-            );
-          }
-        }
-        let totalsum = parseFloat(sum1 + sum2);
+        let non_hazadrous = await waste_generated_emissions_by_non_hazadrous(
+          facilitiesdata,
+          year
+        );
 
         return res.json({
           success: true,
           message: "Succesfully fetched category",
-          totalemssion: parseFloat(totalsum).toFixed(3),
           series: [
-            parseFloat(parseFloat(sum1).toFixed(3)),
-            parseFloat(parseFloat(sum2).toFixed(3)),
+            Number(hazadrous[0].emission),
+            Number(non_hazadrous[0].emission),
           ],
-          hazardousmonth: ["Hazardous", " Non Hazardous waste"],
+          cities: ["Hazardous Waste", "Non-Hazardous Waste"],
           status: 200,
         });
       }
@@ -2814,7 +2787,7 @@ exports.dashboardWasteEmission = async (req, res) => {
       let scope3month = [];
 
       let scope3 = [];
-    
+
       let categorydata8 = "";
       let sum2 = 0;
       if (facilities) {
@@ -3977,8 +3950,8 @@ exports.dashboardenergyConsumptionWellTank = async (req, res) => {
 
         categorydata5 = await getCombustionEmissionDetailFixed(
           facilitiesdata,
-        year
-      );
+          year
+        );
       }
 
       let totalsum = categorydata[0].emission
@@ -4294,7 +4267,7 @@ exports.dashboardWasteBreakdown = async (req, res) => {
       let scope3month = [];
 
       let scope3 = [];
-    
+
       let categorydata8 = "";
       let sum2 = 0;
       if (facilities) {
@@ -4941,25 +4914,24 @@ exports.getFacilityByTenantIdMainGroup = async (req, res) => {
         await Promise.all(
           groupmap.map(async (item) => {
             var groupmap1 = [];
-            if(item.is_main_group == 1)
-            {
+            if (item.is_main_group == 1) {
               item.name = item.AssestName;
               let where1 = ' where G.groupId = "' + item.id + '"';
-               groupmap1 = await getSelectedColumn(
+              groupmap1 = await getSelectedColumn(
                 "`dbo.groupmapping` G",
                 where1,
                 " G.facilityId"
               );
             }
-            else{
-            item.name = item.AssestName;
-            let where1 = ' where G.sub_group_id = "' + item.id + '"';
+            else {
+              item.name = item.AssestName;
+              let where1 = ' where G.sub_group_id = "' + item.id + '"';
               groupmap1 = await getSelectedColumn(
-              "`dbo.groupmapping` G",
-              where1,
-              " G.facilityId"
-            );
-          }
+                "`dbo.groupmapping` G",
+                where1,
+                " G.facilityId"
+              );
+            }
             item.ID = groupmap1?.map((item) => String(item.facilityId));
           })
         );
@@ -5244,7 +5216,7 @@ exports.financedashboardtop5emission = async (req, res) => {
     } else {
       let array3 = [];
       let array = [];
-  
+
       let categorydata15 = "";
       let sum1 = 0;
       let sum = 0;

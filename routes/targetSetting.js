@@ -10,7 +10,7 @@ router.post("/addActions", auth, targetSettingController.addActions);
 router.get("/getActions/:tenant_id", auth, targetSettingController.getActions);
 router.post("/addEmissionInventory", auth, targetSettingController.addEmissionInventory);
 router.get("/getTargetEmissionInventory/:tenant_id", auth, targetSettingController.getTargetEmissionInventory);
-router.post("/getEmissionPoints", targetSettingController.getEmissionPoints);
+router.post("/getEmissionPoints", auth, targetSettingController.getEmissionPoints);
 router.post("/getTargetEmissionInventoryRelation", auth, targetSettingController.getTargetEmissionInventoryRelation);
 router.post("/updateEmissionInventoryID", auth, targetSettingController.updateEmissionInventoryID);
 router.post("/updateTargetSetting", auth, targetSettingController.updateTargetSetting);

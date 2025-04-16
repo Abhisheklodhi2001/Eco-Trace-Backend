@@ -19,9 +19,8 @@ module.exports = {
     return db.query(`select 'Scope1' as scope, 'Company Owned Vehicles' as category,cov.Item as DataPoint1,cov.ItemType  as DataPoint2, \
                      f.AssestName as facility,   sum(vd.GHGEmission) as Emission,  vd.year as Years, vd.months as Months, cov.kgCO2e_km, cov.kgCO2e_litre, cov.kgCO2e_kg, cov.reference  \
                      from  \`dbo.vehiclede\` vd, \`dbo.facilities\` f,  \`companyownedvehicles\`   cov   \
-                     where   vd.facilities in ('1') and   \
-                     vd.year =2024 and vd.months in ('Jan','Feb','Mar','Apr', 'May','Jun',                  \
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec') and vd.vehicleTypeID = cov.id and    \
+                     where   vd.facilities in (${facility}) and   \
+                     vd.year ='${year}' and vd.months in (${month}) and vd.vehicleTypeID = cov.id and    \
                      vd.facilities= f.ID  group by DataPoint2,  Years     \
                      ORDER BY FIELD(vd.MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',     \
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
@@ -54,7 +53,7 @@ module.exports = {
                      sum(fce.emission) as Emission,  fce.year as Years, fce.month as Months, fcs.reference, \
                     f.AssestName as facility from  franchise_categories_emission fce, \`dbo.facilities\`  f, franchise_categories_subcategories fcs\
                     where   fce.facility_id in (${facility}) and \
-                    fce.year =${year} and fce.month in (${month}) and  fce.status ='S' \
+                    fce.year =${year} and fce.month in (${month}) and  fce.status ='S' and \
                     fce.facility_id= f.ID   and fce.sub_category  = fcs.sub_categories\
                     group by DataPoint2, Years 
                     ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
@@ -66,7 +65,7 @@ module.exports = {
                       sum(ie.emission) as Emission,  ie.year as Years, ie.month as Months, ie.reference, \
                       f.groupname as sub_group from  investment_emissions ie, \`dbo.group\`  f, investment_types it \
                       where   ie.sub_group_id in (${facility}) and  \
-                      ie.year =${year} and ie.month in (${month}) and  ie.status ='S' \
+                      ie.year =${year} and ie.month in (${month}) and  ie.status ='S' and \
                       ie.sub_group_id= f.ID  and ie.sub_category = it.broad_categories \
                       group by Sub_Sector, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
@@ -171,8 +170,8 @@ module.exports = {
     end_year
   ) => {
     
-    return db.query(`select 'Scope3' as scope, 'Home Office' as data_point, hoc.typeofhomeoffice as category,hoc.year, hoc.month, sum(hoc.emission) as emission, f.AssestName as facility, hef.EFkgco2 as emission_factor, 'EFkgco2' as emission_factor_name, hef.reference  \
-                    from  homeoffice_category hoc, homeoffice_emission_factors hef, \`dbo.facilities\`  f  where  hoc.facilities in (${facility}) and hoc.year >='${start_year}' and  hoc.year <='${start_year}'  \
+    return db.query(`select hef.typeof_homeoffice as category,hoc.year AS Years, hoc.month AS Months, sum(hoc.emission) as Emission, f.AssestName as facility, hef.EFkgco2 as emission_factor, hef.reference  \
+                    from  homeoffice_category hoc, homeoffice_emission_factors hef, \`dbo.facilities\`  f  where  hoc.facilities in (${facility}) and hoc.year >='${start_year}' and  hoc.year <='${end_year}'  \
                      and hoc.typeofhomeoffice =  hef.id  and hoc.status ='S' and \
                     hoc.facilities= f.ID  ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',  \
                     'Jul','Aug','Sep','Oct','Nov', 'Dec') `);

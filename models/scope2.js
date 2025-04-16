@@ -7,6 +7,7 @@ module.exports = {
 Addelectricityde: async (data) => {
   return db.query("insert into `dbo.renewableelectricityde`  set ?", [data]);
 },
+
 getelectricityef: async (SubCategorySeedID,RegionID,country_id) => {
   let where = "";
   if(RegionID){

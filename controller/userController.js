@@ -268,6 +268,8 @@ exports.login = async (req, res) => {
                     (item1) => item1.super_admin_id === item.tenantID
                   );
                   console.log(exists, "--------", array);
+                  console.log("roles[0]?.Name =>", roles[0]?.Name);
+                  
                   if (exists == true && roles[0]?.Name == "Super Admin") {
                     item.super_admin_id = item.Id;
                     item.role = roles[0]?.Name;
@@ -514,7 +516,7 @@ exports.GetFacilityGroups = async (req, res) => {
               }
             }
           } else {
-            let where = "  where  F.ID = '" + item.facilityID + "'";
+            let where =`  where F.ID IN(${item.facilityID})`;
             facilities1 = await getSelectedColumn(
               "`dbo.facilities` F ",
               where,
@@ -2522,6 +2524,8 @@ exports.Updatefacilities = async (req, res) => {
       CityId,
       CountryId,
       StateId,
+      total_area,
+      energy_ref_area
     } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
@@ -2535,6 +2539,8 @@ exports.Updatefacilities = async (req, res) => {
         CityId: [Joi.optional().allow("")],
         CountryId: [Joi.optional().allow("")],
         StateId: [Joi.optional().allow("")],
+        total_area: [Joi.optional().allow("")],
+        energy_ref_area: [Joi.optional().allow("")],
       })
     );
     const result = schema.validate(req.body);
@@ -2569,6 +2575,8 @@ exports.Updatefacilities = async (req, res) => {
         CityId: CityId ? CityId : facilities[0].CityId,
         CountryId: CountryId ? CountryId : facilities[0].CountryId,
         StateId: StateId ? StateId : facilities[0].StateId,
+        total_area: total_area ? total_area : facilities[0].total_area,
+        energy_ref_area: energy_ref_area ? energy_ref_area : facilities[0].energy_ref_area,
       };
       let where = "where ID  = '" + ID + "'";
       const addgroup = await updateData("`dbo.facilities`", where, user);
@@ -5648,7 +5656,7 @@ exports.getExcelSheet = async (req, res) => {
     const unitDropdownValues = `Kg,Tonnes,Litres,${currencyCode}`;
 
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile("../purchasedGoods.xlsx");
+    await workbook.xlsx.readFile("purchasedGoods.xlsx");
     const worksheet = workbook.getWorksheet(1);
 
     const unitColumnIndex = 5;
@@ -5691,6 +5699,8 @@ exports.getExcelSheet = async (req, res) => {
       }
     });
   } catch (error) {
+    console.log(error);
+    
     return res.status(500).json({ error: true, message: "Internal Server Error " + error.message, success: false });
   }
 };
@@ -6118,7 +6128,9 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
     }
 
     const getFacilityResponse = await getVehicleFleetByFacilityCategoryId(facility_id, categoryID);
-    const unitDropdownValues = getFacilityResponse.filter(val => val.retire_vehicle == 0).map(val => val.vehicle_model).join(",");
+    const modelValues = getFacilityResponse.filter(val => val.retire_vehicle == 0).map(val => val.vehicle_model).join(",");
+
+    const currencyCode = getFacilityResponse.length > 0 ? getFacilityResponse[0].CurrencyCode || "USD" : "USD";
 
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile("vehiclede.xlsx");
@@ -6134,12 +6146,15 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
 
     const unitColumnIndex = 2;
     const unitColumnIndex1 = 3;
+    const unitColumnIndex2 = 5;
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
         const unitCell = row.getCell(unitColumnIndex);
         const unitCell1 = row.getCell(unitColumnIndex1);
+        const unitCell2 = row.getCell(unitColumnIndex2);
         const dateCell = row.getCell(3);
+
         if (dateCell.value) {
           const dateValue = dateCell.value instanceof Date
             ? dateCell.value.toISOString().split("T")[0].split("-").reverse().join("-")
@@ -6148,11 +6163,11 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
           dateCell.value = dateValue;
         }
 
-        if (unitDropdownValues.length > 0) {
+        if (modelValues.length > 0) {
           unitCell.dataValidation = {
             type: "list",
             allowBlank: false,
-            formulae: [`"${unitDropdownValues}"`],
+            formulae: [`"${modelValues}"`],
             showErrorMessage: true,
             errorTitle: "Invalid Entry",
             error: "Please select a valid unit.",
@@ -6162,16 +6177,19 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
         unitCell1.dataValidation = {
           type: "list",
           allowBlank: false,
-          formulae: [`"Average distance per trip,Average qty of fuel per trip,Avg. amount spent per trip"`],
+          formulae: [`"Total distance travelled,Total fuel burnt,Total amount spent"`],
           showErrorMessage: true,
           errorTitle: "Invalid Entry",
           error: "Please select a valid option.",
+        };
+
+        unitCell2.value = {
+          formula: `IF(ISNUMBER(MATCH(${unitCell1.address}, {"Total distance travelled","Total fuel burnt","Total amount spent"}, 0)), CHOOSE(MATCH(${unitCell1.address}, {"Total distance travelled","Total fuel burnt","Total amount spent"}, 0), "Km", "Litres", "${currencyCode}"), "")`
         };
       }
     });
 
     let updatedFilePath = categoryID == 1 ? "passenger_vehicles.xlsx" : "delivery_vehicles.xlsx";
-
     await workbook.xlsx.writeFile(updatedFilePath);
 
     res.download(updatedFilePath, updatedFilePath, (err) => {

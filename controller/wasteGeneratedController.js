@@ -200,7 +200,7 @@ exports.getwasteGeneratedEmission = async (req, res) => {
 };
 
 const dataProgress = async (facilities, scopeObject) => {
-  try {
+  try {    
     var expectedOutput = {
       Jan: 0,
       Feb: 0,
@@ -833,10 +833,11 @@ const dataProgress = async (facilities, scopeObject) => {
       currentYear,
       facilities
     );
+    
     if (Monthprogress.length > 0) {
       for (let key in electricity) {
         Monthprogress.find((elem) => {
-          if (elem.month == key) {
+          if (elem.months == key) {
             electricity[key] = 1;
             count++;
           }
@@ -865,10 +866,11 @@ const dataProgress = async (facilities, scopeObject) => {
       currentYear,
       facilities
     );
+    
     if (Monthprogress.length > 0) {
       for (let key in heatAndSteam) {
         Monthprogress.find((elem) => {
-          if (elem.month == key) {
+          if (elem.months == key) {
             heatAndSteam[key] = 1;
             count++;
           }

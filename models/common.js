@@ -7,7 +7,6 @@ module.exports = {
     return db.query(`update ${table} SET ? ${where}`, [data]);
   },
 
-
   getData: async (table, where) => {
     return db.query(`select * from ${table} ${where}`);
   },

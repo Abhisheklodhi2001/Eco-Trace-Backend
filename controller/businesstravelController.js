@@ -32,6 +32,7 @@ const {
   getSelectedColumn,
   getSelectedData, country_check
 } = require("../models/common");
+const { error } = require("console");
 
 const baseurl = config.base_url;
 const Fcm_serverKey = config.fcm_serverKey;
@@ -114,45 +115,20 @@ exports.subvehicleType = async (req, res) => {
 };
 
 exports.flightTravel = async (req, res) => {
-  const {
-    from, to,
-    flight_type,
-    flight_class,
-    no_of_trips,
-    flight_calc_mode,
-    return_flight,
-    cost_centre, distance, month, year,
-    via, no_of_passengers, reference_id, batch, facilities
-  } = req.body;
-  try {
-    var hrstart = process.hrtime();
-    const schema = Joi.alternatives(
-      Joi.object({
-        from: [Joi.optional().allow("")],
-        to: [Joi.optional().allow("")],
-        flight_type: [Joi.optional().allow("")],
-        flight_class: [Joi.optional().allow("")],
-        no_of_trips: [Joi.optional().allow("")],
-        return_flight: [Joi.optional().allow("")],
-        reference_id: [Joi.optional().allow("")],
-        cost_centre: [Joi.optional().allow("")],
-        flight_calc_mode: [Joi.string().empty().required()],
-        no_of_passengers: [Joi.optional().allow("")],
-        reference_id: [Joi.optional().allow("")],
-        distance: [Joi.optional().allow("")],
-        via: [Joi.optional().allow("")],
-        batch: [Joi.string().empty().required()],
-        month: [Joi.string().empty().required()],
-        year: [Joi.string().empty().required()],
-        facilities: [Joi.string().empty().required()],
-      })
-    );
+  const { flight_calc_mode, jsonData, year, facilities } = req.body;
 
+  try {
+    const schema = Joi.object({
+      flight_calc_mode: Joi.string().required(),
+      jsonData: Joi.string().required(),
+      year: Joi.number().required(),
+      facilities: Joi.number().required()
+    });
 
     const result = schema.validate(req.body);
 
     if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
+      const message = result.error.details.map(i => i.message).join(",");
       return res.json({
         message: result.error.details[0].message,
         error: message,
@@ -160,208 +136,158 @@ exports.flightTravel = async (req, res) => {
         status: 400,
         success: false,
       });
-    } else {
-      var Nox = 0;
-      let result = 0;
-      var finalco2 = 0;
-      var allinsertedID = [];
+    }
 
-      const user_id = req.user.user_id;
+    let parsedData;
+    try {
+      parsedData = JSON.parse(jsonData);
+    } catch (e) {
+      return res.json({
+        success: false,
+        message: "Invalid JSON in 'jsonData'",
+        status: 400,
+      });
+    }
 
-      if (from && to) {
+    const user_id = req.user.user_id;
+    const allinsertedID = [];
+    let finalco2 = 0;
+    let distanceResult = 0;
+    let Nox = 0;
 
-        const fromAPoint = await getLatLongByCode(from);
-        const toBPoint = await getLatLongByCode(to);
-        console.log(fromAPoint, '---------', toBPoint)
-        if (fromAPoint.length <= 0 || toBPoint.length <= 0) {
-          return res.json({
-            success: false,
-            message: "Please check the IATA codes of both the airports",
-            status: 400,
-          });
-        }
-        const from_latitude = fromAPoint[0]?.latitude;
-        const from_longitude = fromAPoint[0]?.longitude;
-        const to_latitude = toBPoint[0]?.latitude;
-        const to_longitude = toBPoint[0]?.longitude;
+    for (const val of parsedData) {
+      try {
+        const {
+          from, to, flight_type, flight_class, no_of_trips,
+          return_flight, cost_centre, distance, via,
+          no_of_passengers, reference_id, batch, month
+        } = val;
 
-        const toPoint = new GeoPoint(Number(to_latitude), Number(to_longitude));
-        const fromPoint = new GeoPoint(
-          Number(from_latitude),
-          Number(from_longitude)
-        );
-        result = fromPoint?.distanceTo(toPoint, true);
-      } else {
-        result = distance;
-      }
+        if (from && to) {
+          const fromAPoint = await getLatLongByCode(from);
+          const toBPoint = await getLatLongByCode(to);
 
-      if (flight_calc_mode == "Generic") {
-        let where = " where flight_type  = '" + flight_type + "'";
-        const flight_type_avg_distance = await getSelectedColumn("flight_types", where, "avg_distance");
+          if (fromAPoint.length <= 0 || toBPoint.length <= 0) {
+            return res.json({
+              success: false,
+              message: "Please check the IATA codes of both the airports",
+              status: 400,
+            });
+          }
 
-        result = flight_type_avg_distance.length > 0 ? flight_type_avg_distance[0].avg_distance : 0;
-      }
+          const from_latitude = fromAPoint[0]?.latitude;
+          const from_longitude = fromAPoint[0]?.longitude;
+          const to_latitude = toBPoint[0]?.latitude;
+          const to_longitude = toBPoint[0]?.longitude;
 
-
-      if (result != undefined && result.length != 0) {
-
-        var search_str;
-        if (result > 0 && result <= 900) {
-          search_str = "0-900";
-        } else if (result > 900 && result <= 1400) {
-          search_str = "900-1400";
-        } else if (result > 1400 && result <= 3000) {
-          search_str = "1400-3000";
-        } else if (result > 3000 && result <= 9000) {
-          search_str = "3000-9000";
-        } else if (result > 9000 && result <= 13000) {
-          search_str = "9000-13000";
+          const fromPoint = new GeoPoint(Number(from_latitude), Number(from_longitude));
+          const toPoint = new GeoPoint(Number(to_latitude), Number(to_longitude));
+          distanceResult = fromPoint.distanceTo(toPoint, true);
         } else {
-          search_str = "13000";
+          distanceResult = distance;
         }
 
-        let countrydata = await country_check(facilities);
-        //console.log(countrydata[0].CountryId);
-        if (countrydata.length == 0) {
+        if (flight_calc_mode === "Generic") {
+          const where = `where flight_type = '${flight_type}'`;
+          const avgData = await getSelectedColumn("flight_types", where, "avg_distance");
+          distanceResult = avgData.length > 0 ? avgData[0].avg_distance : 0;
+        }
+
+        let search_str;
+        if (distanceResult <= 900) search_str = "0-900";
+        else if (distanceResult <= 1400) search_str = "900-1400";
+        else if (distanceResult <= 3000) search_str = "1400-3000";
+        else if (distanceResult <= 9000) search_str = "3000-9000";
+        else if (distanceResult <= 13000) search_str = "9000-13000";
+        else search_str = "13000";
+
+        const countrydata = await country_check(facilities);
+        if (countrydata.length === 0) {
           return res.json({
             success: false,
             message: "EF not Found for this country",
             status: 400,
           });
         }
+
         const flightParams = await getFlightParams(search_str, countrydata[0].CountryId);
-        console.log(flightParams, 'flightParams----------------');
-        if (flightParams.length <= 0) {
+        if (flightParams.length === 0) {
           return res.json({
             success: false,
-            message:
-              "distance calculated is Invalid!, Please check the IATA Codes of Airports",
+            message: "Invalid distance or missing EF for this country",
             status: 400,
           });
-        } else {
-          let yearRange = flightParams[0]?.Fiscal_Year; // The string representing the year range
-          let [startYear, endYear] = yearRange.split('-').map(Number);
-
-          if (year <= startYear && year >= endYear) {
-            return res.json({
-              success: false,
-              message: "EF not Found for this year",
-              status: 400,
-            });
-          } else if (year != startYear) {
-            return res.json({
-              success: false,
-              message: "EF not Found for this year",
-              status: 400,
-            });
-          }
-        }
-        const b = flightParams[0].b;
-        const c = flightParams[0].c;
-        const A = flightParams[0].a;
-        const C_1 = flightParams[0].c1;
-        const C_2 = flightParams[0].c2;
-        const C_3 = flightParams[0].c3;
-        const EF = flightParams[0].ef;
-        const P = flightParams[0].p;
-        const seats = flightParams[0].seats;
-        const LF = flightParams[0].lf;
-        const CF = flightParams[0].cf;
-        const CW1 = flightParams[0].cw1;
-        const CW2 = flightParams[0].cw2;
-        const CW3 = flightParams[0].cw3;
-
-        var CW;
-        switch (flight_class) {
-          case "Economy":
-            CW = CW1;
-            break;
-          case "Business":
-            CW = CW2;
-            break;
-          case "First":
-            CW = CW3;
-            break;
-        }
-        const M = Number(flightParams[0].Nox) ? Number(flightParams[0].Nox) : 1;
-        const TotalFuel = result * Number(b) + Number(c);
-        const FS =
-          TotalFuel * ((1 - Number(CF)) / (Number(seats) * Number(LF)));
-        const FS_Adj = FS * Number(CW);
-        const EM = Number(EF) * M + Number(P);
-        const Total_Co2 = FS_Adj * EM;
-        finalco2 = Total_Co2 + Number(A);
-        finalco2 = Number(flightParams[0].Nox) ? parseFloat(finalco2 * 2) : parseFloat(finalco2);
-
-        if (finalco2 == 'NaN') {
-          finalco2 = 0;
         }
 
-        if (return_flight == 'true' && finalco2 != "") {
-          finalco2 = parseFloat(finalco2 * 2)
-        } else {
-          finalco2 = finalco2;
-        }
+        const { Fiscal_Year, b, c, a: A, c1: C_1, c2: C_2, c3: C_3, ef: EF, p: P, seats, lf: LF, cf: CF, cw1: CW1, cw2: CW2, cw3: CW3, Nox: NoxParam } = flightParams[0];
 
-        let flighttravel = {
-
-          from: from ? from : "",
-          to: to ? to : "",
-          flight_type: flight_type ? flight_type : "",
-          flight_class: flight_class ? flight_class : "",
-          no_of_trips: no_of_trips ? no_of_trips : 0,
-          return_flight: return_flight ? return_flight : "",
-          cost_centre: cost_centre ? cost_centre : "",
-          flight_calc_mode: flight_calc_mode,
-          no_of_passengers: no_of_passengers ? no_of_passengers : 0,
-          reference_id: reference_id ? reference_id : 0,
-          distance: distance ? distance : 0,
-          emission: finalco2,
-          user_id: user_id,
-          via: via ? via : "",
-          batch: batch,
-          year: year,
-          facilities: facilities,
-        }
-        let months = JSON.parse(month);
-        for (let monthdata of months) {
-          flighttravel.month = monthdata;
-          let flight = await flight_travel(flighttravel);
-          allinsertedID.push(flight.insertId);
-        }
-
-        if (allinsertedID.length > 0) {
-          return res.json({
-            success: true,
-            message: "Data Entry Done Successfully",
-            categories: result,
-            emission: finalco2,
-            offset_sub_type: Number(Nox) ? "Nox" : "No-Nox",
-
-          });
-
-        } else {
+        const [startYear, endYear] = Fiscal_Year.split('-').map(Number);
+        if (year < startYear || year > endYear) {
           return res.json({
             success: false,
-            message: "Data Entry Not Done Successfully",
-            categories: 0,
-            emission: 0,
-            offset_sub_type: No - Nox,
-
+            message: "EF not Found for this year",
+            status: 400,
           });
-
         }
 
+        let CW;
+        switch (flight_class) {
+          case "Economy": CW = CW1; break;
+          case "Business": CW = CW2; break;
+          case "First": CW = CW3; break;
+          default: CW = CW1;
+        }
 
-      } else {
-        return res.json({
-          success: true,
-          message:
-            "Due to some error in geo-distance package distance cannot be caluclated",
-          status: 200,
-        });
+        const M = NoxParam ? Number(NoxParam) : 1;
+        const TotalFuel = distanceResult * Number(b) + Number(c);
+        const FS = TotalFuel * ((1 - Number(CF)) / (Number(seats) * Number(LF)));
+        const FS_Adj = FS * Number(CW);
+        const EM = Number(EF) * M + Number(P);
+        let Total_Co2 = FS_Adj * EM;
+        finalco2 = Total_Co2 + Number(A);
+        finalco2 = NoxParam ? parseFloat(finalco2 * 2) : parseFloat(finalco2);
+
+        if (return_flight === true || return_flight === 'true') {
+          finalco2 *= 2;
+        }
+
+        if (isNaN(finalco2)) finalco2 = 0;
+
+        const where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id WHERE flight_types.flight_type = '${flight_type}'`;
+        const flight_type_ef = await getSelectedColumn("flight_types", where, `flight_types.id, flight_travel_ef.*`);
+
+        if (flight_type_ef.length <= 0) return res.status(404).json({ error: true, success: false, message: "EF not found for this facility" })
+
+        const ef_factor = flight_class == 'Economy' ? flight_type_ef[0].economy : flight_class == 'Business' ? flight_type_ef[0].business : flight_type_ef[0].first_class;
+
+        const flighttravel = {
+          from: from || "", to: to || "", flight_type, flight_class,
+          no_of_trips: no_of_trips || 0,
+          return_flight: return_flight || "",
+          cost_centre: cost_centre || "",
+          flight_calc_mode, no_of_passengers: no_of_passengers || 0,
+          reference_id: reference_id || 0,
+          distance: distance || 0,
+          emission: Number((finalco2 * ef_factor).toFixed(4)),
+          user_id, via: via || "",
+          batch, month, year, facilities
+        };
+        const flight = await flight_travel(flighttravel);
+        allinsertedID.push(flight.insertId);
+
+      } catch (flightError) {
+        console.error("Error processing a flight record:", flightError);
       }
     }
+
+    return res.json({
+      success: allinsertedID.length > 0,
+      message: allinsertedID.length > 0 ? "Data Entry Done Successfully" : "Data Entry Not Done Successfully",
+      categories: distanceResult,
+      emission: finalco2,
+      offset_sub_type: Nox ? "Nox" : "No-Nox"
+    });
+
   } catch (error) {
     console.log(error);
     if (error.code === "23505") {
@@ -382,29 +308,17 @@ exports.flightTravel = async (req, res) => {
 
 exports.Othermodes_of_transport = async (req, res) => {
   try {
-    const { mode_of_trasport, vehicle_type, fuel_type, type, distance_travelled, no_of_trips,
-      no_of_passengers, batch, year, month, facilities } = req.body;
+    const { year, facilities, jsonData } = req.body;
+    const schema = Joi.object({
+      year: Joi.number().required(),
+      facilities: Joi.number().required(),
+      jsonData: Joi.string().required()
+    });
 
-    const schema = Joi.alternatives(
-      Joi.object({
-        mode_of_trasport: [Joi.string().empty().required()],
-        vehicle_type: [Joi.optional().allow("")],
-        fuel_type: [Joi.optional().allow("")],
-        distance_travelled: [Joi.string().empty().required()],
-        no_of_trips: [Joi.string().empty().required()],
-        type: [Joi.optional().allow("")],
-        // rail_type:[Joi.optional().allow("")],
-        // ferry_type:[Joi.optional().allow("")],
-        no_of_passengers: [Joi.optional().allow("")],
-        batch: [Joi.string().empty().required()],
-        month: [Joi.string().empty().required()],
-        year: [Joi.string().empty().required()],
-        facilities: [Joi.string().empty().required()],
-      })
-    );
     const result = schema.validate(req.body);
+
     if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
+      const message = result.error.details.map(i => i.message).join(",");
       return res.json({
         message: result.error.details[0].message,
         error: message,
@@ -413,91 +327,76 @@ exports.Othermodes_of_transport = async (req, res) => {
         success: false,
       });
     } else {
+      let parsedData;
+      try {
+        parsedData = JSON.parse(jsonData);
+      } catch (e) {
+        return res.json({
+          success: false,
+          message: "Invalid JSON in 'jsonData'",
+          status: 400,
+        });
+      }
+
       var allinsertedID = [];
       const user_id = req.user.user_id;
 
-      let countrydata = await country_check(facilities);
-      //console.log(countrydata[0].CountryId);
-      if (countrydata.length == 0) {
-        return res.json({
-          success: false,
-          message: "EF not found for other_modes_of_transport",
-          status: 400,
-        });
-      }
-      let where = ``;
-      var ef = '';
-      if (fuel_type) {
-        where += ` where fuel_type = '${fuel_type}' and type_name = '${mode_of_trasport}' and country_id = '${countrydata[0].CountryId}'`;
-      } else {
-        where += ` where mode_type = '${type}' and type_name = '${mode_of_trasport}' and country_id = '${countrydata[0].CountryId}'`;
-      }
-      const efs = await getSelectedColumn("other_modes_of_transport_ef", where, "*");
+      for (const val of parsedData) {
+        try {
+          const { mode_of_trasport, vehicle_type, fuel_type, type, distance_travelled, no_of_trips,
+            no_of_passengers, batch, month } = val;
+          let countrydata = await country_check(facilities);
+          if (countrydata.length > 0) {
+            let where = ``;
+            var ef = '';
+            if (fuel_type) {
+              where += ` where fuel_type = '${fuel_type}' and type_name = '${mode_of_trasport}' and country_id = '${countrydata[0].CountryId}'`;
+            } else {
+              where += ` where mode_type = '${type}' and type_name = '${mode_of_trasport}' and country_id = '${countrydata[0].CountryId}'`;
+            }
+            const efs = await getSelectedColumn("other_modes_of_transport_ef", where, "*");
 
-      if (efs.length > 0) {
-
-        let yearRange = efs[0]?.Fiscal_Year; // The string representing the year range
-        let [startYear, endYear] = yearRange.split('-').map(Number);
-
-        if (year >= startYear && year <= endYear) {
-
-          if (mode_of_trasport == 'Car' || mode_of_trasport == 'Auto') {
-            ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled);
+            if (efs.length > 0) {
+              let yearRange = efs[0]?.Fiscal_Year;
+              let [startYear, endYear] = yearRange.split('-').map(Number);
+              if (year >= startYear && year <= endYear) {
+                if (mode_of_trasport == 'Car' || mode_of_trasport == 'Auto') {
+                  ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled);
+                }
+                if (mode_of_trasport == 'Rail' || mode_of_trasport == 'Ferry' || mode_of_trasport == 'Bus') {
+                  ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled * no_of_passengers);
+                }
+              } else if (year == startYear) {
+                if (mode_of_trasport == 'Car' || mode_of_trasport == 'Auto') {
+                  ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled);
+                }
+                if (mode_of_trasport == 'Rail' || mode_of_trasport == 'Ferry' || mode_of_trasport == 'Bus') {
+                  ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled * no_of_passengers);
+                }
+              }
+              let data_info = {
+                mode_of_trasport: mode_of_trasport,
+                vehicle_type: vehicle_type ? vehicle_type : null,
+                fuel_type: fuel_type ? fuel_type : "",
+                distance_travelled: distance_travelled,
+                no_of_trips: no_of_trips,
+                user_id: user_id,
+                type: type ? type : "",
+                no_of_passengers: no_of_passengers ? no_of_passengers : 0,
+                emission: ef,
+                batch: batch ? batch : 1,
+                month: month,
+                year: year,
+                facilities: facilities
+              }
+              const create_data = await Othermodes_of_transport(data_info);
+              allinsertedID.push(create_data.insertId);
+            }
           }
-          if (mode_of_trasport == 'Rail' || mode_of_trasport == 'Ferry' || mode_of_trasport == 'Bus') {
-            ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled * no_of_passengers);
-          }
-        } else if (year == startYear) {
-
-          if (mode_of_trasport == 'Car' || mode_of_trasport == 'Auto') {
-            ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled);
-          }
-          if (mode_of_trasport == 'Rail' || mode_of_trasport == 'Ferry' || mode_of_trasport == 'Bus') {
-            ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled * no_of_passengers);
-          }
-        } else {
-          return res.json({
-            success: false,
-            message: "EF not Found for this year",
-            status: 400,
-          });
+        } catch (flightError) {
+          console.error("Error processing a flight record:", flightError);
         }
-
-
-      } else {
-        return res.json({
-          success: false,
-          message: "EF not found for other_modes_of_transport",
-          status: 400,
-        });
       }
-
-
-      let data_info = {
-        mode_of_trasport: mode_of_trasport,
-        vehicle_type: vehicle_type ? vehicle_type : "",
-        fuel_type: fuel_type ? fuel_type : "",
-        distance_travelled: distance_travelled,
-        no_of_trips: no_of_trips,
-        user_id: user_id,
-        type: type ? type : "",
-        // rail_type:rail_type?rail_type:"",
-        // ferry_type:ferry_type?ferry_type:"",
-        no_of_passengers: no_of_passengers ? no_of_passengers : 0,
-        emission: ef,
-        batch: batch ? batch : 1,
-        month: month,
-        year: year,
-        facilities: facilities
-      }
-
-      let months = JSON.parse(month);
-      for (let monthdata of months) {
-        data_info.month = monthdata;
-        const create_data = await Othermodes_of_transport(data_info);
-        allinsertedID.push(create_data.insertId);
-      }
-
       if (allinsertedID.length > 0) {
         return res.json({
           success: true,
@@ -512,7 +411,6 @@ exports.Othermodes_of_transport = async (req, res) => {
           status: 200,
         });
       }
-
     }
   } catch (error) {
     console.log(error);
@@ -527,23 +425,17 @@ exports.Othermodes_of_transport = async (req, res) => {
 
 exports.hotelStay = async (req, res) => {
   try {
-    const { country_of_stay, type_of_hotel, no_of_occupied_rooms, no_of_nights_per_room, batch, month, year, facilities } = req.body;
-    var allinsertedID = [];
-    const schema = Joi.alternatives(
-      Joi.object({
-        country_of_stay: [Joi.string().empty().required()],
-        type_of_hotel: [Joi.string().empty().required()],
-        no_of_occupied_rooms: [Joi.string().empty().required()],
-        no_of_nights_per_room: [Joi.string().empty().required()],
-        batch: [Joi.string().empty().required()],
-        month: [Joi.string().empty().required()],
-        year: [Joi.string().empty().required()],
-        facilities: [Joi.string().empty().required()],
-      })
-    );
+    const { year, facilities, jsonData } = req.body;
+    const schema = Joi.object({
+      year: Joi.number().required(),
+      facilities: Joi.number().required(),
+      jsonData: Joi.string().required()
+    });
+
     const result = schema.validate(req.body);
+
     if (result.error) {
-      const message = result.error.details.map((i) => i.message).join(",");
+      const message = result.error.details.map(i => i.message).join(",");
       return res.json({
         message: result.error.details[0].message,
         error: message,
@@ -552,116 +444,100 @@ exports.hotelStay = async (req, res) => {
         success: false,
       });
     } else {
+      let parsedData;
+      try {
+        parsedData = JSON.parse(jsonData);
+      } catch (e) {
+        return res.json({
+          success: false,
+          message: "Invalid JSON in 'jsonData'",
+          status: 400,
+        });
+      }
       var finalco2 = 0;
-
-      let countrydata = await country_check(facilities);
-      //console.log(countrydata[0].CountryId);
-      if (countrydata.length == 0) {
-        return res.json({
-          success: false,
-          message: "EF not Found for this country",
-          status: 400,
-        });
-      }
-      const hotelBooking = await getOffsetByCountry(country_of_stay, countrydata[0].CountryId);
-
-
-      let rating_type = "none";
-      if (hotelBooking.length <= 0) {
-        return res.json({
-          success: false,
-          message:
-            "Please check the country's Data is not available in database",
-          status: 400,
-        });
-
-      } else {
-
-        let yearRange = hotelBooking[0]?.Fiscal_Year; // The string representing the year range
-        let [startYear, endYear] = yearRange.split('-').map(Number);
-
-        if (year >= startYear && year <= endYear) {
-          switch (type_of_hotel) {
-            case "star_2":
-              finalco2 = hotelBooking[0].star_2;
-              rating_type = "2 Star";
-              console.log(finalco2, 'finalco2finalco2finalco2');
-              break;
-            case "star_3":
-              finalco2 = hotelBooking[0].star_3;
-              rating_type = "3 Star";
-              break;
-            case "star_4":
-              finalco2 = hotelBooking[0].star_4;
-              rating_type = "4 Star";
-              break;
-            case "star_5":
-              finalco2 = hotelBooking[0].star_5;
-              rating_type = "5 Star";
-              break;
-            case "star_green":
-              finalco2 = hotelBooking[0].star_green;
-              rating_type = "Green Star";
-              break;
-          }
-        } else if (year == startYear) {
-          switch (type_of_hotel) {
-            case "star_2":
-              finalco2 = hotelBooking[0].star_2;
-              rating_type = "2 Star";
-              console.log(finalco2, 'finalco2finalco2finalco2');
-              break;
-            case "star_3":
-              finalco2 = hotelBooking[0].star_3;
-              rating_type = "3 Star";
-              break;
-            case "star_4":
-              finalco2 = hotelBooking[0].star_4;
-              rating_type = "4 Star";
-              break;
-            case "star_5":
-              finalco2 = hotelBooking[0].star_5;
-              rating_type = "5 Star";
-              break;
-            case "star_green":
-              finalco2 = hotelBooking[0].star_green;
-              rating_type = "Green Star";
-              break;
-          }
-        } else {
-          return res.json({
-            success: false,
-            message: "EF not Found for this year",
-            status: 400,
-          });
-        }
-
-        //console.log(hotelBooking[0].star_2,'hotelBooking');
-
-      }
-
+      var allinsertedID = [];
       const user_id = req.user.user_id;
+      for (const val of parsedData) {
+        try {
+          const { country_of_stay, type_of_hotel, no_of_occupied_rooms, no_of_nights_per_room, batch, month } = val;
+          let countrydata = await country_check(facilities);
+          if (countrydata.length > 0) {
+            const hotelBooking = await getOffsetByCountry(country_of_stay, countrydata[0].CountryId);
+            let rating_type = "none";
+            console.log("hotelBooking =>", hotelBooking);
 
-      let data_info = {
-        country_of_stay: country_of_stay,
-        type_of_hotel: type_of_hotel,
-        no_of_occupied_rooms: no_of_occupied_rooms,
-        no_of_nights_per_room: no_of_nights_per_room,
-        user_id: user_id,
-        emission: finalco2,
-        batch: batch,
-        month: month,
-        year: year,
-        facilities: facilities
+            if (hotelBooking.length > 0) {
+              let yearRange = hotelBooking[0]?.Fiscal_Year;
+              let [startYear, endYear] = yearRange.split('-').map(Number);
+              if (year >= startYear && year <= endYear) {
+                switch (type_of_hotel) {
+                  case "star_2":
+                    finalco2 = hotelBooking[0].star_2;
+                    rating_type = "2 Star";
+                    console.log(finalco2, 'finalco2finalco2finalco2');
+                    break;
+                  case "star_3":
+                    finalco2 = hotelBooking[0].star_3;
+                    rating_type = "3 Star";
+                    break;
+                  case "star_4":
+                    finalco2 = hotelBooking[0].star_4;
+                    rating_type = "4 Star";
+                    break;
+                  case "star_5":
+                    finalco2 = hotelBooking[0].star_5;
+                    rating_type = "5 Star";
+                    break;
+                  case "star_green":
+                    finalco2 = hotelBooking[0].star_green;
+                    rating_type = "Green Star";
+                    break;
+                }
+              } else if (year == startYear) {
+                switch (type_of_hotel) {
+                  case "star_2":
+                    finalco2 = hotelBooking[0].star_2;
+                    rating_type = "2 Star";
+                    console.log(finalco2, 'finalco2finalco2finalco2');
+                    break;
+                  case "star_3":
+                    finalco2 = hotelBooking[0].star_3;
+                    rating_type = "3 Star";
+                    break;
+                  case "star_4":
+                    finalco2 = hotelBooking[0].star_4;
+                    rating_type = "4 Star";
+                    break;
+                  case "star_5":
+                    finalco2 = hotelBooking[0].star_5;
+                    rating_type = "5 Star";
+                    break;
+                  case "star_green":
+                    finalco2 = hotelBooking[0].star_green;
+                    rating_type = "Green Star";
+                    break;
+                }
+              }
+              let data_info = {
+                country_of_stay: country_of_stay,
+                type_of_hotel: type_of_hotel,
+                no_of_occupied_rooms: no_of_occupied_rooms,
+                no_of_nights_per_room: no_of_nights_per_room,
+                user_id: user_id,
+                emission: finalco2,
+                batch: batch,
+                month: month,
+                year: year,
+                facilities: facilities
+              }
+              const create_data = await hotelStay(data_info);
+              allinsertedID.push(create_data.insertId);
+            }
+          }
+        } catch (flightError) {
+          console.error("Error processing a flight record:", flightError);
+        }
       }
-
-      let months = JSON.parse(month);
-      for (let monthdata of months) {
-        data_info.month = monthdata;
-        const create_data = await hotelStay(data_info);
-        allinsertedID.push(create_data.insertId);
-      }
-
       if (allinsertedID.length > 0) {
         return res.json({
           success: true,
@@ -1603,7 +1479,7 @@ exports.AddSoldProductsCategory = async (req, res) => {
       });
     } else {
       var allinsertedID = [];
-   
+
       const user_id = req.user.user_id;
 
       let prductef = '';
@@ -1854,7 +1730,7 @@ exports.getAllsoldproductCategory = async (req, res) => {
     //     success: true,
     //   });
     // }else{
-  
+
     const user_id = req.user.user_id;
 
 
@@ -3002,7 +2878,6 @@ exports.getcurrencyByfacilities = async (req, res) => {
   }
 };
 
-
 exports.getprocessing_of_sold_productsCategory = async (req, res) => {
   try {
     const user_id = req.user.user_id;
@@ -3301,10 +3176,8 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
   }
 };
 
-
 exports.AddassignedDataPointbyfacility = async (req, res) => {
   try {
-
     const { ScopeID, FacilityId, FiscalYear, category } = req.body;
     const schema = Joi.alternatives(
       Joi.object({

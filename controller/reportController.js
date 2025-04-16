@@ -4463,18 +4463,23 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
         multiReport.push(...reportResult);
       }
     }
-    if (homeOffice) {
+    if (homeOffice) {      
       const reportResult = await getHomeOfficeReportMultiAudit(
         facility,
         start_year,
         end_year
       );
+      
       if (reportResult.length > 0) {
-        multiReport.push(...reportResult);
+        const enrichedResult = reportResult.filter(item => item.category != null && item.Years != null && item.Months != null).map(item => ({
+          ...item,
+          scope: 'Scope3',
+          DataPoint1: 'Home Office',
+          emission_factor_name: 'EFkgco2'
+        }));
+        multiReport.push(...enrichedResult);
       }
     }
-    //Yearly Reports Ends
-
     if (soldProducts) {
       if (differenceInYear == 0) {
         var months = getMonths(start_month, end_month);
@@ -5159,7 +5164,6 @@ const handleServerError = (res, error) => {
     error: error.message,
   });
 };
-
 
 exports.getVendorProductDashboard = async (req, res) => {
   try {

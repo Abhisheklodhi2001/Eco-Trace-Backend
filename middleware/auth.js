@@ -11,6 +11,8 @@ const auth = async (req, res, next) => {
       req.token = bearer[1];
       const verifyUser = jwt.verify(req.token, JWT_SECRET);
       if (verifyUser && verifyUser.user_id) {
+        console.log(verifyUser);
+        
         req.user = verifyUser;
         next();
       } else {

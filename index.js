@@ -13,6 +13,7 @@ const dashboard = require("./routes/dashboard")
 const tree = require("./routes/tree")
 const target = require("./routes/targetSetting")
 const ghgEmissionReport = require("./routes/ghgEmissionReport");
+const kpiReport = require("./routes/kpiReport");
 const app = express();
 const path = require('node:path');
 const cors = require("cors");
@@ -48,6 +49,7 @@ app.use("/report", report)
 app.use("/targetsetting", target)
 app.use("/", tree);
 app.use("/", ghgEmissionReport);
+app.use("/", kpiReport);
 
 app.get("/", (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*", "http://13.200.247.29:4000", {

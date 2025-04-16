@@ -529,7 +529,7 @@ exports.purchaseGoods = async (req, res) => {
 
         if (purchasedata[0].is_annual == 1 && purchasedata[0].year == year) {
           return res.json({
-            messgae: "Data Already Exits for this year",
+            message: "Data Already Exits for this year",
             status: 400,
             success: false,
           });
@@ -789,7 +789,7 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
                 productcode = "";
               }
 
-              if (is_annual == '0') {
+              if (is_annual == '0' && item.month != 'Invalid date') {
                 const rowData = {
                   typeofpurchase: item.typeofpurchase ? item.typeofpurchase : "",
                   product_category: item.product_category ? item.product_category : "",
@@ -863,6 +863,8 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
       }
     }
   } catch (err) {
+    console.log(err);
+    
     return res.status(500).json({
       success: false,
       message: "Internal server error " + err.message,

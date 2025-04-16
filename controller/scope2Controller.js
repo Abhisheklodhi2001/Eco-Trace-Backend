@@ -177,10 +177,7 @@ exports.Addrenewableelectricity = async (req, res) => {
       });
     } else {
       let user_id = req.user.user_id;
-
       let countrydata = await country_check(facilities);
-
-      // console.log(countrydata[0].CountryId);
       if (countrydata.length == 0) {
         return res.json({
           success: false,
@@ -188,18 +185,30 @@ exports.Addrenewableelectricity = async (req, res) => {
           status: 400,
         });
       }
-      const refunit = await getelectricityef(SubCategorySeedID, '', countrydata[0].CountryId);
 
-      let GHGEmission = ""
-      if (refunit.length > 0) {
+      let category = "";
 
-        let yearRange = refunit[0]?.Fiscal_Year; // The string representing the year range
+      if (SubCategorySeedID == '9') {
+        const refunit = await getelectricityef(SubCategorySeedID, '', countrydata[0].CountryId);
+        let yearRange = refunit[0]?.Fiscal_Year;
         let [startYear, endYear] = yearRange.split('-').map(Number);
-
         if (year >= startYear && year <= endYear) {
-
-          //    console.log(yearRange,"-----------",startYear, endYear,year)
-          GHGEmission = parseFloat(refunit[0].kgCO2e_kwh) * readingValue;
+          category = {
+            sourceName: sourceName ? sourceName : "",
+            Unit: unit ? unit : "",
+            note: note ? note : "",
+            GHGEmission: parseFloat(refunit[0].kgCO2e_kwh) * readingValue,
+            SubCategorySeedID: SubCategorySeedID ? SubCategorySeedID : "",
+            typeID: typeID ? typeID : "",
+            readingValue: readingValue ? readingValue : "",
+            year: year ? year : "",
+            facilities: facilities ? facilities : "",
+            user_id: user_id,
+            CreatedDate: moment().format('YYYY-MM-DD'),
+            TenantID: 4,
+            Active: 1,
+            SendForApproval: 'yes',
+          }
         } else {
           return res.json({
             success: false,
@@ -207,41 +216,11 @@ exports.Addrenewableelectricity = async (req, res) => {
             status: 400,
           });
         }
-
-
-
       } else {
-        //  GHGEmission = 0;
-
-        return res.json({
-          success: false,
-          message: "EF not found while adding renewable electricity",
-          status: 400,
-        });
-      }
-      // console.log(GHGEmission,refunit);
-      let category = "";
-      GHGEmission = 0;
-      if (typeID == '1') {
-        category = {
-          sourceName: sourceName ? sourceName : "",
-          Unit: unit ? unit : "",
-          note: note ? note : "",
-          GHGEmission: GHGEmission,
-          SubCategorySeedID: SubCategorySeedID ? SubCategorySeedID : "",
-          typeID: typeID ? typeID : "",
-          readingValue: readingValue ? readingValue : "",
-          year: year ? year : "",
-          facilities: facilities ? facilities : "",
-          user_id: user_id,
-          CreatedDate: moment().format('YYYY-MM-DD'),
-          TenantID: 4,
-          Active: 1,
-          SendForApproval: 'yes',
-        }
-      } else {
-
-        let Emission = parseFloat(readingValue * emission_factor)
+        let where = `where country_code = ${countrydata[0].CountryId}`;
+        const ef_factor = await getData("renewable_energy_cert_ef", where);
+        const factor_column_name = sourceName == 'Solar' ? ef_factor[0].solar : sourceName == 'Wind' ? ef_factor[0].wind : ef_factor[0].hydro;
+        let Emission = parseFloat(readingValue * factor_column_name)
         category = {
           Unit: unit ? unit : "",
           note: note ? note : "",
@@ -256,7 +235,7 @@ exports.Addrenewableelectricity = async (req, res) => {
           TenantID: 4,
           Active: 1,
           SendForApproval: 'yes',
-          emission_factor: emission_factor ? emission_factor : ""
+          emission_factor: (emission_factor !== 'undefined' && emission_factor !== 'null') ? emission_factor : null
         }
       }
 
@@ -270,9 +249,7 @@ exports.Addrenewableelectricity = async (req, res) => {
         }
       }
 
-
       if (allinsertedID.length > 0) {
-
         let where = ` where user_id ='${user_id}' and facilities = '${facilities}' and SubCategorySeedID = '${SubCategorySeedID}'`;
         const refrigents = await getSelectedColumn("`dbo.renewableelectricityde`", where, "*");
         return res.json({
