@@ -22,6 +22,7 @@ exports.Addelectricity = async (req, res) => {
         months: [Joi.string().empty().required()],
         SubCategorySeedID: [Joi.string().empty().required()],
         facilities: [Joi.string().empty().required()],
+        file: [Joi.string().optional()]
       })
     );
     const result = schema.validate(req.body);
@@ -102,7 +103,8 @@ exports.Addelectricity = async (req, res) => {
         TenantID: 4,
         Active: 1,
         SendForApproval: 'yes',
-        scop3_GHGEmission: GHGEmission1 ? GHGEmission1 : 0.00
+        scop3_GHGEmission: GHGEmission1 ? GHGEmission1 : 0.00,
+        FileName: req.file != undefined ? req.file.filename : null
       }
 
 

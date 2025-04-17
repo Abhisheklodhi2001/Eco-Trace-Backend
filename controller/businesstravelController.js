@@ -157,120 +157,103 @@ exports.flightTravel = async (req, res) => {
 
     for (const val of parsedData) {
       try {
-        const {
-          from, to, flight_type, flight_class, no_of_trips,
-          return_flight, cost_centre, distance, via,
-          no_of_passengers, reference_id, batch, month
-        } = val;
+        const { from, to, flight_type, flight_class, no_of_trips, return_flight, cost_centre, distance, via, no_of_passengers, reference_id, batch, month } = val;
 
         if (from && to) {
-          const fromAPoint = await getLatLongByCode(from);
-          const toBPoint = await getLatLongByCode(to);
+          const fromPointData = await getLatLongByCode(from);
+          const viaPointData = via ? await getLatLongByCode(via) : null;
+          const toPointData = await getLatLongByCode(to);
 
-          if (fromAPoint.length <= 0 || toBPoint.length <= 0) {
+          if (
+            fromPointData.length <= 0 ||
+            (via && (!viaPointData || viaPointData.length <= 0)) ||
+            toPointData.length <= 0
+          ) {
             return res.json({
               success: false,
-              message: "Please check the IATA codes of both the airports",
+              message: "Please check the IATA codes of the airports",
               status: 400,
             });
           }
 
-          const from_latitude = fromAPoint[0]?.latitude;
-          const from_longitude = fromAPoint[0]?.longitude;
-          const to_latitude = toBPoint[0]?.latitude;
-          const to_longitude = toBPoint[0]?.longitude;
+          const fromPoint = new GeoPoint(
+            Number(fromPointData[0].latitude),
+            Number(fromPointData[0].longitude)
+          );
 
-          const fromPoint = new GeoPoint(Number(from_latitude), Number(from_longitude));
-          const toPoint = new GeoPoint(Number(to_latitude), Number(to_longitude));
-          distanceResult = fromPoint.distanceTo(toPoint, true);
-        } else {
-          distanceResult = distance;
+          const toPoint = new GeoPoint(
+            Number(toPointData[0].latitude),
+            Number(toPointData[0].longitude)
+          );
+
+          if (via) {
+            const viaPoint = new GeoPoint(
+              Number(viaPointData[0].latitude),
+              Number(viaPointData[0].longitude)
+            );
+
+            const distance1 = fromPoint.distanceTo(viaPoint, true);
+            const distance2 = viaPoint.distanceTo(toPoint, true);
+            distanceResult = distance1 + distance2;
+          } else {
+            distanceResult = fromPoint.distanceTo(toPoint, true);
+          }
         }
 
-        if (flight_calc_mode === "Generic") {
-          const where = `where flight_type = '${flight_type}'`;
-          const avgData = await getSelectedColumn("flight_types", where, "avg_distance");
-          distanceResult = avgData.length > 0 ? avgData[0].avg_distance : 0;
+        finalco2 = distanceResult;
+
+        let minDistance = 0;
+        let maxDistance = 0;
+
+        if (finalco2 >= 0 && finalco2 <= 1400) {
+          minDistance = 0;
+          maxDistance = 1400;
+        } else if (finalco2 > 1400 && finalco2 <= 3000) {
+          minDistance = 1401;
+          maxDistance = 3000;
+        } else if (finalco2 > 3000 && finalco2 <= 13000) {
+          minDistance = 3001;
+          maxDistance = 13000;
+        } else if (finalco2 > 13000) {
+          minDistance = 13001;
+          maxDistance = Infinity;
         }
 
-        let search_str;
-        if (distanceResult <= 900) search_str = "0-900";
-        else if (distanceResult <= 1400) search_str = "900-1400";
-        else if (distanceResult <= 3000) search_str = "1400-3000";
-        else if (distanceResult <= 9000) search_str = "3000-9000";
-        else if (distanceResult <= 13000) search_str = "9000-13000";
-        else search_str = "13000";
-
-        const countrydata = await country_check(facilities);
-        if (countrydata.length === 0) {
-          return res.json({
-            success: false,
-            message: "EF not Found for this country",
-            status: 400,
-          });
-        }
-
-        const flightParams = await getFlightParams(search_str, countrydata[0].CountryId);
-        if (flightParams.length === 0) {
-          return res.json({
-            success: false,
-            message: "Invalid distance or missing EF for this country",
-            status: 400,
-          });
-        }
-
-        const { Fiscal_Year, b, c, a: A, c1: C_1, c2: C_2, c3: C_3, ef: EF, p: P, seats, lf: LF, cf: CF, cw1: CW1, cw2: CW2, cw3: CW3, Nox: NoxParam } = flightParams[0];
-
-        const [startYear, endYear] = Fiscal_Year.split('-').map(Number);
-        if (year < startYear || year > endYear) {
-          return res.json({
-            success: false,
-            message: "EF not Found for this year",
-            status: 400,
-          });
-        }
-
-        let CW;
-        switch (flight_class) {
-          case "Economy": CW = CW1; break;
-          case "Business": CW = CW2; break;
-          case "First": CW = CW3; break;
-          default: CW = CW1;
-        }
-
-        const M = NoxParam ? Number(NoxParam) : 1;
-        const TotalFuel = distanceResult * Number(b) + Number(c);
-        const FS = TotalFuel * ((1 - Number(CF)) / (Number(seats) * Number(LF)));
-        const FS_Adj = FS * Number(CW);
-        const EM = Number(EF) * M + Number(P);
-        let Total_Co2 = FS_Adj * EM;
-        finalco2 = Total_Co2 + Number(A);
-        finalco2 = NoxParam ? parseFloat(finalco2 * 2) : parseFloat(finalco2);
-
-        if (return_flight === true || return_flight === 'true') {
-          finalco2 *= 2;
-        }
-
+        if (return_flight === true || return_flight === 'true') finalco2 *= 2;
         if (isNaN(finalco2)) finalco2 = 0;
 
-        const where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id WHERE flight_types.flight_type = '${flight_type}'`;
-        const flight_type_ef = await getSelectedColumn("flight_types", where, `flight_types.id, flight_travel_ef.*`);
+        let where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id`;
+
+        if (maxDistance === Infinity) {
+          where += ` WHERE flight_types.avg_distance >= ${minDistance}`;
+        } else {
+          where += ` WHERE flight_types.avg_distance >= ${minDistance} AND flight_types.avg_distance <= ${maxDistance}`;
+        }
+        const flight_type_ef = await getSelectedColumn("flight_types", where, `flight_types.id, flight_types.flight_type, flight_travel_ef.*`);
 
         if (flight_type_ef.length <= 0) return res.status(404).json({ error: true, success: false, message: "EF not found for this facility" })
 
         const ef_factor = flight_class == 'Economy' ? flight_type_ef[0].economy : flight_class == 'Business' ? flight_type_ef[0].business : flight_type_ef[0].first_class;
 
         const flighttravel = {
-          from: from || "", to: to || "", flight_type, flight_class,
-          no_of_trips: no_of_trips || 0,
+          flight_calc_mode,
+          flight_type: flight_type_ef[0].flight_type,
+          flight_class,
           return_flight: return_flight || "",
+          no_of_trips: no_of_trips || 0,
           cost_centre: cost_centre || "",
-          flight_calc_mode, no_of_passengers: no_of_passengers || 0,
+          from: from || "",
+          to: to || "",
+          via: via || '',
+          no_of_passengers: no_of_passengers || 0,
           reference_id: reference_id || 0,
           distance: distance || 0,
-          emission: Number((finalco2 * ef_factor).toFixed(4)),
-          user_id, via: via || "",
-          batch, month, year, facilities
+          emission: flight_calc_mode === "Generic" ? Number((ef_factor * no_of_trips * finalco2).toFixed(4)): Number((ef_factor * no_of_passengers * finalco2).toFixed(4)),
+          user_id,
+          batch,
+          month,
+          year,
+          facilities
         };
         const flight = await flight_travel(flighttravel);
         allinsertedID.push(flight.insertId);

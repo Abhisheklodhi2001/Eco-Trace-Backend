@@ -2,11 +2,11 @@ const express = require("express");
 const stationaryCombController = require("../controller/stationaryCombController");
 const auth = require("../middleware/auth");
 const router = express.Router();
-
+const upload = require("../middleware/upload_file")
 
 router.get("/getSubCatSeedData", stationaryCombController.getSubCatSeedData);
 router.get("/getSubCategoryTypes", stationaryCombController.getSubCategoryTypes);
-router.post("/stationaryCombustionEmission", auth, stationaryCombController.stationaryCombustionEmission);
+router.post("/stationaryCombustionEmission", auth, upload.single('file'), stationaryCombController.stationaryCombustionEmission);
 router.get("/getStationaryCombEmission", auth, stationaryCombController.getStationaryCombEmission);
 router.post("/getStationaryCombEmissionByTypeId", auth, stationaryCombController.getStationaryCombEmissionByTypeId);
 

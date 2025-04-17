@@ -1,9 +1,10 @@
 const express = require("express");
 const scope2Controller = require("../controller/scope2Controller");
 const auth = require("../middleware/auth");
+const upload = require("../middleware/upload_file");
 const router = express.Router();
 
-router.post("/Addelectricity", auth, scope2Controller.Addelectricity);
+router.post("/Addelectricity", auth, upload.single('file'), scope2Controller.Addelectricity);
 
 router.post("/getAllelectricity", auth, scope2Controller.getAllelectricity);
 

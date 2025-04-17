@@ -12,9 +12,10 @@ module.exports = {
                     from \`dbo.managedatapointcategory\` MDS,  \`dbo.categoryseeddata\` C, \`dbo.managedatapoint\` MDP  \
                     where MDS.ManageDataPointCategorySeedID = C.Id  and  MDS.ManageDataPointId = MDP.ID and MDP.FacilityId = ${facilityId} and C.CatName = 'Fuel and Energy-related Activities' LIMIT 1`);
    },
-  insertCombustionEmission: async (data) => {
+   
+  insertCombustionEmission: async (data) => {    
     return db.query(
-      "INSERT INTO   `stationarycombustionde` (user_id, ReadingValue, Unit, Status, Year, Month, GHGEmission, BlendType,	BlendPercent, CalorificValue, TypeName,TypeID, SubCategoriesID,CreatedBy,facility_id,Scope3GHGEmission) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      "INSERT INTO   `stationarycombustionde` (user_id, ReadingValue, Unit, Status, Year, Month, GHGEmission, BlendType, BlendPercent, CalorificValue, TypeName,TypeID, SubCategoriesID,CreatedBy,facility_id, Scope3GHGEmission, FileName) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       [
         data.user_id,
         data.readingValue,
@@ -31,8 +32,8 @@ module.exports = {
         data.SubCategoriesID,
         data.user_id,
         data.facility_id,
-        data.Scope3GHGEmission
-
+        data.Scope3GHGEmission,
+        data.FileName
       ]
     );
   },

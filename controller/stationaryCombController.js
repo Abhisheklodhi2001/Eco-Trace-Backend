@@ -94,7 +94,8 @@ exports.stationaryCombustionEmission = async (req, res) => {
         unit: [Joi.string().required().empty()],
         readingValue: [Joi.number().required().empty()],
         calorificValue: [Joi.optional().allow("")],
-        facility_id: [Joi.number().required().empty()]
+        facility_id: [Joi.number().required().empty()],
+        file: [Joi.string().optional()]
       })
     );
     const result = schema.validate(req.body);
@@ -108,7 +109,6 @@ exports.stationaryCombustionEmission = async (req, res) => {
         success: false,
       });
     }
-
     const user_id = req.user.user_id;
 
     var monthsArr = JSON.parse(months);
@@ -119,13 +119,14 @@ exports.stationaryCombustionEmission = async (req, res) => {
     var emissionFactor = 0;
     var emissionFactor1 = 0;
     let resultInserted = [];
-    //Check Waste Data
     let calorificValue2 = "";
     if (calorificValue == "null") {
       calorificValue2 = "";
     } else {
       calorificValue2 = calorificValue
     }
+    console.log(req.file);
+    
     stationaryCombustionData = {
       user_id: user_id,
       readingValue: readingValue,
@@ -136,13 +137,13 @@ exports.stationaryCombustionEmission = async (req, res) => {
       year: year,
       Unit: unit,
       ghgEmissions: 0,
-      calorificValue: calorificValue2 ? calorificValue2 : "", //checkNUllUnD(calorificValue),
+      calorificValue: calorificValue2 ? calorificValue2 : "",
       facility_id: facility_id,
-      Scope3GHGEmission: 0
+      Scope3GHGEmission: 0,
+      FileName: req.file != undefined ? req.file.filename : null
     };
 
     let countrydata = await country_check(facility_id);
-    //console.log(countrydata[0].CountryId);
     if (countrydata.length == 0) {
       return res.json({
         success: false,
@@ -157,20 +158,16 @@ exports.stationaryCombustionEmission = async (req, res) => {
     );
 
     if (emissionDetails.length > 0) {
-
-      let yearRange = emissionDetails[0]?.Fiscal_Year; // The string representing the year range
+      let yearRange = emissionDetails[0]?.Fiscal_Year;
       let [startYear, endYear] = yearRange.split('-').map(Number);
-
       if (year >= startYear && year <= endYear) {
         stationaryCombustionData.TypeName = emissionDetails[0].Item;
         stationaryCombustionData.TypeId = subCategoryTypeId;
         stationaryCombustionData.SubCategoriesID = SubCategorySeedID;
-
       } else if (year == startYear) {
         stationaryCombustionData.TypeName = emissionDetails[0].Item;
         stationaryCombustionData.TypeId = subCategoryTypeId;
         stationaryCombustionData.SubCategoriesID = SubCategorySeedID;
-
       } else {
         return res.json({
           success: false,
@@ -178,16 +175,13 @@ exports.stationaryCombustionEmission = async (req, res) => {
           status: 400,
         });
       }
-
     } else {
-
       return res.json({
         success: false,
         message: "EF not found while adding  stationaryCombustion Emissions",
         status: 400,
       });
     }
-
     if (unit.toLowerCase() === kgUnit) {
       emissionFactor = emissionDetails[0]?.kgCO2e_kg
       emissionFactor1 = emissionDetails[0]?.scope3_kgCO2e_kg
@@ -205,20 +199,14 @@ exports.stationaryCombustionEmission = async (req, res) => {
 
       emissionFactor1 = emissionDetails[0]?.scope3_kgCO2e_tonnes
     }
-
-    console.log("emissionDetails[0]", emissionDetails[0]);
-    console.log("emissionFactoremissionFactor", emissionFactor1);
-
-
     if (stationaryCombustionData.calorificValue) {
       emissionFactor = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor)
 
       emissionFactor1 = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor1)
     }
-
-
     let emsssionvalue = 0;
     let emsssionvalue1 = 0;
+
     if ((emissionDetails[0].Item === "Petrol" || emissionDetails[0].Item === "Diesel") && blendType !== "No Blend") {
       if (blendType === "Perc. Blend") {
         let percent = parseFloat(blendPercent / 100);
@@ -242,9 +230,8 @@ exports.stationaryCombustionEmission = async (req, res) => {
     if ((checkRes[0]?.count !== 1)) {
       stationaryCombustionData.Scope3GHGEmission = 0;
     }
-    console.log(stationaryCombustionData)
-    for (let month of monthsArr) {
 
+    for (let month of monthsArr) {
       stationaryCombustionData.month = month;
       var tempInserted = await insertCombustionEmission(stationaryCombustionData);
       resultInserted.push(tempInserted.insertId);

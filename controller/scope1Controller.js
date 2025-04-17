@@ -136,7 +136,6 @@ exports.GetSubCategoryTypes = async (req, res) => {
         }
       });
 
-      //ItemType
       if (stationarycombustion.length > 0) {
         return res.json({
           success: true,
@@ -1392,7 +1391,8 @@ exports.Addrefrigerant = async (req, res) => {
         months: [Joi.string().empty().required()],
         SubCategorySeedID: [Joi.string().empty().required()],
         facilities: [Joi.string().empty().required()],
-        subCategoryTypeId: [Joi.string().empty().required()], //
+        subCategoryTypeId: [Joi.string().empty().required()],
+        file: [Joi.string().optional()]
       })
     );
     const result = schema.validate(req.body);
@@ -1406,6 +1406,7 @@ exports.Addrefrigerant = async (req, res) => {
         success: true,
       });
     } else {
+
       let countrydata = await country_check(facilities);
 
       if (countrydata.length == 0) {
@@ -1439,7 +1440,6 @@ exports.Addrefrigerant = async (req, res) => {
           status: 400,
         });
       }
-      console.log(refunit);
 
       let category = {
         refAmount: refAmount ? refAmount : "",
@@ -1455,6 +1455,7 @@ exports.Addrefrigerant = async (req, res) => {
         TenantID: 4,
         Active: 1,
         SendForApproval: "yes",
+        FileName: req.file != undefined ? req.file.filename : null
       };
 
       let month = JSON.parse(months);
@@ -1571,7 +1572,8 @@ exports.Addfireextinguisher = async (req, res) => {
         months: [Joi.string().empty().required()],
         SubCategorySeedID: [Joi.string().empty().required()],
         facilities: [Joi.string().empty().required()],
-        quantityOfCO2makeup: [Joi.string().empty().required()], //
+        quantityOfCO2makeup: [Joi.string().empty().required()],
+        file: [Joi.string().optional()]
       })
     );
     const result = schema.validate(req.body);
@@ -1625,7 +1627,6 @@ exports.Addfireextinguisher = async (req, res) => {
           status: 400,
         });
       }
-      console.log(refunit);
 
       let category = {
         NumberOfExtinguisher: NumberOfExtinguisher ? NumberOfExtinguisher : "",
@@ -1640,7 +1641,8 @@ exports.Addfireextinguisher = async (req, res) => {
         CreatedDate: moment().format('YYYY-MM-DD'),
         TenantID: 4,
         Active: 1,
-        SendForApproval: 'yes'
+        SendForApproval: 'yes',
+        FileName: req.file != undefined ? req.file.filename : null
       }
 
 
@@ -1929,6 +1931,7 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
         "any.required": "jsonData is required",
         "string.empty": "jsonData cannot be empty",
       }),
+      file: Joi.string().optional()
     });
 
     const result = schema.validate(req.body, { abortEarly: false });
@@ -2047,7 +2050,8 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
           Active: 1,
           SendForApproval: 'yes',
           ModeofDEID: val.mode_of_data_entry ? val.mode_of_data_entry : "",
-          vehicle_model: val.is_excel == 1 ? val.vehicle_type : null
+          vehicle_model: val.is_excel == 1 ? val.vehicle_type : null,
+          FileName: req.file != undefined ? req.file.filename : null
         }
 
         const fireextinguisher = await Addcompanyownedvehicles(category);
