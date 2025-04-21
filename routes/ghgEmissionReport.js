@@ -21,5 +21,7 @@ router.post("/ghgTopEmissionGenerating", auth, ghgEmissionReportController.ghgTo
 router.post("/GhgScopewiseEmssionYearRangeWise", auth, ghgEmissionReportController.GhgScopewiseEmssionYearRangeWise);
 router.post("/GhgEmssionYearRangeWise", auth, ghgEmissionReportController.GhgEmssionYearRangeWise);
 router.post("/GhgEmssionPerNumberOfEmployee", auth, ghgEmissionReportController.GhgEmssionPerNumberOfEmployee);
+router.post("/GhgEmissionFileByFacilityIdAndCatgory", auth, ghgEmissionReportController.GhgEmissionFileByFacilityIdAndCatgory);
+router.get("/GhgSubcategoryTypes", auth, ghgEmissionReportController.GhgSubcategoryTypes);
 
 module.exports = router;

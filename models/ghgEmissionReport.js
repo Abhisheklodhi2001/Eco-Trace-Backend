@@ -895,6 +895,30 @@ LIMIT 5;
 
     employeePerEmission: async (facilities, base_year, current_year) => {
         return await db.query(`SELECT year, ROUND(SUM(emission) / 1000, 4) AS total_emission, SUM(noofemployees) AS total_employees, ROUND(SUM(emission) / SUM(noofemployees) / 1000, 4) AS total_per_employee_emission FROM employee_commuting_category WHERE facilities IN (${facilities}) AND status = "S" AND year BETWEEN ${base_year} AND ${current_year} GROUP BY year;`);
+    },
+
+    findStationaryCombustionde: async (facilities) => {
+        return await db.query('SELECT sc.id, sc.FileName, DATE_FORMAT(sc.CreatedDate, "%d-%m-%Y") AS created_date, au.firstname, au.lastname FROM stationarycombustionde sc LEFT JOIN `dbo.tenants` t ON t.Id = sc.user_id LEFT JOIN `dbo.aspnetusers` au ON au.user_id = t.user_id WHERE sc.facility_id = "' + facilities + '" AND sc.FileName IS NOT NULL;');
+    },
+
+    findRefrigerant: async (facilities) => {
+        return await db.query('SELECT re.id, re.FileName, DATE_FORMAT(re.CreatedDate, "%d-%m-%Y") AS created_date, au.firstname, au.lastname FROM `dbo.refrigerantde` re LEFT JOIN `dbo.tenants` t ON t.Id = re.user_id LEFT JOIN `dbo.aspnetusers` au ON au.user_id = t.user_id WHERE re.facilities = "' + facilities + '" AND re.FileName IS NOT NULL;')
+    },
+
+    findFireextinguisherde: async (facilities) => {
+        return await db.query('SELECT fr.id, fr.FileName, DATE_FORMAT(fr.CreatedDate, "%d-%m-%Y") AS created_date, au.firstname, au.lastname FROM `dbo.fireextinguisherde` fr LEFT JOIN `dbo.tenants` t ON t.Id = fr.user_id LEFT JOIN `dbo.aspnetusers` au ON au.user_id = t.user_id WHERE fr.facilities = "' + facilities + '" AND fr.FileName IS NOT NULL;');
+    },
+
+    findVehiclede: async (facilities) => {
+        return await db.query('SELECT ve.id, ve.FileName, DATE_FORMAT(ve.CreatedDate, "%d-%m-%Y") AS created_date, au.firstname, au.lastname FROM `dbo.vehiclede` ve LEFT JOIN `dbo.tenants` t ON t.Id = ve.user_id LEFT JOIN `dbo.aspnetusers` au ON au.user_id = t.user_id WHERE ve.facilities = "' + facilities + '" AND ve.FileName IS NOT NULL;');
+    },
+
+    findRenewableelectricityde: async (facilities) => {
+        return await db.query('SELECT re.id, re.FileName, DATE_FORMAT(re.CreatedDate, "%d-%m-%Y") AS created_date, au.firstname, au.lastname FROM `dbo.renewableelectricityde` re LEFT JOIN `dbo.tenants` t ON t.Id = re.user_id LEFT JOIN `dbo.aspnetusers` au ON au.user_id = t.user_id WHERE re.facilities = "' + facilities + '" AND re.FileName IS NOT NULL;');
+    },
+
+    findSubCategoryTypes: async () => {
+        return await db.query('SELECT * FROM `subcategorytypes` ORDER BY `ID` ASC');
     }
 
 }

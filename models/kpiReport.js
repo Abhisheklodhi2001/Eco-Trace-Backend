@@ -846,7 +846,8 @@ module.exports = {
                     series: [parseFloat(row.Q1 || null), parseFloat(row.Q2 || null), parseFloat(row.Q3 || null), parseFloat(row.Q4 || null)],
                     kpi_item_id: row.kpi_item_id,
                     target_value: Number(row.target_value) || null,
-                    kpi_name: row.kpi_name
+                    kpi_name: row.kpi_name,
+                    kpi_unit: row.unit
                 };
             } else {
                 const [kpi_Items_list] = await db.query('SELECT * FROM `kpi_Items_list` WHERE id IN (?)', [kpiId])
@@ -985,10 +986,10 @@ module.exports = {
 
             const series = facilityIds.map(fid => facilityDataMap[fid] ?? null);
 
-            if (!kpiName && !kpiUnit) {
-                const [kpiInfo] = await db.query('SELECT kpi_name, unit FROM kpi_Items_list WHERE id = ?', [kpiId]);
-                kpiName = kpiInfo[0]?.kpi_name || null;
-                kpiUnit = kpiInfo[0]?.unit || null;
+            if (!kpiName && !kpiUnit) {                
+                const [kpiInfo] = await db.query('SELECT kpi_name, unit FROM kpi_Items_list WHERE id = ?', [kpiId]);                
+                kpiName = kpiInfo?.kpi_name || null;
+                kpiUnit = kpiInfo?.unit || null;
             }
 
             data[`first${i + 1}`] = {

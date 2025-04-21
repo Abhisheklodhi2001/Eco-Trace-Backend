@@ -269,7 +269,7 @@ exports.login = async (req, res) => {
                   );
                   console.log(exists, "--------", array);
                   console.log("roles[0]?.Name =>", roles[0]?.Name);
-                  
+
                   if (exists == true && roles[0]?.Name == "Super Admin") {
                     item.super_admin_id = item.Id;
                     item.role = roles[0]?.Name;
@@ -516,7 +516,7 @@ exports.GetFacilityGroups = async (req, res) => {
               }
             }
           } else {
-            let where =`  where F.ID IN(${item.facilityID})`;
+            let where = `  where F.ID IN(${item.facilityID})`;
             facilities1 = await getSelectedColumn(
               "`dbo.facilities` F ",
               where,
@@ -718,7 +718,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
         );
         array = [...categorydata];
       }
-
+  
       await Promise.all(
         array.map(async (item) => {
           const category = await getSelectedColumn(
@@ -5700,7 +5700,7 @@ exports.getExcelSheet = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    
+
     return res.status(500).json({ error: true, message: "Internal Server Error " + error.message, success: false });
   }
 };
@@ -6127,7 +6127,8 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
       });
     }
 
-    const getFacilityResponse = await getVehicleFleetByFacilityCategoryId(facility_id, categoryID);
+    const getFacilityResponse = await getVehicleFleetByFacilityCategoryId(facility_id);
+
     const modelValues = getFacilityResponse.filter(val => val.retire_vehicle == 0).map(val => val.vehicle_model).join(",");
 
     const currencyCode = getFacilityResponse.length > 0 ? getFacilityResponse[0].CurrencyCode || "USD" : "USD";

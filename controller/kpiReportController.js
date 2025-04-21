@@ -2053,9 +2053,9 @@ exports.addKpiInventory = async (req, res) => {
                         kpi_value = {
                             annual:
                                 kpiData["Total vehicles"]?.annual && kpiData["Total vehicles"].annual !== 0
-                                    ? Number(parseFloat(kpiData["Total Emissions"]?.annual / kpiData["Total vehicles"].annual).toFixed(4))
+                                    ? Number(parseFloat(kpiData["Total Owned Passenger Vehicle Emiss."]?.annual / kpiData["Total vehicles"].annual).toFixed(4))
                                     : null,
-                            monthly: kpiData["Total Emissions"]?.monthly?.map((val, index) =>
+                            monthly: kpiData["Total Owned Passenger Vehicle Emiss."]?.monthly?.map((val, index) =>
                                 kpiData["Total vehicles"]?.monthly?.[index] && kpiData["Total vehicles"].monthly[index] !== 0
                                     ? Number(parseFloat(val / kpiData["Total vehicles"].monthly[index]).toFixed(4))
                                     : null
@@ -2180,7 +2180,14 @@ exports.addKpiInventory = async (req, res) => {
                         }
                         break;
                     case 29:
-                        kpi_value = kpiData["Waste Diverted"];
+                        kpi_value = {
+                            annual: kpiData['Waste Generated']?.annual && kpiData['Waste Generated']?.annual !== 0 ? Number(parseFloat(kpiData['Waste Diverted']?.annual / kpiData['Waste Generated']?.annual).toFixed(4)) : null,
+                            monthly: kpiData["Waste Diverted"]?.monthly?.map((val, index) =>
+                                kpiData["Waste Generated"]?.monthly?.[index] && kpiData["Waste Generated"].monthly[index] !== 0
+                                    ? Number(parseFloat(val / kpiData["Waste Generated"].monthly[index]).toFixed(4))
+                                    : null
+                            )
+                        }
                         break;
                     case 30:
                         kpi_value = kpiData["Water Usage"];
@@ -2223,10 +2230,10 @@ exports.addKpiInventory = async (req, res) => {
                         break;
                     case 36:
                         kpi_value = {
-                            annual: kpiData['Total Emission Purchase Goods & Services']?.annual && kpiData['Total Emission Purchase Goods & Services']?.annual !== 0 ? Number(parseFloat(kpiData['Total Emission Purchase Items Per Amount']?.annual / kpiData['Total Emission Purchase Goods & Services']?.annual).toFixed(4)) : null,
-                            monthly: kpiData["Total Emission Purchase Items Per Amount"]?.monthly?.map((val, index) =>
-                                kpiData["Total Emission Purchase Goods & Services"]?.monthly?.[index] && kpiData["Total Emission Purchase Goods & Services"].monthly[index] !== 0
-                                    ? Number(parseFloat(val / kpiData["Total Emission Purchase Goods & Services"].monthly[index]).toFixed(4))
+                            annual: kpiData['Total Emission Purchase Items Per Amount']?.annual && kpiData['Total Emission Purchase Items Per Amount']?.annual !== 0 ? Number(parseFloat(kpiData['Total Emission Purchase Goods & Services']?.annual / kpiData['Total Emission Purchase Items Per Amount']?.annual).toFixed(4)) : null,
+                            monthly: kpiData["Total Emission Purchase Goods & Services"]?.monthly?.map((val, index) =>
+                                kpiData["Total Emission Purchase Items Per Amount"]?.monthly?.[index] && kpiData["Total Emission Purchase Items Per Amount"].monthly[index] !== 0
+                                    ? Number(parseFloat(val / kpiData["Total Emission Purchase Items Per Amount"].monthly[index]).toFixed(4))
                                     : null
                             )
                         }
@@ -2299,11 +2306,11 @@ exports.getKpiInventoryByFacilityIdAndYear = async (req, res) => {
                 message: getKpiInventory.length > 0 ? "Successfully retrieved KPI inventory" : "No KPI inventory found",
                 success: getKpiInventory.length > 0 ? true : false,
                 user_name: getKpiInventory.length > 0
-                ? [
-                    getKpiInventory[0].firstname !== 'null' && getKpiInventory[0].firstname ? getKpiInventory[0].firstname : '',
-                    getKpiInventory[0].lastname !== 'null' && getKpiInventory[0].lastname ? getKpiInventory[0].lastname : ''
-                  ].join(' ').trim()
-                : '',
+                    ? [
+                        getKpiInventory[0].firstname !== 'null' && getKpiInventory[0].firstname ? getKpiInventory[0].firstname : '',
+                        getKpiInventory[0].lastname !== 'null' && getKpiInventory[0].lastname ? getKpiInventory[0].lastname : ''
+                    ].join(' ').trim()
+                    : '',
                 updated_at: getKpiInventory.length > 0 ? getKpiInventory[0].updated_at : '',
                 data: getKpiInventory.length > 0 ? JSON.parse(getKpiInventory[0].inventory_json) : []
             });

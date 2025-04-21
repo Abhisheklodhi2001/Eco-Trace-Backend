@@ -72,7 +72,7 @@ module.exports = {
     },
 
     flight_travelDetails: async (facilities, year) => {
-        return db.query("select COALESCE('flight_travel', '')  as  tablename ,A.*,COALESCE('', '')  as  subcatName ,COALESCE('', '')  as subcategoryID from flight_travel A where A.facilities=? and A.year = ?   ORDER BY A.id DESC", [facilities, year]);
+        return db.query("SELECT COALESCE('flight_travel', '') AS tablename, A.*, COALESCE('', '') AS subcatName, COALESCE('', '') AS subcategoryID, flight_types.avg_distance FROM flight_travel A LEFT JOIN flight_types ON flight_types.flight_type = A.flight_Type WHERE A.facilities = ? AND A.year = ? ORDER BY A.id DESC;", [facilities, year]);
     },
 
     hotel_stayDetails: async (facilities, year) => {
@@ -308,8 +308,8 @@ module.exports = {
         return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id WHERE tbl_vehicle_fleet.facility_id = ?', [facility_id]);
     },
 
-    getVehicleFleetByFacilityCategoryId: async (facility_id, categoryID) => {
-        return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type, B.CurrencyCode FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id LEFT JOIN `dbo.country` AS B ON B.ID = companyownedvehicles.country_id WHERE tbl_vehicle_fleet.facility_id = ? AND tbl_vehicle_fleet.category = ?;', [facility_id, categoryID])
+    getVehicleFleetByFacilityCategoryId: async (facility_id) => {
+        return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type, B.CurrencyCode FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id LEFT JOIN `dbo.country` AS B ON B.ID = companyownedvehicles.country_id WHERE tbl_vehicle_fleet.facility_id = ?;', [facility_id])
     }
 
 }
