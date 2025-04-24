@@ -572,11 +572,11 @@ module.exports = {
     },
 
     waste_generated_emissions_by_hazardous: async (facilitiesdata, year) => {
-        return await db.query(`SELECT IFNULL(ROUND(SUM(eltc.emission) / 1000, 4), 0) AS emission FROM endof_lifetreatment_category eltc LEFT JOIN endoflife_waste_type ewt ON ewt.id = eltc.waste_type WHERE eltc.facilities IN (${facilitiesdata}) AND eltc.year = ${year} AND ewt.type IN ( 'Chemical waste', 'Biological waste', 'Heavy metals', 'Radioactive waste', 'Flammable or explosive waste', 'Corrosive waste', 'Toxic waste', 'Industrial waste' );`)
+        return await db.query(`SELECT IFNULL(ROUND(SUM(eltc.emission) / 1000, 4), 0) AS emission FROM endof_lifetreatment_category eltc LEFT JOIN endoflife_waste_type ewt ON ewt.id = eltc.waste_type WHERE eltc.facilities IN (${facilitiesdata}) AND eltc.year = ${year} AND ewt.hazard_nonhazard = 1 ;`)
     },
 
     waste_generated_emissions_by_non_hazadrous: async (facilitiesdata, year) => {
-        return await db.query(`SELECT IFNULL(ROUND(SUM(eltc.emission) / 1000, 4), 0) AS emission FROM endof_lifetreatment_category eltc LEFT JOIN endoflife_waste_type ewt ON ewt.id = eltc.waste_type WHERE eltc.facilities IN (${facilitiesdata}) AND eltc.year = ${year} AND ewt.type IN ( 'Organic waste', 'Plastic waste', 'Glass waste', 'Metal waste', 'Wood waste', 'Textile waste', 'Household waste', 'Construction waste' );`);
+        return await db.query(`SELECT IFNULL(ROUND(SUM(eltc.emission) / 1000, 4), 0) AS emission FROM endof_lifetreatment_category eltc LEFT JOIN endoflife_waste_type ewt ON ewt.id = eltc.waste_type WHERE eltc.facilities IN (${facilitiesdata}) AND eltc.year = ${year} AND ewt.hazard_nonhazard = 0;`);
     },
 
     costcenterData_emission: async (user_id) => {

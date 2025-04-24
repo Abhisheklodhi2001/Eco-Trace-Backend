@@ -1,6 +1,9 @@
 const db = require("../utils/database");
 
 module.exports = {
+    getFacilitiesAreaByFacilityId: async (facilities) => {
+        return await db.query(`SELECT SUM(total_area) AS area FROM \`dbo.facilities\` WHERE ID IN(${facilities});`);
+    },
     getCombustionEmission: async (facilities, year, finalyeardata) => {
         let where = "";
         let year1 = parseInt(year) + 1;
@@ -918,7 +921,11 @@ LIMIT 5;
     },
 
     findSubCategoryTypes: async () => {
-        return await db.query('SELECT * FROM `subcategorytypes` ORDER BY `ID` ASC');
+        return await db.query('SELECT * FROM `subcategorytypes` WHERE SubCatID >= 1 AND SubCatID <= 6 ORDER BY `ID` ASC;');
+    },
+
+    findSubCategoryTypesByCategoryId: async (id) => {
+        return await db.query('SELECT * FROM `subcategorytypes` WHERE SubCatID = "' + id + '";');
     }
 
 }

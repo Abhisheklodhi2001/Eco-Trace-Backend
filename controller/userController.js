@@ -594,7 +594,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
       }
 
       if (categoryID == "5") {
-        categorydata = await getAllelectricity(facilities, year);
+        categorydata = await getAllelectricity(facilities, year);        
         array = [...categorydata];
       }
 
@@ -718,7 +718,8 @@ exports.GetpendingDataEnteries = async (req, res) => {
         );
         array = [...categorydata];
       }
-  
+
+      console.log(array);
       await Promise.all(
         array.map(async (item) => {
           const category = await getSelectedColumn(
@@ -2525,7 +2526,8 @@ exports.Updatefacilities = async (req, res) => {
       CountryId,
       StateId,
       total_area,
-      energy_ref_area
+      energy_ref_area,
+      no_of_employee
     } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
@@ -2541,6 +2543,7 @@ exports.Updatefacilities = async (req, res) => {
         StateId: [Joi.optional().allow("")],
         total_area: [Joi.optional().allow("")],
         energy_ref_area: [Joi.optional().allow("")],
+        no_of_employee: [Joi.optional().allow("")]
       })
     );
     const result = schema.validate(req.body);
@@ -2577,6 +2580,7 @@ exports.Updatefacilities = async (req, res) => {
         StateId: StateId ? StateId : facilities[0].StateId,
         total_area: total_area ? total_area : facilities[0].total_area,
         energy_ref_area: energy_ref_area ? energy_ref_area : facilities[0].energy_ref_area,
+        no_of_employee: no_of_employee ? no_of_employee : facilities[0].no_of_employee
       };
       let where = "where ID  = '" + ID + "'";
       const addgroup = await updateData("`dbo.facilities`", where, user);
@@ -5840,7 +5844,7 @@ exports.addVehicleFeet = async (req, res) => {
           vehicle_model: val.vehicle_model,
           fuel_type: val.fuel_type,
           type_engine: val.type_engine == '' ? null : val.type_engine,
-          company_owned_vehicle_id: findCompanyOwnedVehicleResponse[0].ID,
+          company_owned_vehicle_id: findCompanyOwnedVehicleResponse[0].VehicleTypeID,
           charging_outside: val.charging_outside == '' ? null : val.charging_outside,
           quantity: val.quantity == '' ? null : val.quantity,
           acquisition_date: val.acquisition_date,
@@ -6127,11 +6131,11 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
       });
     }
 
-    const getFacilityResponse = await getVehicleFleetByFacilityCategoryId(facility_id);
+    const getFacilityResponse = await getVehicleFleetByFacilityCategoryId(facility_id, categoryID);
 
     const modelValues = getFacilityResponse.filter(val => val.retire_vehicle == 0).map(val => val.vehicle_model).join(",");
 
-    const currencyCode = getFacilityResponse.length > 0 ? getFacilityResponse[0].CurrencyCode || "USD" : "USD";
+    const currencyResponse = await await findFacilityWithCountryCode(facility_id);(facility_id);
 
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile("vehiclede.xlsx");
@@ -6185,7 +6189,7 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
         };
 
         unitCell2.value = {
-          formula: `IF(ISNUMBER(MATCH(${unitCell1.address}, {"Total distance travelled","Total fuel burnt","Total amount spent"}, 0)), CHOOSE(MATCH(${unitCell1.address}, {"Total distance travelled","Total fuel burnt","Total amount spent"}, 0), "Km", "Litres", "${currencyCode}"), "")`
+          formula: `IF(ISNUMBER(MATCH(${unitCell1.address}, {"Total distance travelled","Total fuel burnt","Total amount spent"}, 0)), CHOOSE(MATCH(${unitCell1.address}, {"Total distance travelled","Total fuel burnt","Total amount spent"}, 0), "Km", "Litres", "${currencyResponse[0].CurrencyCode}"), "")`
         };
       }
     });

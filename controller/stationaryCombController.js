@@ -125,7 +125,6 @@ exports.stationaryCombustionEmission = async (req, res) => {
     } else {
       calorificValue2 = calorificValue
     }
-    console.log(req.file);
     
     stationaryCombustionData = {
       user_id: user_id,

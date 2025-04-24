@@ -165,6 +165,7 @@ exports.Addrenewableelectricity = async (req, res) => {
         facilities: [Joi.string().empty().required()],
         typeID: [Joi.string().empty().required()],
         emission_factor: [Joi.optional().allow("")],
+        file: [Joi.string().optional()]
       })
     );
     const result = schema.validate(req.body);
@@ -210,6 +211,7 @@ exports.Addrenewableelectricity = async (req, res) => {
             TenantID: 4,
             Active: 1,
             SendForApproval: 'yes',
+            FileName: req.file != undefined ? req.file.filename : null
           }
         } else {
           return res.json({
@@ -237,7 +239,8 @@ exports.Addrenewableelectricity = async (req, res) => {
           TenantID: 4,
           Active: 1,
           SendForApproval: 'yes',
-          emission_factor: (emission_factor !== 'undefined' && emission_factor !== 'null') ? emission_factor : null
+          emission_factor: factor_column_name,
+          FileName: req.file != undefined ? req.file.filename : null
         }
       }
 

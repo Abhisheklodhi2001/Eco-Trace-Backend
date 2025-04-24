@@ -308,8 +308,8 @@ module.exports = {
         return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id WHERE tbl_vehicle_fleet.facility_id = ?', [facility_id]);
     },
 
-    getVehicleFleetByFacilityCategoryId: async (facility_id) => {
-        return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type, B.CurrencyCode FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id LEFT JOIN `dbo.country` AS B ON B.ID = companyownedvehicles.country_id WHERE tbl_vehicle_fleet.facility_id = ?;', [facility_id])
+    getVehicleFleetByFacilityCategoryId: async (facility_id, category_id) => {
+        return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type, B.CurrencyCode FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id LEFT JOIN `dbo.country` AS B ON B.ID = companyownedvehicles.country_id WHERE tbl_vehicle_fleet.facility_id = ? AND tbl_vehicle_fleet.category = ?;', [facility_id, category_id])
     }
 
 }

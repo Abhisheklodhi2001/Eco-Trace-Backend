@@ -393,7 +393,7 @@ module.exports = {
             where += ` and  A.Month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.Month !="" GROUP BY A.Month`
         }
 
-        return db.query(`select A.TypeName, SUM(A.ReadingValue) as emission, SUM(A.Scope3GHGEmission) as scope3_emission, COALESCE('Stationary Combustion', '')  as  category ,A.Month AS month_number, tbl_fuel_litre_GJ.litre_to_GJ from stationarycombustionde A LEFT JOIN tbl_fuel_litre_GJ ON tbl_fuel_litre_GJ.id = A.TypeID ${where}`);
+        return db.query(`select A.TypeName, SUM(A.ReadingValue) as emission, SUM(A.Scope3GHGEmission) as scope3_emission, COALESCE('Stationary Combustion', '')  as  category ,A.Month AS month_number, tbl_fuel_litre_GJ.litre_to_GJ, tbl_fuel_litre_GJ.GJ_To_KWH from stationarycombustionde A LEFT JOIN tbl_fuel_litre_GJ ON tbl_fuel_litre_GJ.id = A.TypeID ${where}`);
     },
 
     fuelStationaryCombusiton: async (facilities, year, finalyeardata) => {
@@ -428,7 +428,7 @@ module.exports = {
         return db.query("select  SUM(A.readingValue) as emission,A.months AS month_number,COALESCE('Heat and Steam', '')  as  category  from `dbo.heatandsteamde` A " + where);
     },
 
-    electricityAndRenewableElectricity: async (facilities, year, finalyeardata) => {
+    electricity: async (facilities, year, finalyeardata) => {
         let where = "";
         where = ` where  A.Year = '${year}' and Status = 'S'`;
         if (facilities != '0') {
@@ -439,7 +439,21 @@ module.exports = {
         } else {
             where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
         }
-        return db.query("select SUM(A.readingValue) as emission,A.months AS month_number,COALESCE('Electricity', '')  as  category   from `dbo.renewableelectricityde` A " + where);
+        return db.query("select SUM(A.readingValue) as emission, A.months AS month_number,COALESCE('Electricity', '')  as  category   from `dbo.renewableelectricityde` A " + where);
+    },
+
+    renewableElectricity: async (facilities, year, finalyeardata) => {
+        let where = "";
+        where = ` where  A.Year = '${year}' and Status = 'S'`;
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities}) AND typeID = 1`
+        }
+        if (finalyeardata == '2') {
+            where += ` and  A.months IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.months !="" GROUP BY A.months`
+        } else {
+            where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
+        }
+        return db.query("select SUM(A.readingValue) as emission, A.months AS month_number,COALESCE('Electricity', '')  as  category   from `dbo.renewableelectricityde` A " + where);
     },
 
     kpiInventoryPassengerVehicleDiesel: async (facilities, year, finalyeardata) => {
@@ -453,7 +467,7 @@ module.exports = {
         } else {
             where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
         }
-        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.deliveryvehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
+        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.passengervehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
     },
 
     kpiInventoryPassengerVehiclePetrol: async (facilities, year, finalyeardata) => {
@@ -467,7 +481,7 @@ module.exports = {
         } else {
             where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
         }
-        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.deliveryvehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
+        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.passengervehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
     },
 
     kpiInventoryPassengerVehicle: async (facilities, year, finalyeardata) => {
@@ -481,21 +495,53 @@ module.exports = {
         } else {
             where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
         }
-        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.deliveryvehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
+        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.passengervehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
     },
 
     transportVehicleEmission: async (facilities, year, finalyeardata) => {
-        let where = "";
-        where = ` where  A.Year = '${year}' AND A.Status = 'S' AND A.SubCategorySeedID = 10`;
+        let where = `
+            WHERE A.Year = '${year}' 
+            AND A.Status = 'S'
+            AND (
+                (A.SubCategorySeedID = 11)
+                OR 
+                (A.SubCategorySeedID = 10)
+            )
+        `;
+
         if (facilities != '0') {
-            where += `  and  A.facilities IN (${facilities})`
+            where += ` AND A.facilities IN (${facilities})`;
         }
-        if (finalyeardata == '2') {
-            where += ` and  A.months IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.months !="" GROUP BY A.months`
-        } else {
-            where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
-        }
-        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.deliveryvehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
+
+        const monthsCondition = finalyeardata === '2'
+            ? `AND A.months IN ("Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar")`
+            : `AND A.months IN ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec")`;
+
+        where += `
+            ${monthsCondition}
+            AND A.months != ''
+            GROUP BY A.months
+        `;
+
+        const sql = `
+            SELECT
+                SUM(A.GHGEmission) AS emission,
+                A.months AS month_number,
+                'Company Owned Vehicles' AS category,
+                CASE
+                    WHEN A.SubCategorySeedID = 11 THEN delivery.VehicleType
+                    WHEN A.SubCategorySeedID = 10 THEN passenger.VehicleType
+                    ELSE NULL
+                END AS VehicleType
+            FROM \`dbo.vehiclede\` A
+            LEFT JOIN \`dbo.deliveryvehicletypes\` delivery 
+                ON delivery.ID = A.vehicleTypeID AND A.SubCategorySeedID = 11
+            LEFT JOIN \`dbo.passengervehicletypes\` passenger 
+                ON passenger.ID = A.vehicleTypeID AND A.SubCategorySeedID = 10
+            ${where}
+        `;
+
+        return db.query(sql);
     },
 
     freightTransportEmission: async (facilities, year, finalyeardata) => {
@@ -509,35 +555,97 @@ module.exports = {
         } else {
             where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
         }
-        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.deliveryvehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
+        return db.query("select  SUM(A.Value) as emission,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.deliveryvehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
     },
+
+    // employeeCommutingEmission: async (facilities, year, finalyeardata) => {
+    //     let where = "";
+    //     where = ` where  A.year = '${year}' and status = 'S'`;
+    //     if (facilities != '0') {
+    //         where += `  and  A.facilities IN (${facilities})`
+    //     }
+    //     if (finalyeardata == '2') {
+    //         where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
+    //     } else {
+    //         where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
+    //     }
+    //     return db.query("select  SUM(A.emission) as emission,A.month AS month_number,COALESCE('Employee Commuting', '')  as  category from employee_commuting_category A " + where);
+    // },
 
     employeeCommutingEmission: async (facilities, year, finalyeardata) => {
-        let where = "";
-        where = ` where  A.year = '${year}' and status = 'S'`;
+        let where = ` WHERE A.year = '${year}' AND status = 'S'`;
         if (facilities != '0') {
-            where += `  and  A.facilities IN (${facilities})`
+            where += ` AND A.facilities IN (${facilities})`;
         }
-        if (finalyeardata == '2') {
-            where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
-        } else {
-            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
-        }
-        return db.query("select  SUM(A.emission) as emission,A.month AS month_number,COALESCE('Employee Commuting', '')  as  category from employee_commuting_category A " + where);
+
+        // const checkMonthResult = await db.query(`SELECT COUNT(*) as count FROM employee_commuting_category A ${where} AND (A.month IS NULL OR A.month = '')`);
+
+        // if (checkMonthResult[0].count > 0) {
+        const totalEmissionRes = await db.query(`SELECT SUM(A.emission) as total_emission FROM employee_commuting_category A ${where}`);
+        const totalEmission = totalEmissionRes[0].total_emission || 0;
+        const monthlyEmission = (totalEmission / 12).toFixed(2);
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const result = months.map(month => ({
+            emission: monthlyEmission,
+            month_number: month,
+            category: "Employee Commuting"
+        }));
+        return result;
+        // } else {
+        //     if (finalyeardata == '2') {
+        //         where += ` AND A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") AND A.month != "" GROUP BY A.month`;
+        //     } else {
+        //         where += ` AND A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") AND A.month != "" GROUP BY A.month`;
+        //     }
+
+        //     return db.query(`SELECT SUM(A.emission) as emission, A.month AS month_number, COALESCE('Employee Commuting', '') as category FROM employee_commuting_category A ${where}`);
+        // }
     },
 
+    // employeeCommutingWorkingDays: async (facilities, year, finalyeardata) => {
+    //     let where = "";
+    //     where = ` where  A.year = '${year}' and status = 'S'`;
+    //     if (facilities != '0') {
+    //         where += `  and  A.facilities IN (${facilities})`
+    //     }
+    //     if (finalyeardata == '2') {
+    //         where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
+    //     } else {
+    //         where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
+    //     }
+    //     return db.query("select  SUM(A.workingdays) AS working_days, A.month AS month_number, COALESCE('Employee Commuting', '')  as  category from employee_commuting_category A " + where);
+    // },
+
     employeeCommutingWorkingDays: async (facilities, year, finalyeardata) => {
-        let where = "";
-        where = ` where  A.year = '${year}' and status = 'S'`;
+        let where = ` WHERE A.year = '${year}' AND status = 'S'`;
         if (facilities != '0') {
-            where += `  and  A.facilities IN (${facilities})`
+            where += ` AND A.facilities IN (${facilities})`;
         }
-        if (finalyeardata == '2') {
-            where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
-        } else {
-            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
-        }
-        return db.query("select  SUM(A.workingdays) AS working_days, A.month AS month_number, COALESCE('Employee Commuting', '')  as  category from employee_commuting_category A " + where);
+
+        // const checkMonthResult = await db.query(`SELECT COUNT(*) as count FROM employee_commuting_category A ${where} AND (A.month IS NULL OR A.month = '')`);
+
+        // if (checkMonthResult[0].count > 0) {
+        const totalEmissionRes = await db.query(`SELECT SUM(A.workingdays) AS working_days FROM employee_commuting_category A ${where}`);
+        const totalEmission = totalEmissionRes[0].working_days || 0;
+        const monthlyEmission = (totalEmission / 12).toFixed(2);
+
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const result = months.map(month => ({
+            working_days: monthlyEmission,
+            month_number: month,
+            category: "Employee Commuting"
+        }));
+        return result;
+        // } else {
+        //     if (finalyeardata == '2') {
+        //         where += ` AND A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") AND A.month != "" GROUP BY A.month`;
+        //     } else {
+        //         where += ` AND A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") AND A.month != "" GROUP BY A.month`;
+        //     }
+
+        //     return db.query(`SELECT SUM(A.workingdays) AS working_days, A.month AS month_number, COALESCE('Employee Commuting', '') as category FROM employee_commuting_category A ${where}`);
+        // }
     },
 
     waste_generated_emissionsDetailsEmssion: async (facilities, year, finalyeardata) => {
@@ -555,9 +663,7 @@ module.exports = {
 
         where += ` AND A.month IS NOT NULL AND A.month != ''`;
 
-        const groupBy = ` GROUP BY A.month`;
-
-        const query = `SELECT A.*, A.month AS month_number FROM waste_generated_emissions A ${where} ${groupBy}`;
+        const query = `SELECT A.*, A.month AS month_number FROM waste_generated_emissions A ${where}`;
 
         return db.query(query);
     },
@@ -581,7 +687,7 @@ module.exports = {
 
         const groupBy = ` GROUP BY A.method, A.month`;
 
-        const query = `SELECT SUM(A.emission) AS emission, A.year, A.facility_id, A.method, A.month AS month_number FROM waste_generated_emissions A ${where} ${groupBy}`;
+        const query = `SELECT SUM(A.emission) AS emission, SUM(A.total_waste) AS total_waste, A.year, A.facility_id, A.method, A.month AS month_number FROM waste_generated_emissions A ${where} ${groupBy}`;
 
         return db.query(query);
     },
@@ -616,39 +722,102 @@ module.exports = {
 
     no_of_employee: async (facilities, year) => {
         let where = "";
-        where = ` where  A.year = '${year}' and status = 'S'`;
         if (facilities != '0') {
-            where += `  and  A.facilities IN (${facilities})`
+            where += ` WHERE A.ID IN (${facilities})`
         }
-        return db.query("select  SUM(A.noofemployees) AS no_of_employees, A.month AS month_number, COALESCE('Employee Commuting', '')  as  category from employee_commuting_category A " + where);
+        return db.query("select  SUM(A.no_of_employee) AS no_of_employees, COALESCE('Employee Commuting', '')  as  category from `dbo.facilities` A " + where);
     },
 
     no_of_diesel_vehicles: async (facilities, year, finalyeardata) => {
-        let where = "";
-        where = ` where  A.Year = '${year}' AND A.Status = 'S' AND A.SubCategorySeedID = 10 AND B.VehicleType LIKE "%Diesel%"`;
+        let where = `
+            WHERE A.Year = '${year}' 
+            AND A.Status = 'S'
+            AND (
+                (A.SubCategorySeedID = 11 AND delivery.VehicleType LIKE "%Diesel%")
+                OR 
+                (A.SubCategorySeedID = 10 AND passenger.VehicleType LIKE "%Diesel%")
+            )
+        `;
+
         if (facilities != '0') {
-            where += `  and  A.facilities IN (${facilities})`
+            where += ` AND A.facilities IN (${facilities})`;
         }
-        if (finalyeardata == '2') {
-            where += ` and  A.months IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.months !="" GROUP BY A.months`
-        } else {
-            where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
-        }
-        return db.query("select  SUM(A.NoOfVehicles) AS no_of_vehicle,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.deliveryvehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
+
+        const monthsCondition = finalyeardata === '2'
+            ? `AND A.months IN ("Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar")`
+            : `AND A.months IN ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec")`;
+
+        where += `
+            ${monthsCondition}
+            AND A.months != ''
+            GROUP BY A.months
+        `;
+
+        const sql = `
+            SELECT
+                SUM(A.NoOfVehicles) AS no_of_vehicle,
+                A.months AS month_number,
+                'Company Owned Vehicles' AS category,
+                CASE
+                    WHEN A.SubCategorySeedID = 11 THEN delivery.VehicleType
+                    WHEN A.SubCategorySeedID = 10 THEN passenger.VehicleType
+                    ELSE NULL
+                END AS VehicleType
+            FROM \`dbo.vehiclede\` A
+            LEFT JOIN \`dbo.deliveryvehicletypes\` delivery 
+                ON delivery.ID = A.vehicleTypeID AND A.SubCategorySeedID = 11
+            LEFT JOIN \`dbo.passengervehicletypes\` passenger 
+                ON passenger.ID = A.vehicleTypeID AND A.SubCategorySeedID = 10
+            ${where}
+        `;
+
+        return db.query(sql);
     },
 
     no_of_petrol_vehicles: async (facilities, year, finalyeardata) => {
-        let where = "";
-        where = ` where  A.Year = '${year}' AND A.Status = 'S' AND A.SubCategorySeedID = 10 AND B.VehicleType LIKE "%Petrol%"`;
+        let where = `
+            WHERE A.Year = '${year}' 
+            AND A.Status = 'S'
+            AND (
+                (A.SubCategorySeedID = 11 AND delivery.VehicleType LIKE "%Petrol%")
+                OR 
+                (A.SubCategorySeedID = 10 AND passenger.VehicleType LIKE "%Petrol%")
+            )
+        `;
+
         if (facilities != '0') {
-            where += `  and  A.facilities IN (${facilities})`
+            where += ` AND A.facilities IN (${facilities})`;
         }
-        if (finalyeardata == '2') {
-            where += ` and  A.months IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.months !="" GROUP BY A.months`
-        } else {
-            where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
-        }
-        return db.query("select  SUM(A.NoOfVehicles) AS no_of_vehicle,A.months AS month_number,COALESCE('Company Owned Vehicles', '')  as  category, B.VehicleType from `dbo.vehiclede` A JOIN `dbo.deliveryvehicletypes` AS B ON B.ID = A.vehicleTypeID" + where);
+
+        const monthsCondition = finalyeardata === '2'
+            ? `AND A.months IN ("Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar")`
+            : `AND A.months IN ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "July", "Aug", "Sep", "Oct", "Nov", "Dec")`;
+
+        where += `
+            ${monthsCondition}
+            AND A.months != ''
+            GROUP BY A.months
+        `;
+
+        const sql = `
+            SELECT
+                SUM(A.NoOfVehicles) AS no_of_vehicle,
+                A.months AS month_number,
+                'Company Owned Vehicles' AS category,
+                CASE
+                    WHEN A.SubCategorySeedID = 11 THEN delivery.VehicleType
+                    WHEN A.SubCategorySeedID = 10 THEN passenger.VehicleType
+                    ELSE NULL
+                END AS VehicleType
+            FROM \`dbo.vehiclede\` A
+            LEFT JOIN \`dbo.deliveryvehicletypes\` delivery 
+                ON delivery.ID = A.vehicleTypeID AND A.SubCategorySeedID = 11
+            LEFT JOIN \`dbo.passengervehicletypes\` passenger 
+                ON passenger.ID = A.vehicleTypeID AND A.SubCategorySeedID = 10
+            ${where}
+        `;
+
+        return db.query(sql);
     },
 
     total_vehicles: async (facilities, year, finalyeardata) => {
@@ -986,8 +1155,8 @@ module.exports = {
 
             const series = facilityIds.map(fid => facilityDataMap[fid] ?? null);
 
-            if (!kpiName && !kpiUnit) {                
-                const [kpiInfo] = await db.query('SELECT kpi_name, unit FROM kpi_Items_list WHERE id = ?', [kpiId]);                
+            if (!kpiName && !kpiUnit) {
+                const [kpiInfo] = await db.query('SELECT kpi_name, unit FROM kpi_Items_list WHERE id = ?', [kpiId]);
                 kpiName = kpiInfo?.kpi_name || null;
                 kpiUnit = kpiInfo?.unit || null;
             }

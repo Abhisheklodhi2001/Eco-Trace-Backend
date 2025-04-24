@@ -489,15 +489,18 @@ exports.kpiInventoryFuelConsumption = async (req, res) => {
             let month = finalyear;
             let monthlyData = {};
             let monthlyData1 = {};
+            let monthlyData2 = {};
             month.forEach((month) => {
                 monthlyData[month] = null;
                 monthlyData1[month] = null;
+                monthlyData2[month] = null;
             });
 
             const stationaryCombustionde = await kpiModel.stationaryCombustionde(facilities, year, type_id, finalyeardata);
             if (stationaryCombustionde) {
                 let overallAnnualSum = 0;
                 let overallAnnualSum1 = 0;
+                let overallAnnualSum2 = 0;
                 await Promise.all(
                     stationaryCombustionde.map(async (item) => {
                         if (
@@ -506,17 +509,22 @@ exports.kpiInventoryFuelConsumption = async (req, res) => {
                         ) {
                             const emission = Number(item.emission);
                             const litreToGJ = Number(item.litre_to_GJ);
+                            const gjToKWH = Number(item.GJ_To_KWH);
                             const converted = Number((emission * litreToGJ).toFixed(4)) || 0;
+                            const converted2 = Number((emission * litreToGJ * gjToKWH).toFixed(4)) || 0;
 
                             monthlyData[item.month_number] += Number(emission.toFixed(4)) || 0;
                             monthlyData1[item.month_number] += converted;
+                            monthlyData2[item.month_number] += converted2;
                             overallAnnualSum += Number(emission.toFixed(4)) || 0;
                             overallAnnualSum1 += converted;
+                            overallAnnualSum2 += converted2;
                         }
                     })
                 );
                 monthlyData = { annual_total: overallAnnualSum, ...monthlyData };
                 monthlyData1 = { annual_total: overallAnnualSum1, ...monthlyData1 };
+                monthlyData2 = { annual_total: overallAnnualSum2, ...monthlyData2 };
             }
 
             return res.json({
@@ -524,6 +532,7 @@ exports.kpiInventoryFuelConsumption = async (req, res) => {
                 message: "Succesfully fetched kpi inventory fuel consumption",
                 data: Object.values(monthlyData),
                 statuinary_fuel: Object.values(monthlyData1),
+                statuinary_fuel2: Object.values(monthlyData2),
                 month: month,
                 status: 200,
             });
@@ -658,22 +667,45 @@ exports.kpiInventoryEnergyUse = async (req, res) => {
                 monthlyData = { annual_total: overallAnnualSum, ...monthlyData };
             }
 
-            const electricityAndRenewableElectricity = await kpiModel.electricityAndRenewableElectricity(facilities, year, finalyeardata);
-            if (electricityAndRenewableElectricity) {
+            const electricity = await kpiModel.electricity(facilities, year, finalyeardata);
+            if (electricity) {
                 let overallAnnualSum = null;
-                let overallAnnualSum1 = null;
+
                 await Promise.all(
-                    electricityAndRenewableElectricity.map(async (item) => {
-                        if ((item.month_number && monthlyData1.hasOwnProperty(item.month_number)) || (item.month_number && monthlyData2.hasOwnProperty(item.month_number))
-                        ) {
-                            monthlyData1[item.month_number] += Number(item.emission) || null;
-                            overallAnnualSum += Number(item.emission) || null;
-                            monthlyData2[item.month_number] += Number(item.emission) || null;
-                            overallAnnualSum1 += Number(item.emission) || null;
+                    electricity.map(async (item) => {
+                        const month = item.month_number;
+                        const emission = item.emission !== null ? Number(item.emission) : null;
+
+                        if (month && monthlyData1.hasOwnProperty(month)) {
+                            if (emission !== null && !isNaN(emission)) {
+                                monthlyData1[month] = emission;
+                                overallAnnualSum = overallAnnualSum === null ? emission : overallAnnualSum + emission;
+                            }
                         }
                     })
                 );
+
                 monthlyData1 = { annual_total: overallAnnualSum, ...monthlyData1 };
+            }
+
+            const renewableElectricity = await kpiModel.renewableElectricity(facilities, year, finalyeardata);
+            if (renewableElectricity) {
+                let overallAnnualSum1 = null;
+
+                await Promise.all(
+                    renewableElectricity.map(async (item) => {
+                        const month = item.month_number;
+                        const emission = item.emission !== null ? Number(item.emission) : null;
+
+                        if (month && monthlyData2.hasOwnProperty(month)) {
+                            if (emission !== null && !isNaN(emission)) {
+                                monthlyData2[month] = emission;
+                                overallAnnualSum1 = overallAnnualSum1 === null ? emission : overallAnnualSum1 + emission;
+                            }
+                        }
+                    })
+                );
+
                 monthlyData2 = { annual_total: overallAnnualSum1, ...monthlyData2 };
             }
 
@@ -957,7 +989,7 @@ exports.kpiInventoryTransportVehicle = async (req, res) => {
                     })
                 );
                 let sortedData = Object.entries(monthlyData1);
-                sortedData.unshift(["annual_total", overallAnnualSum]);
+                sortedData.unshift(["annual_total", Number(overallAnnualSum.toFixed(4))]);
                 monthlyData1 = Object.fromEntries(sortedData);
             }
 
@@ -968,8 +1000,8 @@ exports.kpiInventoryTransportVehicle = async (req, res) => {
                     freightTransportEmission.map(async (item) => {
                         if (item.month_number && monthlyData2.hasOwnProperty(item.month_number)
                         ) {
-                            monthlyData2[item.month_number] += Number((item.emission / 1000).toFixed(4)) || null;
-                            overallAnnualSum += Number((item.emission / 1000).toFixed(4)) || null;
+                            monthlyData2[item.month_number] += Number((item.emission).toFixed(4)) || null;
+                            overallAnnualSum += Number((item.emission).toFixed(4)) || null;
                         }
                     })
                 );
@@ -1267,8 +1299,8 @@ exports.kpiInventoryEmployeeCommute = async (req, res) => {
                     employeeCommutingWorkingDays.map(async (item) => {
                         if (item.month_number && monthlyData2.hasOwnProperty(item.month_number)
                         ) {
-                            monthlyData2[item.month_number] += item.working_days || null;
-                            overallAnnualSum += item.working_days || null
+                            monthlyData2[item.month_number] += Number(item.working_days) || null;
+                            overallAnnualSum += Number(item.working_days) || null
 
                         }
                     })
@@ -1372,64 +1404,70 @@ exports.kpiInventoryWasteGenerated = async (req, res) => {
                 finalyeardata = "2";
             }
             let month = finalyear;
-            let monthlyWasteGenerated = {};
             let monthlyWasteDiversion = {};
             let monthlyDiverteTreatment = {};
             let monthlyDivertedEmission = {};
             month.forEach((month) => {
-                monthlyWasteGenerated[month] = null;
                 monthlyWasteDiversion[month] = null;
                 monthlyDiverteTreatment[month] = null;
                 monthlyDivertedEmission[month] = null;
             });
 
-            const categorydata15 = await kpiModel.waste_generated_emissionsDetailsEmssion(facilities, year, finalyeardata);
-
-            let sum_quantity = 0, sum_quantity2 = 0, sum_quantity3 = 0, overallAnnualSum = null, overallAnnualSum1 = null;
-            if (categorydata15) {
+            const categorydata1 = await kpiModel.waste_generated_emissionsDetailsEmssion(facilities, year, finalyeardata);
+            const categorydata2 = await kpiModel.waste_generated_emissionsDetailsEmssionByMethodemission(facilities, year, "reuse", finalyeardata);
+            const categorydata3 = await kpiModel.waste_generated_emissionsDetailsEmssionByMethodemission(facilities, year, "composting", finalyeardata);
+            const categorydata4 = await kpiModel.waste_generated_emissionsDetailsEmssionByMethodemission(facilities, year, "recycling", finalyeardata);
+            let overallAnnualSum = null, overallAnnualSum1 = null, overallAnnualSum2 = null;
+            if (categorydata1) {
                 await Promise.all(
-                    categorydata15.map(async (item) => {
-                        if (item.month_number && monthlyWasteDiversion.hasOwnProperty(item.month_number)
-                        ) {
+                    categorydata1.map(async (item) => {
+                        if (item.month_number && monthlyWasteDiversion.hasOwnProperty(item.month_number)) {
                             monthlyWasteDiversion[item.month_number] += parseFloat(item.total_waste) || null;
                             overallAnnualSum += parseFloat(item.total_waste) || null;
                         }
-                        if (item.month_number && monthlyDiverteTreatment.hasOwnProperty(item.month_number)
-                        ) {
+
+                        if (item.month_number && monthlyDiverteTreatment.hasOwnProperty(item.month_number)) {
                             monthlyDiverteTreatment[item.month_number] += Number((item.emission / 1000).toFixed(4)) || null;
                             overallAnnualSum1 += Number((item.emission / 1000).toFixed(4)) || null;
-                        }
-
-                        if (item.method == "reuse") {
-                            let total_waste = parseFloat(item.total_waste);
-                            sum_quantity += total_waste;
-                        }
-
-                        if (item.method == "composting") {
-                            let total_waste = parseFloat(item.total_waste);
-                            sum_quantity2 += total_waste;
-                        }
-
-                        if (item.method == "recycling") {
-                            let total_waste = parseFloat(item.total_waste);
-                            sum_quantity3 += total_waste;
                         }
                     })
                 );
                 monthlyWasteDiversion = { annual_total: overallAnnualSum, ...monthlyWasteDiversion };
                 monthlyDiverteTreatment = { annual_total: overallAnnualSum1, ...monthlyDiverteTreatment };
             }
-
-            let overallAnnualSum2 = null;
-            month.forEach((monthName) => {
-                let totalWasteForMonth = monthlyWasteDiversion[monthName] || 0;
-                let divertedForMonth = totalWasteForMonth > 0
-                    ? ((sum_quantity + sum_quantity2 + sum_quantity3) / totalWasteForMonth) * 100
-                    : 0;
-                monthlyDivertedEmission[monthName] = Number(divertedForMonth.toFixed(4)) || null;
-                overallAnnualSum2 += Number(divertedForMonth.toFixed(4)) || null;
-            });
-            monthlyDivertedEmission = { annual_total: overallAnnualSum2, ...monthlyDivertedEmission };
+            if (categorydata2) {
+                await Promise.all(
+                    categorydata2.map(async (item) => {
+                        if (item.month_number && monthlyDivertedEmission.hasOwnProperty(item.month_number)) {
+                            monthlyDivertedEmission[item.month_number] += parseFloat(item.total_waste) || null;
+                            overallAnnualSum2 += parseFloat(item.total_waste) || null;
+                        }
+                    })
+                );
+                monthlyDivertedEmission = { annual_total: overallAnnualSum2, ...monthlyDivertedEmission };
+            }
+            if (categorydata3) {
+                await Promise.all(
+                    categorydata3.map(async (item) => {
+                        if (item.month_number && monthlyDivertedEmission.hasOwnProperty(item.month_number)) {
+                            monthlyDivertedEmission[item.month_number] += parseFloat(item.total_waste) || null;
+                            overallAnnualSum2 += parseFloat(item.total_waste) || null;
+                        }
+                    })
+                );
+                monthlyDivertedEmission = { annual_total: overallAnnualSum2, ...monthlyDivertedEmission };
+            }
+            if (categorydata4) {
+                await Promise.all(
+                    categorydata4.map(async (item) => {
+                        if (item.month_number && monthlyDivertedEmission.hasOwnProperty(item.month_number)) {
+                            monthlyDivertedEmission[item.month_number] += parseFloat(item.total_waste) || null;
+                            overallAnnualSum2 += parseFloat(item.total_waste) || null;
+                        }
+                    })
+                );
+                monthlyDivertedEmission = { annual_total: overallAnnualSum2, ...monthlyDivertedEmission };
+            }
 
             return res.json({
                 success: true,
@@ -1563,7 +1601,7 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
 
             Object.keys(waterUsageByMonth).forEach((month) => {
                 if (waterDischargeByMonth[month]) {
-                    waterUsageByMonth[month] += waterDischargeByMonth[month];
+                    waterUsageByMonth[month] -= waterDischargeByMonth[month];
                 }
             });
 
@@ -1729,7 +1767,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
             emissionPurchasedGoodsByMonth = { annual_total: overallAnnualSum6, ...emissionPurchasedGoodsByMonth };
 
             noOfEmployee?.forEach((item) => {
-                const employee = item.no_of_employees ? item.no_of_employees : null;
+                const employee = item.no_of_employees ? Number(item.no_of_employees) : null;
                 month.forEach((m) => {
                     if (employee == null) {
                         noOfEmployeeByMonth[m] = employee

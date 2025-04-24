@@ -8,7 +8,7 @@ router.post("/Addelectricity", auth, upload.single('file'), scope2Controller.Add
 
 router.post("/getAllelectricity", auth, scope2Controller.getAllelectricity);
 
-router.post("/Addrenewableelectricity", auth, scope2Controller.Addrenewableelectricity);
+router.post("/Addrenewableelectricity", auth, upload.single('file'), scope2Controller.Addrenewableelectricity);
 
 router.post("/getrenewableelectricity", auth, scope2Controller.getrenewableelectricity);
 

@@ -3,7 +3,7 @@ const Joi = require("joi");
 
 const { getSelectedColumn } = require("../models/common");
 
-const { getCombustionEmission, Allrefrigerants, Allfireextinguisher, getAllcompanyownedvehicles, getAllelectricity, getAllheatandsteam, purchaseGoodsDetails, goodsServicesDetails, capitalGoodsDetails, flight_travelDetails, hotel_stayDetails, other_modes_of_transportDetails, processing_of_sold_products_categoryDetails, getAllCoal, sold_product_categoryDetails, endoflife_waste_typeDetails, water_supply_treatment_categoryDetails, employee_commuting_categoryDetails, homeoffice_categoryDetails, waste_generated_emissionsDetails, upstreamLease_emissionDetails, downstreamLease_emissionDetails, franchise_categories_emissionDetails, investment_emissionsDetails, upstream_vehicle_storage_emissions, downstream_vehicle_storage_emissions, waste_generated_emissionsDetailsEmssion, waste_generated_emissionsDetailsEmssionByMethodemission, getTop3CombustionEmission, getCombustionEmissionData, getRefrigerantEmissionData, getExtinguisherEmissionData, getDieselPassengerData, getPetrolPassengerData, getDieselDeliveryData, getOtherDeliveryData, fetchRenewableElectricityde, purchaseGoodAndServicesModel, getWasteData, flightTravel, modeOfTransport, hotelStay, employeeCommute, getCombustionEmissionDetail, getCombustionEmissionDetailFixed, getscope1CombustionEmissionDetail, getCombustionEmissionRangeWise, AllrefrigerantsRangeWise, AllfireextinguisherRangeWise, getAllcompanyownedvehiclesRangeWise, getAllelectricityRangeWise, getAllheatandsteamRangeWise, purchaseGoodsDetailsRangeWise, flight_travelDetailsRangeWise, hotel_stayDetailsRangeWise, other_modes_of_transportDetailsRangeWise, processing_of_sold_products_categoryDetailsRangeWise, sold_product_categoryDetailsRangeWise, endoflife_waste_typeDetailsRangeWise, water_supply_treatment_categoryDetailsRangeWise, employee_commuting_categoryDetailsRangeWise, homeoffice_categoryDetailsRangeWise, waste_generated_emissionsDetailsRangeWise, upstreamLease_emissionDetailsRangeWise, downstreamLease_emissionDetailsRangeWise, franchise_categories_emissionDetailsRangeWise, investment_emissionsDetailsRangeWise, upstream_vehicle_storage_emissionsRangeWise, downstream_vehicle_storage_emissionsRangeWise, employeePerEmission, findStationaryCombustionde, findRefrigerant, findFireextinguisherde, findVehiclede, findRenewableelectricityde, findSubCategoryTypes } = require("../models/ghgEmissionReport");
+const { getFacilitiesAreaByFacilityId, getCombustionEmission, Allrefrigerants, Allfireextinguisher, getAllcompanyownedvehicles, getAllelectricity, getAllheatandsteam, purchaseGoodsDetails, goodsServicesDetails, capitalGoodsDetails, flight_travelDetails, hotel_stayDetails, other_modes_of_transportDetails, processing_of_sold_products_categoryDetails, getAllCoal, sold_product_categoryDetails, endoflife_waste_typeDetails, water_supply_treatment_categoryDetails, employee_commuting_categoryDetails, homeoffice_categoryDetails, waste_generated_emissionsDetails, upstreamLease_emissionDetails, downstreamLease_emissionDetails, franchise_categories_emissionDetails, investment_emissionsDetails, upstream_vehicle_storage_emissions, downstream_vehicle_storage_emissions, waste_generated_emissionsDetailsEmssion, waste_generated_emissionsDetailsEmssionByMethodemission, getTop3CombustionEmission, getCombustionEmissionData, getRefrigerantEmissionData, getExtinguisherEmissionData, getDieselPassengerData, getPetrolPassengerData, getDieselDeliveryData, getOtherDeliveryData, fetchRenewableElectricityde, purchaseGoodAndServicesModel, getWasteData, flightTravel, modeOfTransport, hotelStay, employeeCommute, getCombustionEmissionDetail, getCombustionEmissionDetailFixed, getscope1CombustionEmissionDetail, getCombustionEmissionRangeWise, AllrefrigerantsRangeWise, AllfireextinguisherRangeWise, getAllcompanyownedvehiclesRangeWise, getAllelectricityRangeWise, getAllheatandsteamRangeWise, purchaseGoodsDetailsRangeWise, flight_travelDetailsRangeWise, hotel_stayDetailsRangeWise, other_modes_of_transportDetailsRangeWise, processing_of_sold_products_categoryDetailsRangeWise, sold_product_categoryDetailsRangeWise, endoflife_waste_typeDetailsRangeWise, water_supply_treatment_categoryDetailsRangeWise, employee_commuting_categoryDetailsRangeWise, homeoffice_categoryDetailsRangeWise, waste_generated_emissionsDetailsRangeWise, upstreamLease_emissionDetailsRangeWise, downstreamLease_emissionDetailsRangeWise, franchise_categories_emissionDetailsRangeWise, investment_emissionsDetailsRangeWise, upstream_vehicle_storage_emissionsRangeWise, downstream_vehicle_storage_emissionsRangeWise, employeePerEmission, findStationaryCombustionde, findRefrigerant, findFireextinguisherde, findVehiclede, findRenewableelectricityde, findSubCategoryTypes, findSubCategoryTypesByCategoryId } = require("../models/ghgEmissionReport");
 
 exports.GhgScopewiseEmssion = async (req, res) => {
     try {
@@ -63,6 +63,7 @@ exports.GhgScopewiseEmssion = async (req, res) => {
             let sum_quantity3 = 0;
             if (facilities) {
                 let facilitiesdata = facilities !== "0" ? facilities : "0";
+                const facilities_area = await getFacilitiesAreaByFacilityId(facilitiesdata)
                 categorydata = await getCombustionEmission(facilitiesdata, year);
                 categorydata2 = await Allrefrigerants(facilitiesdata, year);
                 categorydata3 = await Allfireextinguisher(facilitiesdata, year);
@@ -382,6 +383,7 @@ exports.GhgScopewiseEmssion = async (req, res) => {
                     waste_emissions_unit: "Tonnes",
                     diverted_emssion: parseFloat(diverted_emssion ? diverted_emssion : 0).toFixed(2),
                     diverted_emssion_unit: "%",
+                    area: facilities_area[0].area,
                     status: 200,
                 });
             }
@@ -2154,6 +2156,48 @@ exports.GhgSubcategoryTypes = async (req, res) => {
             data: subCategoryTypesResponse,
             success: true
         });
+    } catch (error) {
+        return res.status(500).json({ error: true, message: "Interval server error " + error.message, success: false });
+    }
+};
+
+exports.GhgSubcategoryTypesByCategoryId = async (req, res) => {
+    try {
+        const { category_id } = req.query;
+        const schema = Joi.alternatives(
+            Joi.object({
+                category_id: [Joi.number().required()]
+            })
+        );
+        const result = schema.validate(req.query);
+        if (result.error) {
+            const message = result.error.details.map((i) => i.message).join(",");
+            return res.json({
+                message: result.error.details[0].message,
+                error: message,
+                missingParams: result.error.details[0].message,
+                status: 200,
+                success: true,
+            });
+        } else {
+            const subCategoryTypesResponse = await findSubCategoryTypesByCategoryId(category_id);
+
+            if (!subCategoryTypesResponse || subCategoryTypesResponse.length === 0) {
+                return res.status(404).json({
+                    error: false,
+                    message: "No subcategory types found",
+                    data: [],
+                    success: true
+                });
+            }
+
+            return res.status(200).json({
+                error: false,
+                message: "Subcategory types fetched successfully",
+                data: subCategoryTypesResponse,
+                success: true
+            });
+        }
     } catch (error) {
         return res.status(500).json({ error: true, message: "Interval server error " + error.message, success: false });
     }
