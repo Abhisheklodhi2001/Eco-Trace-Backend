@@ -72,7 +72,7 @@ module.exports = {
     },
 
     flight_travelDetails: async (facilities, year) => {
-        return db.query("SELECT COALESCE('flight_travel', '') AS tablename, A.*, COALESCE('', '') AS subcatName, COALESCE('', '') AS subcategoryID, flight_types.avg_distance FROM flight_travel A LEFT JOIN flight_types ON flight_types.flight_type = A.flight_Type WHERE A.facilities = ? AND A.year = ? ORDER BY A.id DESC;", [facilities, year]);
+        return db.query("SELECT COALESCE('flight_travel', '') AS tablename, A.*, COALESCE('', '') AS subcatName, COALESCE('', '') AS subcategoryID, A.distance AS avg_distance FROM flight_travel A WHERE A.facilities = ? AND A.year = ? ORDER BY A.id DESC;", [facilities, year]);
     },
 
     hotel_stayDetails: async (facilities, year) => {

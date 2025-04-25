@@ -628,8 +628,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
            }
          }*/
         let hotelstayDetails = await hotel_stayDetails(facilities, year);
-        let othermodes_of_transportDetails =
-          await other_modes_of_transportDetails(facilities, year);
+        let othermodes_of_transportDetails = await other_modes_of_transportDetails(facilities, year);
         array = [
           ...categorydata2,
           ...hotelstayDetails,
@@ -1054,6 +1053,8 @@ exports.GetpendingDataEnteries = async (req, res) => {
           }
 
           if (categoryID == "13") {
+            item.distance = '';
+            item.avg_distance = Number(parseFloat(item.avg_distance).toFixed(4));
             if (item.type_of_hotel) {
               let where1 = ` where  country ='${item.country_of_stay}' `;
               const hotelstay = await getSelectedColumn(
@@ -1067,16 +1068,9 @@ exports.GetpendingDataEnteries = async (req, res) => {
             }
 
             if (item.tablename == "flight_travel") {
-              let efss = await calculateflight(
-                item.distance,
-                item.from,
-                item.to
-              );
               item.unit = "km";
-              //console.log(efss,"effffffffffffffffffffffffffffff");
-              emissionFactor = efss ? efss : "0.000";
+              emissionFactor = item.emission_factor;
             }
-
             if (item.tablename == "other_modes_of_transport") {
               // if(item.mode_of_trasport == 'Car' || item.mode_of_trasport == 'Ferry' ){
               //   mode= "Car"
@@ -5533,7 +5527,7 @@ exports.forgetPassword = async (req, res) => {
         to: email,
         subject: "Reset password",
         html: emailHtml
-      };      
+      };
 
       sendEmail(mailOptions)
         .then(info => {
