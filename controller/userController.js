@@ -8,6 +8,7 @@ const ExcelJS = require("exceljs");
 const nodemailer = require('nodemailer');
 const path = require('node:path');
 const fs = require("fs");
+const ejs = require('ejs');
 
 const {
   fetchUserByEmail,
@@ -124,12 +125,12 @@ function generateRandomString(length) {
 // Create a Nodemailer transporter
 const sendEmail = async (mailOptions) => {
   const transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
+    host: 'smtp.gmail.com',
     port: 587,
     secure: false,
     auth: {
-      user: '7d4083002@smtp-brevo.com',
-      pass: 'WsQ4wJ7U2OdGz1DM',
+      user: 'ekobons@gmail.com',
+      pass: 'okkbtvsicbhgcaaz',
     },
   });
 
@@ -594,7 +595,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
       }
 
       if (categoryID == "5") {
-        categorydata = await getAllelectricity(facilities, year);        
+        categorydata = await getAllelectricity(facilities, year);
         array = [...categorydata];
       }
 
@@ -719,7 +720,6 @@ exports.GetpendingDataEnteries = async (req, res) => {
         array = [...categorydata];
       }
 
-      console.log(array);
       await Promise.all(
         array.map(async (item) => {
           const category = await getSelectedColumn(
@@ -1152,32 +1152,36 @@ exports.GetpendingDataEnteries = async (req, res) => {
 
           if (categoryID == "6") {
             if (item.SubCategorySeedID == "10") {
-              let where = ` where  	ID = '${item.vehicleTypeID}' `;
+              let where = `where ID = '${item.vehicleTypeID}' `;
               const passengervehicletypes = await getSelectedColumn(
-                "`dbo.passengervehicletypes`",
+                "companyownedvehicles",
                 where,
                 "*"
               );
-              item.TypeName = passengervehicletypes[0]["VehicleType"]
-                ? passengervehicletypes[0]["VehicleType"]
+
+              item.TypeName = passengervehicletypes[0]["ItemType"]
+                ? passengervehicletypes[0]["ItemType"]
                 : "";
             }
 
             if (item.SubCategorySeedID == "11") {
               let where = ` where ID = '${item.vehicleTypeID}' `;
               const deliveryvehicletypes = await getSelectedColumn(
-                "`dbo.deliveryvehicletypes`",
+                "companyownedvehicles",
                 where,
                 "*"
               );
-              item.TypeName = deliveryvehicletypes[0]["VehicleType"]
-                ? deliveryvehicletypes[0]["VehicleType"]
+              item.TypeName = deliveryvehicletypes[0]["ItemType"]
+                ? deliveryvehicletypes[0]["ItemType"]
                 : "";
             }
+
             if (unit.toLowerCase() === "km") {
               emissionFactor = item.kgCO2e_km;
             } else if (unit.toLowerCase() === "litres") {
               emissionFactor = item.kgCO2e_litre;
+            } else if (unit.toLowerCase() !== "km" && unit.toLowerCase() !== "litres") {
+              emissionFactor = item.kgCO2e_ccy;
             }
           }
 
@@ -5514,21 +5518,26 @@ exports.forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
     const findUser = await fetchEmail(email);
-    ;
     if (findUser.length != 0) {
       const tokenGenerate = generateRandomString(10);
       await updateToken(tokenGenerate, findUser[0].Id);
       let token = tokenGenerate;
-      // Define the mail options, including attachment path
+
+      const emailTemplatePath = path.resolve(__dirname, './view/forgetPasswordEmail.ejs');
+      const reset_link = `${config.live_base_url}verify-token/${token}`
+      const emailHtml = await ejs.renderFile(emailTemplatePath, { reset_link });
+
       const mailOptions = {
-        from: 'abhishek.ctinfotech@gmail.com',
+        from: 'ekobons@gmail.com',
+        // replyTo: 'no-reply@gmail.com',
         to: email,
-        subject: "forgot Password",
-        text: "Please follow the instructions to reset your password.",
-        html: `<p>Please click the link below to change your password:</p><a href="${config.live_base_url}verify-token/${token}">Reset Password</a>`,
-      };
+        subject: "Reset password",
+        html: emailHtml
+      };      
+
       sendEmail(mailOptions)
         .then(info => {
+          console.log(info);
           return res.json({
             success: true,
             message: "Your account has been successfully created!",
@@ -5663,8 +5672,8 @@ exports.getExcelSheet = async (req, res) => {
     await workbook.xlsx.readFile("purchasedGoods.xlsx");
     const worksheet = workbook.getWorksheet(1);
 
-    const unitColumnIndex = 5;
-    const lookupColumnIndex = 9;
+    const unitColumnIndex = 6;
+    const lookupColumnIndex = 10;
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
@@ -5688,7 +5697,7 @@ exports.getExcelSheet = async (req, res) => {
         };
 
         lookupCell.value = {
-          formula: `IF(E${rowNumber}<>"", "Kg CO2e/" & E${rowNumber}, "")`,
+          formula: `IF(F${rowNumber}<>"", "Kg CO2e/" & F${rowNumber}, "")`,
         };
       }
     });
@@ -5844,7 +5853,7 @@ exports.addVehicleFeet = async (req, res) => {
           vehicle_model: val.vehicle_model,
           fuel_type: val.fuel_type,
           type_engine: val.type_engine == '' ? null : val.type_engine,
-          company_owned_vehicle_id: findCompanyOwnedVehicleResponse[0].VehicleTypeID,
+          company_owned_vehicle_id: findCompanyOwnedVehicleResponse[0].ID,
           charging_outside: val.charging_outside == '' ? null : val.charging_outside,
           quantity: val.quantity == '' ? null : val.quantity,
           acquisition_date: val.acquisition_date,
@@ -6135,7 +6144,7 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
 
     const modelValues = getFacilityResponse.filter(val => val.retire_vehicle == 0).map(val => val.vehicle_model).join(",");
 
-    const currencyResponse = await await findFacilityWithCountryCode(facility_id);(facility_id);
+    const currencyResponse = await await findFacilityWithCountryCode(facility_id); (facility_id);
 
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile("vehiclede.xlsx");

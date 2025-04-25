@@ -172,7 +172,6 @@ exports.kpiInventory = async (req, res) => {
                                 monthlyData[item.month_number] += parseFloat(item.emission) || null;
                                 let emissionFixed = parseFloat(item.emission) || null;
                                 sum += emissionFixed || 0;
-                                // Add emission value to the corresponding month
                             }
                         })
                     );
@@ -322,43 +321,37 @@ exports.kpiInventory = async (req, res) => {
                 if (array3) {
                     await Promise.all(
                         array3.map(async (item) => {
-                            let employeeamount = 0;
-                            let homecategory = 0;
-
-                            if (
-                                item.month_number &&
-                                monthlyData2.hasOwnProperty(item.month_number)
-                            ) {
-                                monthlyData2[item.month_number] += parseFloat(item.emission) || null;
-
-                                if (item.category == "Employee Commuting") {
-                                    employeeamount = parseFloat(item.emission / 12);
+                            let monthlyEmission = 0;
+                
+                            if (item.month_number && monthlyData2.hasOwnProperty(item.month_number)) {
+                                if (item.category === "Employee Commuting" || item.category === "Home Office") {
+                                    const dividedEmission = parseFloat(item.emission) / 12 || 0;
+                                    monthlyData2[item.month_number] += dividedEmission;
+                                    monthlyEmission = dividedEmission;
+                                } else {
+                                    const regularEmission = parseFloat(item.emission) || 0;
+                                    monthlyData2[item.month_number] += regularEmission;
+                                    monthlyEmission = regularEmission;
                                 }
-
-                                if (item.category == "Home Office") {
-                                    homecategory = parseFloat(item.emission / 12);
-                                }
-                                //
-
-                                sum2 += parseFloat(item.emission) + employeeamount + homecategory;
-                                // Add emission value to the corresponding month
+                
+                                sum2 += monthlyEmission;
                             }
                         })
                     );
-
+                
                     if (categorydata.length > 0) {
-                        for (item of categorydata) {
+                        for (let item of categorydata) {
                             if (item.month_number && monthlyData2.hasOwnProperty(item.month_number)) {
-                                monthlyData2[item.month_number] += parseFloat(item?.scope3_emission ? item?.scope3_emission : 0) || null;
-                                let emissionFixed = parseFloat(item?.scope3_emission ? item?.scope3_emission : 0) || null;
-                                sum2 += emissionFixed || 0;
-                                // Add emission value to the corresponding month
+                                const emissionFixed = parseFloat(item.scope3_emission || 0) || 0;
+                                monthlyData2[item.month_number] += emissionFixed;
+                                sum2 += emissionFixed;
                             }
                         }
                     }
+                
                     scope3month.push(Object.keys(monthlyData2));
                     scope3.push(Object.values(monthlyData2).map((num) => num !== null ? parseFloat(num / 1000).toFixed(3) : null));
-                }
+                }                              
 
                 let series = [
                     { name: "Scope 1", data: scope1[0] },

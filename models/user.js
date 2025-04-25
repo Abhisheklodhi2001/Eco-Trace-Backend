@@ -56,7 +56,7 @@ module.exports = {
     getAllcompanyownedvehicles: async (facilities, year) => {
         var join = "";
         // SELECT COALESCE('dbo.vehiclede', '') AS tablename, S.Id AS subcategoryID, S.Item AS subcatName, A.Unit AS unit, A.Status AS STATUS , E.kgCO2e_km, E.kgCO2e_litre, E.kgCO2e_kg, A.months AS month, A.GHGEmission AS emission, A.* FROM `dbo.vehiclede` A LEFT JOIN subcategoryseeddata S ON S.Id = A.SubCategorySeedID LEFT JOIN companyownedvehicles E ON E.VehicleTypeID = A.vehicleTypeID WHERE A.facilities = 1 AND A.year = 2025 AND E.SubCategorySeedID = A.SubCategorySeedID ORDER BY A.id DESC;
-        return db.query("SELECT DISTINCT COALESCE('dbo.vehiclede', '') as tablename, S.Id as subcategoryID, S.Item as subcatName, A.Unit as unit, A.Status as status, E.kgCO2e_km, E.kgCO2e_litre, E.kgCO2e_kg, A.months as month, A.GHGEmission as emission, A.* FROM `dbo.vehiclede` A LEFT JOIN subcategoryseeddata S ON S.Id = A.SubCategorySeedID LEFT JOIN companyownedvehicles E ON E.VehicleTypeID = A.vehicleTypeID AND E.SubCategorySeedID = A.SubCategorySeedID WHERE A.facilities = ? AND A.year = ? ORDER BY A.id DESC;", [facilities, year]);
+        return db.query("SELECT DISTINCT COALESCE('dbo.vehiclede', '') as tablename, S.Id as subcategoryID, S.Item as subcatName, A.Unit as unit, A.Status as status, E.kgCO2e_km, E.kgCO2e_litre, E.kgCO2e_kg, E.kgCO2e_ccy, A.months as month, A.GHGEmission as emission, A.* FROM `dbo.vehiclede` A LEFT JOIN subcategoryseeddata S ON S.Id = A.SubCategorySeedID LEFT JOIN companyownedvehicles E ON E.ID = A.vehicleTypeID AND E.SubCategorySeedID = A.SubCategorySeedID WHERE A.facilities = ? AND A.year = ? ORDER BY A.id DESC;", [facilities, year]);
     },
 
     getAllelectricity: async (facilities, year) => {
@@ -309,7 +309,7 @@ module.exports = {
     },
 
     getVehicleFleetByFacilityCategoryId: async (facility_id, category_id) => {
-        return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type, B.CurrencyCode FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id LEFT JOIN `dbo.country` AS B ON B.ID = companyownedvehicles.country_id WHERE tbl_vehicle_fleet.facility_id = ? AND tbl_vehicle_fleet.category = ?;', [facility_id, category_id])
+        return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id WHERE tbl_vehicle_fleet.facility_id = ? AND tbl_vehicle_fleet.category = ?;', [facility_id, category_id])
     }
 
 }

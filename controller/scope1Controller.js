@@ -19,9 +19,6 @@ const {
   getSelectedData, country_check
 } = require("../models/common");
 
-const baseurl = config.base_url;
-
-
 exports.electricitygridType = async (req, res) => {
   try {
 
@@ -214,7 +211,6 @@ exports.GetUnits = async (req, res) => {
   }
 };
 
-
 exports.getBlendType = async (req, res) => {
   try {
     // Fetch blend types
@@ -244,7 +240,6 @@ exports.getBlendType = async (req, res) => {
     });
   }
 };
-
 
 exports.Getfacilities = async (req, res) => {
   try {
@@ -515,7 +510,6 @@ exports.getmanageDataPointbyfacility = async (req, res) => {
     });
   }
 };
-
 
 exports.AddassignedDataPointbyfacility = async (req, res) => {
   try {
@@ -903,9 +897,6 @@ exports.AddassignedDataPointbyfacility = async (req, res) => {
     });
   }
 };
-
-
-
 
 // exports.AddassignedDataPointbyfacility = async (req, res) => {
 //   try {
@@ -1720,26 +1711,41 @@ exports.Getfireextinguisher = async (req, res) => {
 
 exports.Getpassengervehicletypes = async (req, res) => {
   try {
-    const user_id = req.user.user_id;
+    const { facilityId } = req.query;
+    const schema = Joi.object({
+      facilityId: Joi.string().required().not(null, '').messages({
+        "string.base": "facilityId must be a string",
+        "any.required": "facilityId is required",
+        "string.empty": "facilityId cannot be empty",
+      })
+    });
 
-    // ------------------------------
-    // Fetch Passenger Vehicle Types
-    // ------------------------------
-    const passengervehicletypes = await getpassengervehicletypes(user_id);
+    const result = schema.validate(req.query, { abortEarly: false });
 
-    if (Array.isArray(passengervehicletypes) && passengervehicletypes.length > 0) {
-      return res.status(200).json({
-        success: true,
-        message: "Successfully fetched passenger vehicle types",
-        categories: passengervehicletypes,
-        status: 200,
+    if (result.error) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: result.error.details.map((i) => i.message),
+        status: 400,
       });
     } else {
-      return res.status(404).json({
-        success: false,
-        message: "No passenger vehicle types found",
-        status: 404,
-      });
+      const countryReponse = await country_check(facilityId);
+      const passengervehicletypes = await getpassengervehicletypes(countryReponse[0].CountryId);
+      if (passengervehicletypes.length > 0) {
+        return res.status(200).json({
+          success: true,
+          message: "Successfully fetched passenger vehicle types",
+          categories: passengervehicletypes,
+          status: 200,
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          message: "No passenger vehicle types found",
+          status: 404,
+        });
+      }
     }
   } catch (err) {
     console.error("Error fetching passenger vehicle types:", err);
@@ -1754,24 +1760,41 @@ exports.Getpassengervehicletypes = async (req, res) => {
 
 exports.Getdeliveryvehicletypes = async (req, res) => {
   try {
-    // ------------------------------
-    // Fetch Delivery Vehicle Types
-    // ------------------------------
-    const deliveryvehicletypes = await getdeliveryvehicletypes();
+    const { facilityId } = req.query;
+    const schema = Joi.object({
+      facilityId: Joi.string().required().not(null, '').messages({
+        "string.base": "facilityId must be a string",
+        "any.required": "facilityId is required",
+        "string.empty": "facilityId cannot be empty",
+      })
+    });
 
-    if (Array.isArray(deliveryvehicletypes) && deliveryvehicletypes.length > 0) {
-      return res.status(200).json({
-        success: true,
-        message: "Successfully fetched delivery vehicle types",
-        categories: deliveryvehicletypes,
-        status: 200,
+    const result = schema.validate(req.query, { abortEarly: false });
+
+    if (result.error) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation error",
+        errors: result.error.details.map((i) => i.message),
+        status: 400,
       });
     } else {
-      return res.status(404).json({
-        success: false,
-        message: "No delivery vehicle types found",
-        status: 404,
-      });
+      const countryReponse = await country_check(facilityId);
+      const deliveryvehicletypes = await getdeliveryvehicletypes(countryReponse[0].CountryId);
+      if (deliveryvehicletypes.length > 0) {
+        return res.status(200).json({
+          success: true,
+          message: "Successfully fetched delivery vehicle types",
+          categories: deliveryvehicletypes,
+          status: 200,
+        });
+      } else {
+        return res.status(404).json({
+          success: false,
+          message: "No delivery vehicle types found",
+          status: 404,
+        });
+      }
     }
   } catch (err) {
     console.error("Error fetching delivery vehicle types:", err);
@@ -2040,7 +2063,7 @@ exports.addMultipleCompanyOwnedVehicles = async (req, res) => {
           SubCategorySeedID: val.sub_category ? val.sub_category : "",
           TotalnoOftripsPerVehicle: trip_per_vehicle ? trip_per_vehicle : "",
           Value: val.value ? val.value : 0,
-          vehicleTypeID: val.is_excel == 1 && refunit.length > 0 ? refunit[0].vehicle_type_id : val.vehicle_type || 0,
+          vehicleTypeID: val.is_excel == 1 && refunit.length > 0 ? refunit[0].ID : val.vehicle_type || 0,
           year: year ? year : "",
           months: months[0] ? months[0] : "",
           facilities: facilityId ? facilityId : "",

@@ -47,18 +47,17 @@ module.exports = {
     return db.query("select * from `dbo.fireextinguisher`  where SubCategorySeedID=?", [item, country_id]);
   },
 
-  getpassengervehicletypes: async () => {
-    return db.query("select * from `dbo.passengervehicletypes` ");
+  getpassengervehicletypes: async (country_id) => {
+    return await db.query('SELECT ID, Item, ItemType AS VehicleType FROM `companyownedvehicles` WHERE country_id = "' + country_id + '" AND SubCategorySeedID = 10;');
   },
 
   getdeliveryvehicletypesWithCountryId: async (country_id) => {
     return db.query('select * from `dbo.deliveryvehicletypes` where vehicletypes_id < 4  AND country_id = "' + country_id + '"');
   },
 
-  getdeliveryvehicletypes: async () => {
-    return db.query("select * from `dbo.deliveryvehicletypes` where vehicletypes_id < 4  ");
+  getdeliveryvehicletypes: async (country_id) => {
+    return await db.query('SELECT ID, Item, ItemType AS VehicleType FROM `companyownedvehicles` WHERE country_id = "' + country_id + '" AND SubCategorySeedID = 11;');
   },
-
 
   getelectricity: async (id, CountryId) => {
     return db.query('select *,SubCategorySeedID as subCatTypeID from `dbo.electricity` where SubCategorySeedID = "' + id + '" AND country_id = "' + CountryId + '"');
@@ -84,7 +83,7 @@ module.exports = {
   },
 
   getvehicletypes: async (VehicleTypeID, SubCategorySeedID, country_id) => {
-    return db.query("select * from `companyownedvehicles` where VehicleTypeID =? and SubCategorySeedID = ? and country_id = ?", [VehicleTypeID, SubCategorySeedID, country_id]);
+    return db.query("select * from `companyownedvehicles` where ID = ? and SubCategorySeedID = ? and country_id = ?", [VehicleTypeID, SubCategorySeedID, country_id]);
   },
 
   getAllcompanyownedvehicles: async (user_id, ModeofDEID) => {

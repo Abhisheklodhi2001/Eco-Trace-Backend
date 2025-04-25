@@ -415,20 +415,17 @@ exports.dashboardScope = async (req, res) => {
                 item.month_number &&
                 monthlyData2.hasOwnProperty(item.month_number)
               ) {
-                monthlyData2[item.month_number] += parseFloat(item.emission);
-
+                monthlyData2[item.month_number] += parseFloat(item.emission) || 0;
                 if (item.category == "Employee Commuting") {
-                  employeeamount = parseFloat(item.emission / 12);
+                  employeeamount = parseFloat(item.emission);
+                  monthlyData2[item.month_number] += parseFloat(item.emission / 12);
                 }
-
                 if (item.category == "Home Office") {
-                  homecategory = parseFloat(item.emission / 12);
+                  homecategory = parseFloat(item.emission);
+                  monthlyData2[item.month_number] += parseFloat(item.emission / 12);
                 }
-                //
 
-                sum2 +=
-                  parseFloat(item.emission) + employeeamount + homecategory;
-                // Add emission value to the corresponding month
+                sum2 += parseFloat(item.emission) + employeeamount + homecategory;
               }
             })
           );
