@@ -1765,7 +1765,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
                     if (employee == null) {
                         noOfEmployeeByMonth[m] = employee
                     } else {
-                        noOfEmployeeByMonth[m] += employee ? Number(parseFloat(item.no_of_employees / 12).toFixed(4)) : null;
+                        noOfEmployeeByMonth[m] += employee ? Number(parseFloat(item.no_of_employees).toFixed(4)) : null;
                     }
                 });
                 overallAnnualSum += employee ?? null;
@@ -1805,7 +1805,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
                     if (totalArea === null || totalArea === 0) {
                         totalAreaByMonth[m] = null;
                     } else {
-                        totalAreaByMonth[m] += Number((totalArea / 12).toFixed(4));
+                        totalAreaByMonth[m] += Number((totalArea).toFixed(4));
                     }
                 });
                 overallAnnualSum4 += totalArea !== null ? totalArea : 0;
@@ -1821,7 +1821,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
                     if (energyArea == null) {
                         energyRefAreaByMonth[m] = energyArea
                     } else {
-                        energyRefAreaByMonth[m] += energyArea ? Number(parseFloat(energyArea / 12).toFixed(4)) : null;
+                        energyRefAreaByMonth[m] += energyArea ? Number(parseFloat(energyArea).toFixed(4)) : null;
                     }
                 });
                 overallAnnualSum5 += energyArea ?? null;

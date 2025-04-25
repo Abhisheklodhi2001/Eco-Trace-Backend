@@ -151,24 +151,18 @@ exports.flightTravel = async (req, res) => {
 
     const user_id = req.user.user_id;
     const allinsertedID = [];
-    let finalco2 = 0;
     let distanceResult = 0;
-    let Nox = 0;
 
     for (const val of parsedData) {
       try {
-        const { from, to, flight_type, flight_class, no_of_trips, return_flight, cost_centre, distance, via, no_of_passengers, reference_id, batch, month } = val;
+        const { from, to, flight_type, flight_class, no_of_trips, return_flight, cost_centre, via, no_of_passengers, reference_id, batch, month } = val;
 
         if (from && to) {
           const fromPointData = await getLatLongByCode(from);
           const viaPointData = via ? await getLatLongByCode(via) : null;
           const toPointData = await getLatLongByCode(to);
 
-          if (
-            fromPointData.length <= 0 ||
-            (via && (!viaPointData || viaPointData.length <= 0)) ||
-            toPointData.length <= 0
-          ) {
+          if (fromPointData.length <= 0 || (via && (!viaPointData || viaPointData.length <= 0)) || toPointData.length <= 0) {
             return res.json({
               success: false,
               message: "Please check the IATA codes of the airports",
@@ -191,73 +185,186 @@ exports.flightTravel = async (req, res) => {
               Number(viaPointData[0].latitude),
               Number(viaPointData[0].longitude)
             );
-
             const distance1 = fromPoint.distanceTo(viaPoint, true);
             const distance2 = viaPoint.distanceTo(toPoint, true);
             distanceResult = distance1 + distance2;
+
+            if (return_flight === true || return_flight === 'true') {
+              distanceResult *= 2;
+            }
+            if (isNaN(distanceResult)) distanceResult = 0;
+
+            const getEmissionFactor = async (distance) => {
+              let minDistance = 0;
+              let maxDistance = 0;
+
+              if (distance >= 0 && distance <= 1400) {
+                minDistance = 0;
+                maxDistance = 1400;
+              } else if (distance > 1400 && distance <= 3000) {
+                minDistance = 1401;
+                maxDistance = 3000;
+              } else if (distance > 3000 && distance <= 13000) {
+                minDistance = 3001;
+                maxDistance = 13000;
+              } else if (distance > 13000) {
+                minDistance = 13001;
+                maxDistance = Infinity;
+              }
+
+              let where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id`;
+              if (maxDistance === Infinity) {
+                where += ` WHERE flight_types.avg_distance >= ${minDistance}`;
+              } else {
+                where += ` WHERE flight_types.avg_distance BETWEEN ${minDistance} AND ${maxDistance}`;
+              }
+
+              const flight_type_ef = await getSelectedColumn("flight_types", where, `flight_types.id, flight_types.flight_type, flight_travel_ef.*`);
+
+              if (!flight_type_ef.length) {
+                throw new Error("EF not found for this facility");
+              }
+
+              return flight_type_ef;
+            };
+
+            try {
+              const ef_factor1 = distance1 ? await getEmissionFactor(distance1) : 0;
+              const ef_factor2 = distance2 ? await getEmissionFactor(distance2) : 0;
+
+              const flight_class1 = flight_class === 'Economy' ? parseFloat(ef_factor1[0].economy) : flight_class === 'Business' ? parseFloat(ef_factor1[0].business) : parseFloat(ef_factor1[0].first_class);
+              const flight_class2 = flight_class === 'Economy' ? parseFloat(ef_factor2[0].economy) : flight_class === 'Business' ? parseFloat(ef_factor2[0].business) : parseFloat(ef_factor2[0].first_class);
+
+              let maxEF = flight_class1;
+              let selectedFlightType = ef_factor1[0].flight_type;
+              
+              if (flight_class2 > flight_class1) {
+                maxEF = flight_class2;
+                selectedFlightType = ef_factor2[0].flight_type;
+              }
+              
+              const flighttravel = {
+                flight_calc_mode,
+                flight_type: selectedFlightType,
+                flight_class,
+                return_flight: return_flight || "",
+                no_of_trips: no_of_trips || 0,
+                cost_centre: cost_centre || "",
+                from: from || "",
+                to: to || "",
+                via: via || '',
+                no_of_passengers: no_of_passengers || 0,
+                reference_id: reference_id || 0,
+                distance: distanceResult || 0,
+                emission: Number((maxEF * no_of_passengers * distanceResult).toFixed(4)),
+                user_id,
+                batch,
+                month,
+                year,
+                facilities
+              };
+              const flight = await flight_travel(flighttravel);
+              allinsertedID.push(flight.insertId);
+            } catch (error) {
+              return res.status(404).json({ error: true, success: false, message: error.message });
+            }
           } else {
             distanceResult = fromPoint.distanceTo(toPoint, true);
+
+            let minDistance = 0;
+            let maxDistance = 0;
+
+            if (distanceResult >= 0 && distanceResult <= 1400) {
+              minDistance = 0;
+              maxDistance = 1400;
+            } else if (distanceResult > 1400 && distanceResult <= 3000) {
+              minDistance = 1401;
+              maxDistance = 3000;
+            } else if (distanceResult > 3000 && distanceResult <= 13000) {
+              minDistance = 3001;
+              maxDistance = 13000;
+            } else if (distanceResult > 13000) {
+              minDistance = 13001;
+              maxDistance = Infinity;
+            }
+
+            if (return_flight === true || return_flight === 'true') distanceResult *= 2;
+            if (isNaN(distanceResult)) distanceResult = 0;
+
+            let where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id`;
+
+            if (maxDistance === Infinity) {
+              where += ` WHERE flight_types.avg_distance >= ${minDistance}`;
+            } else {
+              where += ` WHERE flight_types.avg_distance >= ${minDistance} AND flight_types.avg_distance <= ${maxDistance}`;
+            }
+
+            const flight_type_ef = await getSelectedColumn("flight_types", where, `flight_types.id, flight_types.flight_type, flight_travel_ef.*`);
+
+            if (flight_type_ef.length <= 0) return res.status(404).json({ error: true, success: false, message: "EF not found for this facility" })
+
+            const ef_factor = flight_class == 'Economy' ? flight_type_ef[0].economy : flight_class == 'Business' ? flight_type_ef[0].business : flight_type_ef[0].first_class;
+
+            const flighttravel = {
+              flight_calc_mode,
+              flight_type: flight_type_ef[0].flight_type,
+              flight_class,
+              return_flight: return_flight || "",
+              no_of_trips: no_of_trips || 0,
+              cost_centre: cost_centre || "",
+              from: from || "",
+              to: to || "",
+              via: via || '',
+              no_of_passengers: no_of_passengers || 0,
+              reference_id: reference_id || 0,
+              distance: distanceResult || 0,
+              emission: Number((ef_factor * no_of_passengers * distanceResult).toFixed(4)),
+              user_id,
+              batch,
+              month,
+              year,
+              facilities
+            };
+            const flight = await flight_travel(flighttravel);
+            allinsertedID.push(flight.insertId);
           }
-        }
-
-        finalco2 = distanceResult;
-
-        let minDistance = 0;
-        let maxDistance = 0;
-
-        if (finalco2 >= 0 && finalco2 <= 1400) {
-          minDistance = 0;
-          maxDistance = 1400;
-        } else if (finalco2 > 1400 && finalco2 <= 3000) {
-          minDistance = 1401;
-          maxDistance = 3000;
-        } else if (finalco2 > 3000 && finalco2 <= 13000) {
-          minDistance = 3001;
-          maxDistance = 13000;
-        } else if (finalco2 > 13000) {
-          minDistance = 13001;
-          maxDistance = Infinity;
-        }
-
-        if (return_flight === true || return_flight === 'true') finalco2 *= 2;
-        if (isNaN(finalco2)) finalco2 = 0;
-
-        let where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id`;
-
-        if (maxDistance === Infinity) {
-          where += ` WHERE flight_types.avg_distance >= ${minDistance}`;
         } else {
-          where += ` WHERE flight_types.avg_distance >= ${minDistance} AND flight_types.avg_distance <= ${maxDistance}`;
+          let where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id WHERE flight_types.flight_type = '${flight_type}'`;
+
+          const flight_type_ef = await getSelectedColumn("flight_types", where, `flight_types.id, flight_types.flight_type, flight_types.avg_distance, flight_travel_ef.*`);
+
+          if (flight_type_ef.length <= 0) return res.status(404).json({ error: true, success: false, message: "EF not found for this facility" })
+
+          const ef_factor = flight_class == 'Economy' ? flight_type_ef[0].economy : flight_class == 'Business' ? flight_type_ef[0].business : flight_type_ef[0].first_class;
+
+          distanceResult = flight_type_ef[0].avg_distance;
+
+          if (return_flight === true || return_flight === 'true') distanceResult *= 2;
+          if (isNaN(distanceResult)) distanceResult = 0;
+
+          const flighttravel = {
+            flight_calc_mode,
+            flight_type: flight_type,
+            flight_class,
+            return_flight: return_flight || "",
+            no_of_trips: no_of_trips || 0,
+            cost_centre: cost_centre || "",
+            from: from || "",
+            to: to || "",
+            via: via || '',
+            no_of_passengers: no_of_passengers || 0,
+            reference_id: reference_id || 0,
+            distance: distanceResult || 0,
+            emission: Number((ef_factor * no_of_trips * distanceResult).toFixed(4)),
+            user_id,
+            batch,
+            month,
+            year,
+            facilities
+          };
+          const flight = await flight_travel(flighttravel);
+          allinsertedID.push(flight.insertId);
         }
-        const flight_type_ef = await getSelectedColumn("flight_types", where, `flight_types.id, flight_types.flight_type, flight_travel_ef.*`);
-
-        if (flight_type_ef.length <= 0) return res.status(404).json({ error: true, success: false, message: "EF not found for this facility" })
-
-        const ef_factor = flight_class == 'Economy' ? flight_type_ef[0].economy : flight_class == 'Business' ? flight_type_ef[0].business : flight_type_ef[0].first_class;
-
-        const flighttravel = {
-          flight_calc_mode,
-          flight_type: flight_type_ef[0].flight_type,
-          flight_class,
-          return_flight: return_flight || "",
-          no_of_trips: no_of_trips || 0,
-          cost_centre: cost_centre || "",
-          from: from || "",
-          to: to || "",
-          via: via || '',
-          no_of_passengers: no_of_passengers || 0,
-          reference_id: reference_id || 0,
-          distance: distance || 0,
-          emission: flight_calc_mode === "Generic" ? Number((ef_factor * no_of_trips * finalco2).toFixed(4)): Number((ef_factor * no_of_passengers * finalco2).toFixed(4)),
-          user_id,
-          batch,
-          month,
-          year,
-          facilities
-        };
-        const flight = await flight_travel(flighttravel);
-        allinsertedID.push(flight.insertId);
-
       } catch (flightError) {
         console.error("Error processing a flight record:", flightError);
       }
@@ -266,9 +373,6 @@ exports.flightTravel = async (req, res) => {
     return res.json({
       success: allinsertedID.length > 0,
       message: allinsertedID.length > 0 ? "Data Entry Done Successfully" : "Data Entry Not Done Successfully",
-      categories: distanceResult,
-      emission: finalco2,
-      offset_sub_type: Nox ? "Nox" : "No-Nox"
     });
 
   } catch (error) {
