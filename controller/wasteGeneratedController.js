@@ -200,7 +200,7 @@ exports.getwasteGeneratedEmission = async (req, res) => {
 };
 
 const dataProgress = async (facilities, scopeObject) => {
-  try {    
+  try {
     var expectedOutput = {
       Jan: 0,
       Feb: 0,
@@ -239,14 +239,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Stationary Combustion",
         data: stationaryCombustion,
         percentage: percentage,
-        scope : "scope_1"
+        scope: "scope_1"
       });
     } else {
       DataProgress.push({
         category: "Stationary Combustion",
         data: [],
         percentage: 0,
-        scope : "scope_1"
+        scope: "scope_1"
       });
     }
 
@@ -271,14 +271,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Purchased goods and services",
         data: purchaseGoods,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Purchased goods and services",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -303,14 +303,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Company Owned Vehicles",
         data: companyOwnedVehicles,
         percentage: percentage,
-        scope : "scope_1"
+        scope: "scope_1"
       });
     } else {
       DataProgress.push({
         category: "Company Owned Vehicles",
         data: [],
         percentage: 0,
-        scope : "scope_1"
+        scope: "scope_1"
       });
     }
 
@@ -335,14 +335,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Downstream Transportation and Distribution",
         data: downStreamVehicles,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Downstream Transportation and Distribution",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -367,14 +367,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Upstream Transportation and Distribution",
         data: upStreamVehicles,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Upstream Transportation and Distribution",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -399,14 +399,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Franchises",
         data: franchiseEmission,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Franchises",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -431,14 +431,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Investment Emissions",
         data: investmentEmission,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Investment Emissions",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -463,14 +463,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Upstream Leased Assets",
         data: upStreamLeaseEmission,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Upstream Leased Assets",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -495,14 +495,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Downstream Leased Assets",
         data: downStreamLeaseEmission,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Downstream Leased Assets",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -527,14 +527,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Waste generated in operations",
         data: wasteGenerated,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Waste generated in operations",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -559,14 +559,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Business Travel",
         data: flightTravel,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Business Travel",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -591,14 +591,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Other Transport",
         data: otherTransport,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Other Transport",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -620,10 +620,10 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Hotel Stay",
         data: hotelStay,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
-      DataProgress.push({ category: "Hotel Stay", data: [], percentage: 0 , scope : "scope_3"});
+      DataProgress.push({ category: "Hotel Stay", data: [], percentage: 0, scope: "scope_3" });
     }
 
 
@@ -645,10 +645,10 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Home Office",
         data: homeOffice,
         percentage: 100,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
-      DataProgress.push({ category: "Home Office", data: [], percentage: 0 , scope : "scope_3"});
+      DataProgress.push({ category: "Home Office", data: [], percentage: 0, scope: "scope_3" });
     }
 
 
@@ -670,10 +670,10 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Employee Commuting",
         data: employeeCommuting,
         percentage: 100,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
-      DataProgress.push({ category: "Employee Commuting", data: [], percentage: 0 , scope : "scope_3"});
+      DataProgress.push({ category: "Employee Commuting", data: [], percentage: 0, scope: "scope_3" });
     }
 
 
@@ -698,10 +698,10 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Use of Sold Products",
         data: soldProducts,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
-      DataProgress.push({ category: "Use of Sold Products", data: [], percentage: 0, scope : "scope_3" });
+      DataProgress.push({ category: "Use of Sold Products", data: [], percentage: 0, scope: "scope_3" });
     }
 
     var endOfLifeTreatment = { ...expectedOutput };
@@ -725,14 +725,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "End-of-Life Treatment of Sold Products",
         data: endOfLifeTreatment,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "End-of-Life Treatment of Sold Products",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -757,14 +757,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Processing of Sold Products",
         data: soldGoods,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Processing of Sold Products",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -789,10 +789,10 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Refrigerants",
         data: refrigeRant,
         percentage: percentage,
-        scope : "scope_1"
+        scope: "scope_1"
       });
     } else {
-      DataProgress.push({ category: "Refrigerants", data: [], percentage: 0, scope : "scope_1" });
+      DataProgress.push({ category: "Refrigerants", data: [], percentage: 0, scope: "scope_1" });
     }
 
     var fireExtinguisher = { ...expectedOutput };
@@ -816,14 +816,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Fire Extinguisher",
         data: fireExtinguisher,
         percentage: percentage,
-        scope : "scope_1"
+        scope: "scope_1"
       });
     } else {
       DataProgress.push({
         category: "Fire Extinguisher",
         data: [],
         percentage: 0,
-        scope : "scope_1"
+        scope: "scope_1"
       });
     }
 
@@ -833,7 +833,7 @@ const dataProgress = async (facilities, scopeObject) => {
       currentYear,
       facilities
     );
-    
+
     if (Monthprogress.length > 0) {
       for (let key in electricity) {
         Monthprogress.find((elem) => {
@@ -849,14 +849,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Electricity",
         data: electricity,
         percentage: percentage,
-        scope : "scope_2"
+        scope: "scope_2"
       });
     } else {
       DataProgress.push({
         category: "Electricity",
         data: [],
         percentage: 0,
-        scope : "scope_2"
+        scope: "scope_2"
       });
     }
 
@@ -866,7 +866,7 @@ const dataProgress = async (facilities, scopeObject) => {
       currentYear,
       facilities
     );
-    
+
     if (Monthprogress.length > 0) {
       for (let key in heatAndSteam) {
         Monthprogress.find((elem) => {
@@ -877,26 +877,27 @@ const dataProgress = async (facilities, scopeObject) => {
         });
       }
       var percentage = ((count / 12) * 100).toFixed(2);
-      scopeObject.scope2 +=  percentage;
+      scopeObject.scope2 += percentage;
       DataProgress.push({
         category: "Heat and Steam",
         data: heatAndSteam,
         percentage: percentage,
-        scope : "scope_2"
+        scope: "scope_2"
       });
     } else {
       DataProgress.push({
         category: "Heat and Steam",
         data: [],
         percentage: 0,
-        scope : "scope_2"
+        scope: "scope_2"
       });
     }
 
     var waterDischarge = { ...expectedOutput };
     count = 0;
     var Monthprogress = await getDataProgressWaterDischarge(
-      currentYear
+      currentYear,
+      facilities
     );
     if (Monthprogress.length > 0) {
       for (let key in waterDischarge) {
@@ -913,21 +914,22 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Water Supply and Treatment",
         data: waterDischarge,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Water Supply and Treatment",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
     var waterWithdrawal = { ...expectedOutput };
     count = 0;
     var Monthprogress = await getDataProgressWaterWithdrawal(
-      currentYear
+      currentYear,
+      facilities
     );
     if (Monthprogress.length > 0) {
       for (let key in waterWithdrawal) {
@@ -944,14 +946,14 @@ const dataProgress = async (facilities, scopeObject) => {
         category: "Water Withdrawal",
         data: waterWithdrawal,
         percentage: percentage,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     } else {
       DataProgress.push({
         category: "Water Withdrawal",
         data: [],
         percentage: 0,
-        scope : "scope_3"
+        scope: "scope_3"
       });
     }
 
@@ -982,7 +984,7 @@ exports.getDataProgress = async (req, res) => {
       });
     }
 
-    var scopeObject = { }
+    var scopeObject = {}
     scopeObject.scope1 = 0;
     scopeObject.scope2 = 0;
     scopeObject.scope3 = 0;
@@ -992,7 +994,7 @@ exports.getDataProgress = async (req, res) => {
         success: true,
         message: "Succesfully generated Waste Generated Emissions",
         DataProgress: DataProgress,
-        scopeObject : scopeObject,
+        scopeObject: scopeObject,
         status: 200,
       });
     }
@@ -1030,19 +1032,17 @@ exports.getDataProgressForFacilities = async (req, res) => {
     let facilityArray = facilities.split(",");
     var FinalProgress = [];
     for (element of facilityArray) {
-
-
-      var scopeObject = { }
+      var scopeObject = {}
       scopeObject.scope1 = 0;
       scopeObject.scope2 = 0;
       scopeObject.scope3 = 0;
-      DataProgress = await dataProgress(element, scopeObject);
+      const DataProgress = await dataProgress(element, scopeObject);
       if (DataProgress.length > 0) {
-
-        scopeObject.scope1 = parseFloat(Number(scopeObject.scope1)/4).toFixed(2);
-        scopeObject.scope2 = parseFloat(Number(scopeObject.scope2)/2).toFixed(2);
-        scopeObject.scope3 = parseFloat(Number(scopeObject.scope3)/15).toFixed(2);
-        FinalProgress.push({ [element] : DataProgress, ...scopeObject});
+        scopeObject.scope1 = parseFloat(Number(scopeObject.scope1) / 4).toFixed(2);
+        scopeObject.scope2 = parseFloat(Number(scopeObject.scope2) / 2).toFixed(2);
+        scopeObject.scope3 = parseFloat(Number(scopeObject.scope3) / 15).toFixed(2);
+        console.log("scopeObject =>", scopeObject);
+        FinalProgress.push({ [element]: DataProgress, ...scopeObject });
       }
     }
 

@@ -4,6 +4,10 @@ const baseurl = config.base_url;
 
 module.exports = {
 
+    fetchUserByEmailOrUsername: async(email) => {
+        return await db.query('select * from  `dbo.tenants`  where Email = ? OR userName = ?', [email, email]);
+    },
+
     fetchEmail: (async (Email) => {
         return db.query('select * from  `dbo.tenants`  where Email = ?', [Email]);
     }),
@@ -16,6 +20,11 @@ module.exports = {
     fetchEmailUser: (async (Email) => {
         return db.query('select * from  `dbo.aspnetusers`  where Email = ?', [Email]);
     }),
+
+    fetchUserByUserName: async (username) => {
+        return db.query('select * from  `dbo.aspnetusers`  where username = ?', [username]);
+    },
+
     fetchUserByEmail: (async (Email) => {
         return db.query('select A.logoName, A.companyName,A.Email as companyEmail,A.numberOfUserAllowed,A.licenseExpired,B.refreshToken,B.tenantID,A.Id,B.userName,A.licenseType, B.refreshTokenExpiryTime as expiration from `dbo.tenants` A JOIN  `dbo.aspnetusers` B ON B.email = A.Email where A.Email = ? and B.email = "' + Email + '"', [Email]);
     }),
@@ -275,7 +284,7 @@ module.exports = {
         return await db.query('SELECT purchase_goods_categories_ef.*, B.typesofpurchasename FROM purchase_goods_categories_ef LEFT JOIN `dbo.typesofpurchase` AS B ON B.id = purchase_goods_categories_ef.typeofpurchase')
     },
 
-    findCompanyOwnedVehicleByItemType: async (vehicle_type, CountryId) => {  
+    findCompanyOwnedVehicleByItemType: async (vehicle_type, CountryId) => {
         const searchPattern = `%${vehicle_type}%`;
         return await db.query('SELECT * FROM `companyownedvehicles` WHERE ItemType LIKE ? AND country_id = ?', [searchPattern, CountryId]);
     },

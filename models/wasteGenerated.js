@@ -182,34 +182,26 @@ module.exports = {
 
 
   getDataProgressHeatandSteam: async (year, facilities) => {
-
     return db.query("SELECT count(*) as count, months  FROM `dbo.heatandsteamde` WHERE year = ? and months in ('Jan','Feb','Mar','Apr', 'May','Jun','Jul','Aug','Sep','Oct','Nov', 'Dec')  and facilities=? \
                      group by months", [year, facilities]);
 
   },
 
-  getDataProgressWaterDischarge: async (year) => {
-
-    return db.query("SELECT count(*) as count, month  FROM `water_discharge_by_destination` WHERE year = ? and month in ('Jan','Feb','Mar','Apr', 'May','Jun','Jul','Aug','Sep','Oct','Nov', 'Dec') \
-                     group by month", [year]);
-
+  getDataProgressWaterDischarge: async (year, facilities) => {
+    return db.query("SELECT COUNT(DISTINCT water_discharge_by_destination.water_supply_treatment_id) AS count, water_discharge_by_destination.month FROM `water_discharge_by_destination` LEFT JOIN water_supply_treatment_category ON water_supply_treatment_category.id = water_discharge_by_destination.water_supply_treatment_id WHERE water_discharge_by_destination.year = ? and water_discharge_by_destination.month in ('Jan','Feb','Mar','Apr', 'May','Jun','Jul','Aug','Sep','Oct','Nov', 'Dec') AND water_supply_treatment_category.facilities = ? \
+                     group by water_discharge_by_destination.month", [year, facilities]);
   },
 
+  getDataProgressWaterWithdrawal: async (year, facilities) => {
 
-  getDataProgressWaterWithdrawal: async (year) => {
-
-    return db.query("SELECT count(*) as count, month  FROM `water_withdrawl_by_source` WHERE year = ? and month in ('Jan','Feb','Mar','Apr', 'May','Jun','Jul','Aug','Sep','Oct','Nov', 'Dec') \
-                     group by month", [year]);
+    return db.query("SELECT COUNT(DISTINCT water_withdrawl_by_source.water_supply_treatment_id) AS count, water_withdrawl_by_source.month FROM `water_withdrawl_by_source` LEFT JOIN water_supply_treatment_category ON water_supply_treatment_category.id = water_withdrawl_by_source.water_supply_treatment_id WHERE water_withdrawl_by_source.year = ? and water_withdrawl_by_source.month IN ('Jan','Feb','Mar','Apr', 'May','Jun','Jul','Aug','Sep','Oct','Nov', 'Dec') AND water_supply_treatment_category.facilities = ? \
+                     group by water_withdrawl_by_source.month", [year, facilities]);
 
   },
-
 
   getDataProgressCompanyOwnedVehicles: async (year, facilities) => {
-
     return db.query("SELECT count(*) as count, months FROM `dbo.vehiclede` WHERE year = ? and months in ('Jan','Feb','Mar','Apr', 'May','Jun','Jul','Aug','Sep','Oct','Nov', 'Dec')  and facilities=? \
                      group by months", [year, facilities]);
 
   },
-
-
 };

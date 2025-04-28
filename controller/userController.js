@@ -12,8 +12,10 @@ const ejs = require('ejs');
 
 const {
   fetchUserByEmail,
+  fetchUserByEmailOrUsername,
   fetchEmail,
   fetchEmailUser,
+  fetchUserByUserName,
   fetchfacilitiesBytenants,
   user_offseting,
   Allfireextinguisher,
@@ -215,7 +217,8 @@ exports.login = async (req, res) => {
         success: false,
       });
     } else {
-      const data = await fetchEmail(email);
+      const data = await fetchUserByEmailOrUsername(email);
+console.log(data);
 
       let array = "";
       let where2 = ` where  A.is_super_admin ='1'`;
@@ -229,7 +232,7 @@ exports.login = async (req, res) => {
       }
 
       if (data.length !== 0) {
-        if (email == data[0].Email) {
+        if (email == data[0].Email || email == data[0].userName) {
           if (password == data[0]?.Password) {
             const toke = jwt.sign({ user_id: data[0].Id }, JWT_SECRET);
             let data1 = await fetchUserByEmail(email);
@@ -2651,12 +2654,10 @@ exports.register = async (req, res) => {
       package_id,
       group_id,
     } = req.body;
-    console.log(req.body);
     let jsondata = JSON.parse(facilityID);
     const convertedFacilitiyIDs = jsondata.map(Number);
     const idsString = convertedFacilitiyIDs.join(", ");
     var formattedFacilityIds = `${idsString}`;
-    console.log("sfd", formattedFacilityIds);
 
     const saltRounds = 10;
     const schema = Joi.alternatives(
@@ -2703,6 +2704,15 @@ exports.register = async (req, res) => {
           success: false,
           message:
             "Already have account with this " + email + " email , Please Login",
+          status: 400,
+        });
+      }
+
+      let userNameRes = await fetchUserByUserName(username);
+      if (userNameRes.length !== 0) {
+        return res.json({
+          success: false,
+          message: "Already have account with this " + username + " username , Please Login",
           status: 400,
         });
       }

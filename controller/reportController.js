@@ -2120,6 +2120,7 @@ exports.reportFilterMultipleCategoryNew = async (req, res) => {
       refrigerant,
       heat_steam,
       renewable_electricity,
+      business_travel,
       //    water_supply_treatment,
       end_of_life_treatment,
       fire_extinguisher,
@@ -2152,6 +2153,7 @@ exports.reportFilterMultipleCategoryNew = async (req, res) => {
         refrigerant: [Joi.number().required()],
         heat_steam: [Joi.number().required()],
         renewable_electricity: [Joi.number().required()],
+        business_travel: [Joi.number().required()],
         //       water_supply_treatment: [Joi.number().required()],
         end_of_life_treatment: [Joi.number().required()],
         fire_extinguisher: [Joi.number().required()],
@@ -2191,6 +2193,7 @@ exports.reportFilterMultipleCategoryNew = async (req, res) => {
     var refrigeRant = Number(refrigerant);
     var heatAndSteam = Number(heat_steam);
     var renewableElectricity = Number(renewable_electricity);
+    var businessTravel = Number(business_travel);
     //    var waterSupplyTreatment = Number(water_supply_treatment);
     var endOfLifeTreatment = Number(end_of_life_treatment);
     var fireExtinguisher = Number(fire_extinguisher);
@@ -2698,6 +2701,98 @@ exports.reportFilterMultipleCategoryNew = async (req, res) => {
           );
           if (reportResult.length > 0) {
             multiReport.push(...reportResult);
+          }
+        }
+      }
+    }
+    if(businessTravel){
+      if (differenceInYear == 0) {
+        var months = getMonths(start_month, end_month);
+        const reportResult = await getFlightTravelReportMultiNew(
+          facility,
+          start_year,
+          months
+        );
+        if (reportResult.length > 0) {
+          for (elem of reportResult) multiReport.push(elem);
+        }
+      } else {
+        for (var year = Number(start_year); year <= Number(end_year); year++) {
+          var months = "";
+          if (year === Number(start_year)) {
+            months = getMonths(start_month, "Dec");
+          } else if (year === Number(end_year)) {
+            months = getMonths("Jan", end_month);
+          } else {
+            months = getMonths("Jan", "Dec");
+          }
+          const reportResult = await getFlightTravelReportMultiNew(
+            facility,
+            year,
+            months
+          );
+          if (reportResult.length > 0) {
+            for (elem of reportResult) multiReport.push(elem);
+          }
+        }
+      }
+      if (differenceInYear == 0) {
+        var months = getMonths(start_month, end_month);
+        const reportResult = await getHotelStayReportMultiNew(
+          facility,
+          start_year,
+          months
+        );
+        if (reportResult.length > 0) {
+          for (elem of reportResult) multiReport.push(elem);
+        }
+      } else {
+        for (var year = Number(start_year); year <= Number(end_year); year++) {
+          var months = "";
+          if (year === Number(start_year)) {
+            months = getMonths(start_month, "Dec");
+          } else if (year === Number(end_year)) {
+            months = getMonths("Jan", end_month);
+          } else {
+            months = getMonths("Jan", "Dec");
+          }
+          const reportResult = await getHotelStayReportMultiNew(
+            facility,
+            year,
+            months
+          );
+          if (reportResult.length > 0) {
+            for (elem of reportResult) multiReport.push(elem);
+          }
+        }
+      }
+      if (differenceInYear == 0) {
+        var months = getMonths(start_month, end_month);
+        const reportResult = await getOtherTransportReportMultiNew(
+          facility,
+          start_year,
+          months
+        );
+        if (reportResult.length > 0) {
+          for (elem of reportResult) multiReport.push(elem);
+        }
+      } else {
+        for (var year = Number(start_year); year <= Number(end_year); year++) {
+          var months = "";
+          if (year === Number(start_year)) {
+            months = getMonths(start_month, "Dec");
+          } else if (year === Number(end_year)) {
+            months = getMonths("Jan", end_month);
+          } else {
+            months = getMonths("Jan", "Dec");
+          }
+          const reportResult = await getOtherTransportReportMultiNew(
+            facility,
+            year,
+            months
+          );
+          if (reportResult.length > 0) {
+            for (elem of reportResult) multiReport.push(elem);
           }
         }
       }
