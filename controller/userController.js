@@ -218,8 +218,8 @@ exports.login = async (req, res) => {
       });
     } else {
       const data = await fetchUserByEmailOrUsername(email);
-console.log(data);
-
+      console.log("data =>", data);
+      
       let array = "";
       let where2 = ` where  A.is_super_admin ='1'`;
       const super_admin = await getSelectedColumn(
@@ -2963,6 +2963,7 @@ exports.Updateregister = async (req, res) => {
       tenantId,
       roleID,
       username,
+      group_id
     } = req.body;
     const saltRounds = 10;
     const schema = Joi.alternatives(
@@ -2971,6 +2972,7 @@ exports.Updateregister = async (req, res) => {
         email: [Joi.optional().allow("")],
         password: [Joi.optional().allow("")],
         facilityID: [Joi.optional().allow("")],
+        group_id: [Joi.optional().allow("")],
         firstname: [Joi.optional().allow("")],
         lastname: [Joi.optional().allow("")],
         tenantId: [Joi.optional().allow("")],
@@ -2993,27 +2995,22 @@ exports.Updateregister = async (req, res) => {
       let where1 = ` where  user_id ='${user_id}'  `;
       const data = await getSelectedColumn("`dbo.aspnetusers`", where1, "*");
 
-      const hash = await bcrypt.hash(password, saltRounds);
-
       const user = {
         Email: email ? email : data[0].email,
-        passwordHash: hash ? hash : data[0].passwordHash,
         firstname: firstname ? firstname : data[0].firstname,
         lastname: lastname ? lastname : data[0].lastname,
-        tenantID: tenantId ? tenantId : data[0].tenantId,
+        tenantID: tenantId ? tenantId : data[0].tenantID,
         username: username ? username : data[0].username,
       };
 
       let where = "where user_id  = '" + user_id + "'";
       const create_user = await updateData("`dbo.aspnetusers`", where, user);
-      console.log(create_user);
       if (create_user.affectedRows > 0) {
         let where1 = ` where  Email ='${data[0].email}'  `;
         const data1 = await getSelectedColumn("`dbo.tenants`", where1, "*");
 
         let user3 = {
           Email: email ? email : data1[0].Email,
-          Password: password ? password : data1[0].password,
           tenantName: firstname ? firstname : data1[0].tenantName,
           userName: username ? username : data1[0].userName,
         };
@@ -3026,8 +3023,10 @@ exports.Updateregister = async (req, res) => {
         const user2 = {
           userId: user_id,
           roleId: roleID,
-          tenantID: tenantId ? tenantId : data[0].tenantId,
-          facilityID: facilityID,
+          tenantID: tenantId ? tenantId : data[0].tenantID,
+          tenant_id	: tenantId ? tenantId : data1[0].Id,
+          facilityID: JSON.parse(facilityID).join(','),
+          group_id: group_id
         };
         const create_user1 = await registeruserRoles(user2);
 
@@ -3076,7 +3075,6 @@ exports.getAllusers = async (req, res) => {
     } else {
       const getgroup = await fetchAllusers(tenantId);
       var facility = [];
-
       if (getgroup.length > 0) {
         await Promise.all(
           getgroup.map(async (item) => {
@@ -3125,10 +3123,10 @@ exports.getAllusers = async (req, res) => {
             item.group_id = getgroup1[0]?.group_id;
             item.is_subgroup = getgroup1[0]?.is_subgroup;
             item.is_main_group = getgroup1[0]?.is_main_group;
+            item.facilities_id = getgroup1[0]?.facilityID.split(",").map(i => i.trim());
             item.password = "";
           })
         );
-
         return res.json(getgroup);
       } else {
         return res.json({
@@ -5376,8 +5374,7 @@ exports.Updatecountry = async (req, res) => {
 
 exports.AddSuperAdmin = async (req, res) => {
   try {
-    const { email, password, companyName } = req.body;
-    console.log(req.body);
+    const { email, password, companyName, username, firstname, lastname } = req.body;
     // let jsondata = JSON.parse(facilityID)
     // const convertedFacilitiyIDs = jsondata.map(Number);
     // const idsString = convertedFacilitiyIDs.join(', ');
@@ -5401,12 +5398,12 @@ exports.AddSuperAdmin = async (req, res) => {
           "string.min": "minimum 8 value required",
           "string.max": "maximum 15 values allowed",
         }),
-        //   facilityID: [Joi.string().empty().required()],
+        firstname: [Joi.string().empty().required()],
         companyName: [Joi.string().empty().required()],
-        //   lastname: [Joi.string().empty().required()],
+        lastname: [Joi.string().empty().required()],
         //  tenantId: [Joi.string().empty().required()],
         // roleID: [Joi.string().empty().required()],
-        // username: [Joi.string().empty().required()],
+        username: [Joi.string().empty().required()],
         // package_id: [Joi.string().empty().required()],
         // group_id: [Joi.string().optional().allow("")],
       })
@@ -5433,6 +5430,14 @@ exports.AddSuperAdmin = async (req, res) => {
         });
       }
 
+      let userNameRes = await fetchUserByUserName(username);
+      if (userNameRes.length !== 0) {
+        return res.json({
+          success: false,
+          message: "Already have account with this " + username + " username , Please Login",
+          status: 400,
+        });
+      }
       // let groups_id = 0;
       // if (group_id == 'undefined') {
       //   groups_id = 0;
@@ -5445,10 +5450,10 @@ exports.AddSuperAdmin = async (req, res) => {
         Id: generateRandomString(11),
         Email: email,
         passwordHash: hash,
-        firstname: companyName,
-        // lastname: lastname,
+        firstname: firstname,
+        lastname: lastname,
         tenantID: 0,
-        username: companyName,
+        username: username
       };
       const create_user = await registerUser(user);
 
@@ -5467,6 +5472,7 @@ exports.AddSuperAdmin = async (req, res) => {
           companyName: companyName,
           user_id: create_user.insertId,
           is_super_admin: 1,
+          userName: username
         };
         const create_user2 = await Addtenants(user3);
         var tenantId = create_user2.insertId;
@@ -5479,7 +5485,6 @@ exports.AddSuperAdmin = async (req, res) => {
           group_id: 0,
         };
         const create_user1 = await registeruserRoles(user2);
-
         const updateRes = await updateUserTenant(tenantId, userId);
         // const user5 = {
         //   package_id: package_id,

@@ -296,10 +296,10 @@ module.exports = {
   getCompanyOwnedVehiclesMultiAudit: async (facility, year, month) => {
     return db.query(`select 'Scope3' as scope, 'Company Owned Vehicle' as category, vt.vehicle_type as DataPoint1, vs.vehicle_type as DataPoint2, vde.Unit, vs.emission_factor, 'kgCO2e_kg' as emission_factor_name,\
                      sum(vde.GHGEmission) as Emission,  vde.year as Years, vde.months as Months, vs.reference,  \
-                     f.AssestName as facility from  \`dbo.vehiclede\` vde, \`dbo.facilities\`  f   \
+                     f.AssestName as facility from  \`dbo.vehiclede\` vde, \`dbo.facilities\`  f,   \
                      vehicletypes vt, vehicle_subcategory vs   \
                      where   vde.facilities in (${facility})   \
-                     and vde.year =${year} and vde.months in (${month})   \
+                     and vde.year = ${year} and vde.months in (${month})   \
                      and  vde.facilities= f.ID  \
                      and  vs.vehicle_category_id = vt.id and vde.vehicleTypeID = vs.id   \
                      group by DataPoint2, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
