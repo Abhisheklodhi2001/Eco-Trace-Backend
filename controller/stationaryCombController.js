@@ -195,12 +195,10 @@ exports.stationaryCombustionEmission = async (req, res) => {
     }
     else if (unit.toLowerCase() === tonnesUnit) {
       emissionFactor = emissionDetails[0]?.kgCO2e_tonnes
-
       emissionFactor1 = emissionDetails[0]?.scope3_kgCO2e_tonnes
     }
     if (stationaryCombustionData.calorificValue) {
       emissionFactor = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor)
-
       emissionFactor1 = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor1)
     }
     let emsssionvalue = 0;
@@ -221,6 +219,8 @@ exports.stationaryCombustionEmission = async (req, res) => {
       emsssionvalue1 = emissionFactor1;
     }
 
+    stationaryCombustionData.ghgEmissionFactor = emissionFactor;
+    stationaryCombustionData.Scope3GHGEmissionFactor = emissionFactor1;
     stationaryCombustionData.ghgEmissions = parseFloat(readingValue * emsssionvalue);
     stationaryCombustionData.Scope3GHGEmission = emsssionvalue1 ? parseFloat(readingValue * emsssionvalue1) : 0.00;
 

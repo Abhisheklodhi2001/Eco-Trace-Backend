@@ -41,10 +41,7 @@ module.exports = {
 
 
     getCombustionEmission: async (facilities, year) => {
-        return db.query(`select  COALESCE('stationarycombustionde', '')  as  tablename ,B.Id as subcategoryID,B.Item as subcatName,A.ReadingValue as readingValue,A.Unit as unit,A.Status as status,Year as year ,Month as month,
-    GHGEmission as emission,BlendType as blendType,E.scope3_kgCO2e_kg,E.scope3_kg_CO2e_litres,E.scope3_kgCO2e_kwh,E.scope3_kgCO2e_tonnes,E.kgCO2e_kg,E.kgCO2e_kwh,E.cv_perlitre,E.kgCO2e_litre,E.kgCO2e_tonnes,
-    BlendPercent as blendPercent,A.*,TypeName as typeName,facility_id  from stationarycombustionde A  LEFT JOIN  subcategoryseeddata B ON B.Id  = A.SubCategoriesID 
-    JOIN  stationarycombustion E ON E.SubCatTypeID  = A.TypeID  where  A.facility_id= ? and A.year = ? and TRIM(E.Item) = TRIM(A.TypeName) ORDER BY A.id DESC  `, [facilities, year]);
+        return db.query(`select  COALESCE('stationarycombustionde', '')  as  tablename ,B.Id as subcategoryID,B.Item as subcatName,A.ReadingValue as readingValue,A.Unit as unit,A.Status as status,Year as year ,Month as month, GHGEmission as emission,BlendType as blendType,E.scope3_kgCO2e_kg,E.scope3_kg_CO2e_litres,E.scope3_kgCO2e_kwh,E.scope3_kgCO2e_tonnes,E.kgCO2e_kg,E.kgCO2e_kwh,E.cv_perlitre,E.kgCO2e_litre,E.kgCO2e_tonnes, BlendPercent as blendPercent,A.*,TypeName as typeName,facility_id  from stationarycombustionde A  LEFT JOIN  subcategoryseeddata B ON B.Id  = A.SubCategoriesID JOIN  stationarycombustion E ON E.SubCatTypeID  = A.TypeID  where  A.facility_id= ? and A.year = ? and TRIM(E.Item) = TRIM(A.TypeName) ORDER BY A.id DESC  `, [facilities, year]);
     },
 
     getCombustionEmissionFuel: async (facilities, year) => {

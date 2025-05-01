@@ -587,6 +587,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
         categorydata = await getCombustionEmission(facilities, year);
         array = [...categorydata];
       }
+      
       if (categoryID == "2") {
         categorydata = await Allrefrigerants(facilities, year);
         array = [...categorydata];
@@ -762,21 +763,22 @@ exports.GetpendingDataEnteries = async (req, res) => {
           }
 
           if (categoryID == "1") {
-            if (item.CalorificValue) {
-              if (unit.toLowerCase() === "liters") {
-                emissionFactor = parseFloat(item.calorificValue);
-              } else if (unit.toLowerCase() === "kg") {
-                emissionFactor = parseFloat(item.calorificValue);
-              }
-            } else if (unit.toLowerCase() === "kg") {
-              emissionFactor = item.kgCO2e_kg;
-            } else if (unit.toLowerCase() === "litres") {
-              emissionFactor = item.kgCO2e_litre;
-            } else if (unit.toLowerCase() === "kwh") {
-              emissionFactor = item.kgCO2e_litre;
-            } else if (unit.toLowerCase() === "tonnes") {
-              emissionFactor = item.kgCO2e_tonnes;
-            }
+            // if (item.CalorificValue) {
+            //   emissionFactor = parseFloat(item.calorificValue);
+            //   if (unit.toLowerCase() === "liters") {
+            //   } else if (unit.toLowerCase() === "kg") {
+            //     emissionFactor = parseFloat(item.calorificValue);
+            //   }
+            // } else if (unit.toLowerCase() === "kg") {
+            //   emissionFactor = item.kgCO2e_kg;
+            // } else if (unit.toLowerCase() === "litres") {
+            //   emissionFactor = item.kgCO2e_litre;
+            // } else if (unit.toLowerCase() === "kwh") {
+            //   emissionFactor = item.kgCO2e_litre;
+            // } else if (unit.toLowerCase() === "tonnes") {
+            //   emissionFactor = item.kgCO2e_tonnes;
+            // }
+            emissionFactor = parseFloat(item.GHGEmissionFactor);
           }
 
           if (categoryID == "2" || categoryID == "3") {
