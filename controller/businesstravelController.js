@@ -3578,7 +3578,7 @@ exports.employeeCommunityCategory = async (req, res) => {
     }
     const country = await country_check(facility_id);
     let where = `where id != 0 AND country_id = '${country[0].CountryId}' GROUP BY category `;
-    const vehicletype = await getSelectedColumn("employee_community_typeoftransport", where, "MIN(id) as id ,category ");
+    const vehicletype = await getSelectedColumn("employee_community_typeoftransport", where, "MIN(category_id) as id ,category ");
     if (vehicletype.length > 0) {
       return res.json({
         success: true,
