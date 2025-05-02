@@ -21,13 +21,12 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 
-
-
 app.use(express.json());
 app.use(cors());
 app.use(
   express.urlencoded({
     extended: true,
+    limit: '100mb'
   })
 );
 

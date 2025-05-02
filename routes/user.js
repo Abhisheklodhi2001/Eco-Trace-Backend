@@ -133,5 +133,6 @@ router.post('/update-vehicle-feet-by-id', auth, userController.updateVehicleFeet
 router.post('/get-vehicle-fleet-by-facility-id', auth, userController.getVehicleFleetByFacilityId);
 router.get('/download-excel-vehicle-fleet-by-facility-id', userController.downloadExcelVehicleFleetByFacilityId);
 router.get('/download-excel-vehicle-fleet-by-facility-category-id', userController.downloadExcelVehicleFleetByFacilityCategoryId);
+router.post('/add-purchase-goods-match-unmatch-data', userController.addPurchaseGoodsMatchUnmatch);
 
 module.exports = router;

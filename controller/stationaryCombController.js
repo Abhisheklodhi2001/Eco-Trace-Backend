@@ -125,7 +125,7 @@ exports.stationaryCombustionEmission = async (req, res) => {
     } else {
       calorificValue2 = calorificValue
     }
-    
+
     stationaryCombustionData = {
       user_id: user_id,
       readingValue: readingValue,
@@ -219,8 +219,8 @@ exports.stationaryCombustionEmission = async (req, res) => {
       emsssionvalue1 = emissionFactor1;
     }
 
-    stationaryCombustionData.ghgEmissionFactor = emissionFactor;
-    stationaryCombustionData.Scope3GHGEmissionFactor = emissionFactor1;
+    stationaryCombustionData.ghgEmissionFactor = emsssionvalue;
+    stationaryCombustionData.Scope3GHGEmissionFactor = emsssionvalue1;
     stationaryCombustionData.ghgEmissions = parseFloat(readingValue * emsssionvalue);
     stationaryCombustionData.Scope3GHGEmission = emsssionvalue1 ? parseFloat(readingValue * emsssionvalue1) : 0.00;
 

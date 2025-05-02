@@ -81,7 +81,8 @@ const {
   updateVechileFeet,
   deleteVehicleFleetByFacilityId,
   getVehicleFleetByFacilityId,
-  getVehicleFleetByFacilityCategoryId
+  getVehicleFleetByFacilityCategoryId,
+  insertPurchaseGoodsPayloads
 } = require("../models/user");
 
 const {
@@ -219,7 +220,7 @@ exports.login = async (req, res) => {
     } else {
       const data = await fetchUserByEmailOrUsername(email);
       console.log("data =>", data);
-      
+
       let array = "";
       let where2 = ` where  A.is_super_admin ='1'`;
       const super_admin = await getSelectedColumn(
@@ -587,7 +588,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
         categorydata = await getCombustionEmission(facilities, year);
         array = [...categorydata];
       }
-      
+
       if (categoryID == "2") {
         categorydata = await Allrefrigerants(facilities, year);
         array = [...categorydata];
@@ -3026,7 +3027,7 @@ exports.Updateregister = async (req, res) => {
           userId: user_id,
           roleId: roleID,
           tenantID: tenantId ? tenantId : data[0].tenantID,
-          tenant_id	: tenantId ? tenantId : data1[0].Id,
+          tenant_id: tenantId ? tenantId : data1[0].Id,
           facilityID: JSON.parse(facilityID).join(','),
           group_id: group_id
         };
@@ -5796,6 +5797,7 @@ exports.getPurchaseCategoriesEf = async (req, res) => {
       data: productArray,
     });
   } catch (error) {
+    console.log(error);
     return res.status(500).json({ error: true, message: "Internal Servrer Error " + error.message, success: false });
   }
 };
@@ -6155,7 +6157,7 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
 
     const modelValues = getFacilityResponse.filter(val => val.retire_vehicle == 0).map(val => val.vehicle_model).join(",");
 
-    const currencyResponse = await await findFacilityWithCountryCode(facility_id); (facility_id);
+    const currencyResponse = await findFacilityWithCountryCode(facility_id); (facility_id);
 
     const workbook = new ExcelJS.Workbook();
     await workbook.xlsx.readFile("vehiclede.xlsx");
@@ -6227,3 +6229,40 @@ exports.downloadExcelVehicleFleetByFacilityCategoryId = async (req, res) => {
     return res.status(500).json({ error: true, message: "Internal Server Error " + error.message, success: false });
   }
 };
+
+exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
+  try {
+    const { filename, user_id, facility_id, jsonData } = req.body;
+
+    const schema = Joi.object({
+      filename: Joi.string().required(),
+      user_id: Joi.string().required(),
+      facility_id: Joi.string().required(),
+      jsonData: Joi.string().required()
+    });
+
+    const result = schema.validate(req.body);
+    if (result.error) {
+      return res.status(400).json({
+        message: result.error.details[0].message,
+        status: 400,
+        success: false,
+      });
+    }
+
+    const jsonConvertParse = JSON.parse(jsonData);
+
+    const data = {
+      filename: filename,
+      user_id: user_id,
+      facility_id: facility_id,
+      no_of_rows: jsonConvertParse.length
+    }
+    const addPurchaseGoodsPayloads = await insertPurchaseGoodsPayloads(data);
+    if (addPurchaseGoodsPayloads.insertId > 0) {
+      return res.status(201).json({ error: false, message: "add purchase goods payload", success: true })
+    }
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Internal server error " + error.message, success: false });
+  }
+}

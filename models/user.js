@@ -1,10 +1,11 @@
 const db = require("../utils/database");
 const config = require("../config");
-const baseurl = config.base_url;
+const Fuse = require('fuse.js');
+const fuzz = require('fuzzball');
 
 module.exports = {
 
-    fetchUserByEmailOrUsername: async(email) => {
+    fetchUserByEmailOrUsername: async (email) => {
         return await db.query('select * from  `dbo.tenants`  where Email = ? OR userName = ?', [email, email]);
     },
 
@@ -274,7 +275,53 @@ module.exports = {
     },
 
     getPurchaseCategoriesEf: async (product) => {
-        return await db.query('SELECT purchase_goods_categories_ef.*, B.typesofpurchasename FROM purchase_goods_categories_ef LEFT JOIN `dbo.typesofpurchase` AS B ON B.id = purchase_goods_categories_ef.typeofpurchase WHERE product LIKE ?', [`%${product}%`]);
+        const cleanedInput = product.trim();
+
+        const results = await db.query(`SELECT purchase_goods_categories_ef.*, B.typesofpurchasename FROM purchase_goods_categories_ef LEFT JOIN \`dbo.typesofpurchase\` AS B ON B.id = purchase_goods_categories_ef.typeofpurchase`);
+
+        if (results.length > 1) {
+            const fuse = new Fuse(results, {
+                keys: ['product'],
+                includeScore: true,
+                threshold: 0.3,
+                ignoreLocation: true,
+                useExtendedSearch: true
+            });
+
+            const fuseResults = fuse.search(cleanedInput).slice(0, 5).map(r => ({ id: r.item.id, text: r.item.product, score: r.score, source: 'fuse' }));;
+
+            const fuzzResults = results.map(item => {
+                const ratio = fuzz.token_set_ratio(cleanedInput, item.product);
+                return {
+                    id: item.id,
+                    typeofpurchase: item.typeofpurchase,
+                    product_code_id: item.product_code_id,
+                    created_at: item.created_at,
+                    category: item.category,
+                    sub_category: item.sub_category,
+                    product: item.product,
+                    HSN_code: item.HSN_code,
+                    NAIC_code: item.NAIC_code,
+                    ISIC_code: item.ISIC_code,
+                    country_id: item.country_id,
+                    typesofpurchasename: item.typesofpurchasename,
+                    score: 1 - ratio / 100,
+                    source: 'fuzz'
+                };
+            }).filter(r => (1 - r.score) * 100 >= 60).slice(0, 5);
+
+            const merged = new Map();
+            for (const r of [...fuseResults, ...fuzzResults]) {
+                if (!merged.has(r.id) || merged.get(r.id).score > r.score) {
+                    merged.set(r.id, r);
+                }
+            }
+
+            return Array.from(merged.values())
+                .filter(r => r.score <= 0.5)
+                .sort((a, b) => a.score - b.score);
+        }
+        return results;
     },
 
     getAllPurchaseCategoriesEf: async () => {
@@ -316,6 +363,10 @@ module.exports = {
 
     getVehicleFleetByFacilityCategoryId: async (facility_id, category_id) => {
         return await db.query('SELECT tbl_vehicle_fleet.*, companyownedvehicles.ItemType AS vehicle_type FROM `tbl_vehicle_fleet` LEFT JOIN companyownedvehicles ON companyownedvehicles.ID = tbl_vehicle_fleet.company_owned_vehicle_id WHERE tbl_vehicle_fleet.facility_id = ? AND tbl_vehicle_fleet.category = ?;', [facility_id, category_id])
+    },
+
+    insertPurchaseGoodsPayloads: async (data) => {
+        return await db.query('INSERT INTO `purchase_goods_payloads` SET ?', [data]);
     }
 
 }
