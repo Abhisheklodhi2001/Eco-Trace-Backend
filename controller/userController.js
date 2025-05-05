@@ -6268,6 +6268,7 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
             delete item.vendorunit;
             delete item.is_find;  
             item.user_id = user_id;
+            item.purchase_payload_id = addPurchaseGoodsPayloads.insertId;
             await insertPurchaseGoodsMatched(item);
           } else {
             delete item.month;
@@ -6275,6 +6276,7 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
             delete item.vendorunit;
             delete item.is_find;
             item.user_id = user_id;
+            item.purchase_payload_id = addPurchaseGoodsPayloads.insertId;
             await insertPurchaseGoodsUnmatched(item);
           }
         } catch (innerErr) {
