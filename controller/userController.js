@@ -82,7 +82,9 @@ const {
   deleteVehicleFleetByFacilityId,
   getVehicleFleetByFacilityId,
   getVehicleFleetByFacilityCategoryId,
-  insertPurchaseGoodsPayloads
+  insertPurchaseGoodsPayloads,
+  insertPurchaseGoodsMatched,
+  insertPurchaseGoodsUnmatched
 } = require("../models/user");
 
 const {
@@ -5797,7 +5799,6 @@ exports.getPurchaseCategoriesEf = async (req, res) => {
       data: productArray,
     });
   } catch (error) {
-    console.log(error);
     return res.status(500).json({ error: true, message: "Internal Servrer Error " + error.message, success: false });
   }
 };
@@ -6235,7 +6236,7 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
     const { filename, user_id, facility_id, jsonData } = req.body;
 
     const schema = Joi.object({
-      filename: Joi.string().required(),
+      filename: Joi.string().required().allow(null),
       user_id: Joi.string().required(),
       facility_id: Joi.string().required(),
       jsonData: Joi.string().required()
@@ -6251,18 +6252,49 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
     }
 
     const jsonConvertParse = JSON.parse(jsonData);
-
     const data = {
-      filename: filename,
+      filename: (!filename || filename === 'null' || filename === 'undefined') ? null : filename,
       user_id: user_id,
       facility_id: facility_id,
       no_of_rows: jsonConvertParse.length
     }
     const addPurchaseGoodsPayloads = await insertPurchaseGoodsPayloads(data);
     if (addPurchaseGoodsPayloads.insertId > 0) {
-      return res.status(201).json({ error: false, message: "add purchase goods payload", success: true })
+      for (const item of jsonConvertParse) {
+        try {
+          if (item.is_find === true) {
+            delete item.month;
+            delete item.typeofpurchase;  
+            delete item.vendorunit;
+            delete item.is_find;  
+            item.user_id = user_id;
+            await insertPurchaseGoodsMatched(item);
+          } else {
+            delete item.month;
+            delete item.typeofpurchase;
+            delete item.vendorunit;
+            delete item.is_find;
+            item.user_id = user_id;
+            await insertPurchaseGoodsUnmatched(item);
+          }
+        } catch (innerErr) {
+          console.error("Error inserting item:", innerErr.message);
+        }
+      }
+
+      return res.status(201).json({
+        error: false,
+        message: "Purchase goods payload added successfully.",
+        success: true
+      });
+    } else {
+      return res.status(500).json({
+        error: true,
+        message: "Failed to insert purchase goods payload.",
+        success: false
+      });
     }
   } catch (error) {
     return res.status(500).json({ error: true, message: "Internal server error " + error.message, success: false });
   }
-}
+};

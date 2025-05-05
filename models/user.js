@@ -367,6 +367,14 @@ module.exports = {
 
     insertPurchaseGoodsPayloads: async (data) => {
         return await db.query('INSERT INTO `purchase_goods_payloads` SET ?', [data]);
+    },
+
+    insertPurchaseGoodsMatched: async (data) => {
+        return await db.query('INSERT INTO `purchase_goods_matched_items_ai` SET ?', [data]);
+    },
+
+    insertPurchaseGoodsUnmatched: async (data) => {
+        return await db.query('INSERT INTO `purchase_goods_unmatched_items_ai` SET ?', [data]);
     }
 
 }
