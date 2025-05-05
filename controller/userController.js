@@ -6354,9 +6354,22 @@ exports.getPurchaseGoodsMatchedDataUsingPayloadId = async (req, res) => {
     const purchaseGoodMatched = await purchase_goods_matched_items_ai_by_payload_id(purchase_payload_id)
     if (purchaseGoodMatched.length > 0) {
       const matchedWithCategories = await Promise.all(
-        purchaseGoodMatched.map(async (val) => {
-          const [categoryEf] = await purchase_goods_categories_ef_by_match_productCategory_Id(val.match_productCategory_Id);
-          return { ...val, categoryEf };
+        purchaseGoodMatched.map(async (val, index) => {
+          const [productResult] = await purchase_goods_categories_ef_by_match_productCategory_Id(val.match_productCategory_Id);
+          const data = {
+            "S. No" : index + 1,
+            "Product Catgeory" : val.product_category,
+            "Product Description" : val.product_description,
+            "Purchase Date": val.purchase_date,
+            "Value / Quantity": val.value,
+            "Unit" : val.unit,
+            "Vendor": val.vendor_name,
+            "Vendor Specific EF": val.vendor_ef,
+            "Vendor Specific Unit": "",
+            "KG": "",
+            "kg CO2e / kg": ""
+          }
+          return { ...data, productResult };
         })
       );
       return res.status(200).json({
