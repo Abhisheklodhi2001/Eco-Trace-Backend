@@ -85,7 +85,9 @@ const {
   insertPurchaseGoodsPayloads,
   insertPurchaseGoodsMatched,
   insertPurchaseGoodsUnmatched,
-  getPurchaseGoodsPayloadsByUserAndFacilityId
+  getPurchaseGoodsPayloadsByUserAndFacilityId,
+  purchase_goods_matched_items_ai_by_payload_id,
+  purchase_goods_categories_ef_by_match_productCategory_Id
 } = require("../models/user");
 
 const {
@@ -5787,6 +5789,7 @@ exports.getPurchaseCategoriesEf = async (req, res) => {
             ISIC_code: "",
             country_id: "",
             typesofpurchasename: "",
+            other_category_flag: ""
           },
           is_find: false,
         };
@@ -6328,5 +6331,47 @@ exports.getPurchaseGoodsByUserAndFacilityId = async (req, res) => {
     }
   } catch (error) {
     return res.status(500).json({ error: true, message: "Internal server error " + error.message, success: false });
+  }
+};
+
+exports.getPurchaseGoodsMatchedDataUsingPayloadId = async (req, res) => {
+  try {
+    const { purchase_payload_id } = req.body;
+
+    const schema = Joi.object({
+      purchase_payload_id: Joi.number().required()
+    });
+
+    const result = schema.validate(req.body);
+    if (result.error) {
+      return res.status(400).json({
+        message: result.error.details[0].message,
+        status: 400,
+        success: false,
+      });
+    }
+
+    const purchaseGoodMatched = await purchase_goods_matched_items_ai_by_payload_id(purchase_payload_id)
+    if (purchaseGoodMatched.length > 0) {
+      const matchedWithCategories = await Promise.all(
+        purchaseGoodMatched.map(async (val) => {
+          const [categoryEf] = await purchase_goods_categories_ef_by_match_productCategory_Id(val.match_productCategory_Id);
+          return { ...val, categoryEf };
+        })
+      );
+      return res.status(200).json({
+        success: true,
+        message: "Matched data fetched successfully",
+        data: matchedWithCategories
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: "No matched data found",
+        data: []
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Internal server errro " + error.message, success: false });
   }
 };

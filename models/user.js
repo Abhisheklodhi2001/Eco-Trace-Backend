@@ -305,6 +305,7 @@ module.exports = {
                     ISIC_code: item.ISIC_code,
                     country_id: item.country_id,
                     typesofpurchasename: item.typesofpurchasename,
+                    other_category_flag: item.other_category_flag,
                     score: 1 - ratio / 100,
                     source: 'fuzz'
                 };
@@ -378,8 +379,16 @@ module.exports = {
     },
 
     getPurchaseGoodsPayloadsByUserAndFacilityId: async (userId, facilityID) => {
-        await db.query('WITH payload_counts AS ( SELECT p.id, COALESCE(m.matched_count, 0) AS matched_count, COALESCE(u.unmatched_count, 0) AS unmatched_count FROM purchase_goods_payloads p LEFT JOIN ( SELECT purchase_payload_id, COUNT(*) AS matched_count FROM purchase_goods_matched_items_ai GROUP BY purchase_payload_id ) m ON m.purchase_payload_id = p.id LEFT JOIN ( SELECT purchase_payload_id, COUNT(*) AS unmatched_count FROM purchase_goods_unmatched_items_ai GROUP BY purchase_payload_id ) u ON u.purchase_payload_id = p.id WHERE p.user_id = ? AND p.facility_id = ? ) UPDATE purchase_goods_payloads AS p JOIN payload_counts pc ON pc.id = p.id SET p.no_of_rows = 0, p.status = 1 WHERE pc.matched_count = 0 AND pc.unmatched_count = 0;', [userId, facilityID]);
-        return await db.query('SELECT purchase_goods_payloads.* FROM purchase_goods_payloads WHERE purchase_goods_payloads.user_id = ? AND purchase_goods_payloads.facility_id = ?', [userId, facilityID])
+        await db.query('WITH payload_counts AS( SELECT p.id, COALESCE(u.unmatched_count, 0) AS unmatched_count FROM purchase_goods_payloads p LEFT JOIN( SELECT purchase_payload_id, COUNT(*) AS unmatched_count FROM purchase_goods_unmatched_items_ai GROUP BY purchase_payload_id ) u ON u.purchase_payload_id = p.id WHERE p.user_id = ? AND p.facility_id = ? ) UPDATE purchase_goods_payloads AS p JOIN payload_counts pc ON pc.id = p.id SET p.status = 1 WHERE pc.unmatched_count = 0;', [userId, facilityID]);
+        return await db.query('SELECT purchase_goods_payloads.*, COUNT(purchase_goods_matched_items_ai.id) AS matched_no_of_rows FROM purchase_goods_payloads LEFT JOIN purchase_goods_matched_items_ai ON purchase_goods_matched_items_ai.purchase_payload_id = purchase_goods_payloads.id WHERE purchase_goods_payloads.user_id = ? AND purchase_goods_payloads.facility_id = ? GROUP BY purchase_goods_payloads.id;', [userId, facilityID])
+    },
+
+    purchase_goods_matched_items_ai_by_payload_id: async (id) => {
+        return await db.query('SELECT * FROM `purchase_goods_matched_items_ai` WHERE purchase_payload_id = ?', [id])
+    },
+
+    purchase_goods_categories_ef_by_match_productCategory_Id: async (id) => {
+        return await db.query('SELECT purchase_goods_categories_ef.*, B.typesofpurchasename FROM purchase_goods_categories_ef LEFT JOIN `dbo.typesofpurchase` AS B ON B.id = purchase_goods_categories_ef.typeofpurchase WHERE purchase_goods_categories_ef.id = ?', [id]);
     }
 
 }
