@@ -375,6 +375,11 @@ module.exports = {
 
     insertPurchaseGoodsUnmatched: async (data) => {
         return await db.query('INSERT INTO `purchase_goods_unmatched_items_ai` SET ?', [data]);
+    },
+
+    getPurchaseGoodsPayloadsByUserAndFacilityId: async (userId, facilityID) => {
+        await db.query('WITH payload_counts AS ( SELECT p.id, COALESCE(m.matched_count, 0) AS matched_count, COALESCE(u.unmatched_count, 0) AS unmatched_count FROM purchase_goods_payloads p LEFT JOIN ( SELECT purchase_payload_id, COUNT(*) AS matched_count FROM purchase_goods_matched_items_ai GROUP BY purchase_payload_id ) m ON m.purchase_payload_id = p.id LEFT JOIN ( SELECT purchase_payload_id, COUNT(*) AS unmatched_count FROM purchase_goods_unmatched_items_ai GROUP BY purchase_payload_id ) u ON u.purchase_payload_id = p.id WHERE p.user_id = ? AND p.facility_id = ? ) UPDATE purchase_goods_payloads AS p JOIN payload_counts pc ON pc.id = p.id SET p.no_of_rows = 0, p.status = 1 WHERE pc.matched_count = 0 AND pc.unmatched_count = 0;', [userId, facilityID]);
+        return await db.query('SELECT purchase_goods_payloads.* FROM purchase_goods_payloads WHERE purchase_goods_payloads.user_id = ? AND purchase_goods_payloads.facility_id = ?', [userId, facilityID])
     }
 
 }

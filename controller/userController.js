@@ -84,7 +84,8 @@ const {
   getVehicleFleetByFacilityCategoryId,
   insertPurchaseGoodsPayloads,
   insertPurchaseGoodsMatched,
-  insertPurchaseGoodsUnmatched
+  insertPurchaseGoodsUnmatched,
+  getPurchaseGoodsPayloadsByUserAndFacilityId
 } = require("../models/user");
 
 const {
@@ -6264,9 +6265,9 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
         try {
           if (item.is_find === true) {
             delete item.month;
-            delete item.typeofpurchase;  
+            delete item.typeofpurchase;
             delete item.vendorunit;
-            delete item.is_find;  
+            delete item.is_find;
             item.user_id = user_id;
             item.purchase_payload_id = addPurchaseGoodsPayloads.insertId;
             await insertPurchaseGoodsMatched(item);
@@ -6286,7 +6287,7 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
 
       return res.status(201).json({
         error: false,
-        message: "Purchase goods payload added successfully.",
+        message: "Data added with AI.",
         success: true
       });
     } else {
@@ -6295,6 +6296,35 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
         message: "Failed to insert purchase goods payload.",
         success: false
       });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Internal server error " + error.message, success: false });
+  }
+};
+
+exports.getPurchaseGoodsByUserAndFacilityId = async (req, res) => {
+  try {
+    const { userId, facilityID } = req.body;
+
+    const schema = Joi.object({
+      userId: Joi.number().required(),
+      facilityID: Joi.number().required(),
+    });
+
+    const result = schema.validate(req.body);
+    if (result.error) {
+      return res.status(400).json({
+        message: result.error.details[0].message,
+        status: 400,
+        success: false,
+      });
+    }
+
+    const getPurchaseGoodsPayloads = await getPurchaseGoodsPayloadsByUserAndFacilityId(userId, facilityID);
+    if (getPurchaseGoodsPayloads.length > 0) {
+      return res.status(200).json({ error: false, message: "Purchase goods payloads fetched successfully.", success: true, data: getPurchaseGoodsPayloads });
+    } else {
+      return res.status(200).json({ error: true, message: "No data found.", success: false, data: [] });
     }
   } catch (error) {
     return res.status(500).json({ error: true, message: "Internal server error " + error.message, success: false });

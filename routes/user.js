@@ -134,6 +134,6 @@ router.post('/get-vehicle-fleet-by-facility-id', auth, userController.getVehicle
 router.get('/download-excel-vehicle-fleet-by-facility-id', userController.downloadExcelVehicleFleetByFacilityId);
 router.get('/download-excel-vehicle-fleet-by-facility-category-id', userController.downloadExcelVehicleFleetByFacilityCategoryId);
 router.post('/add-purchase-goods-match-unmatch-data', userController.addPurchaseGoodsMatchUnmatch);
-router.post('/get-purchase-good-data-using-user-facilityId', userController.addPurchaseGoodsMatchUnmatch);
+router.post('/get-purchase-good-data-using-user-facilityId', userController.getPurchaseGoodsByUserAndFacilityId);
 
 module.exports = router;
