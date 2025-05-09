@@ -6357,7 +6357,7 @@ exports.getPurchaseGoodsMatchedDataUsingPayloadId = async (req, res) => {
         purchaseGoodMatched.map(async (val, index) => {
           const [productResult] = await purchase_goods_categories_ef_by_match_productCategory_Id(val.match_productCategory_Id);
           const data = {
-            "S. No" : index + 1,
+            "S. No." : index + 1,
             "Product Category" : val.product_category,
             "Product Description" : val.product_description,
             "Purchase Date": val.purchase_date,
