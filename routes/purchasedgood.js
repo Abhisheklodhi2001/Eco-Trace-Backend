@@ -3,6 +3,7 @@ const purchasedgoodController = require("../controller/purchasedgoodController")
 
 const upload_document = require("../middleware/upload_document");
 const auth = require("../middleware/auth");
+const upload = require("../middleware/upload_file");
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ router.get("/getAllCategories", auth, purchasedgoodController.getAllCategories);
 router.get("/getInvestmentSubCategory", auth, purchasedgoodController.getInvestmentSubCategory);
 router.post("/calculateInvestmentEmission", auth, purchasedgoodController.calculateInvestmentEmission);
 router.get("/getInvestmentEmission", auth, purchasedgoodController.getInvestmentEmission);
-router.post("/purchaseGoods", auth, purchasedgoodController.purchaseGoods);
+router.post("/purchaseGoods", auth, upload.single('file'), purchasedgoodController.purchaseGoods);
 router.post("/bulk-purchase-goods-upload", auth, purchasedgoodController.bulkPurchaseGoodsUpload);
 router.get("/getpurchaseproduct_code", auth, purchasedgoodController.getpurchaseproduct_code);
 router.get("/getTypesofpurchase/:product_code_id", auth, purchasedgoodController.getTypesofpurchase);

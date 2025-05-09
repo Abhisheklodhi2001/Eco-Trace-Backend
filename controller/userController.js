@@ -6358,7 +6358,7 @@ exports.getPurchaseGoodsMatchedDataUsingPayloadId = async (req, res) => {
           const [productResult] = await purchase_goods_categories_ef_by_match_productCategory_Id(val.match_productCategory_Id);
           const data = {
             "S. No" : index + 1,
-            "Product Catgeory" : val.product_category,
+            "Product Category" : val.product_category,
             "Product Description" : val.product_description,
             "Purchase Date": val.purchase_date,
             "Value / Quantity": val.value,
@@ -6369,7 +6369,7 @@ exports.getPurchaseGoodsMatchedDataUsingPayloadId = async (req, res) => {
             "KG": "",
             "kg CO2e / kg": ""
           }
-          return { ...data, productResult };
+          return { ...data, productResult, is_find: true };
         })
       );
       return res.status(200).json({

@@ -1,14 +1,15 @@
 const express = require("express");
 const businesstravelController = require("../controller/businesstravelController");
 const auth = require("../middleware/auth");
+const upload = require("../middleware/upload_file");
 
 const router = express.Router();
 
 router.get("/AllvehicleType", businesstravelController.AllvehicleType);
-router.post("/flightTravel", auth, businesstravelController.flightTravel);
+router.post("/flightTravel", auth, upload.single('file'), businesstravelController.flightTravel);
 router.post("/subvehicleType", auth, businesstravelController.subvehicleType);
-router.post("/Othermodes_of_transport", auth, businesstravelController.Othermodes_of_transport);
-router.post("/hotelStay", auth, businesstravelController.hotelStay);
+router.post("/Othermodes_of_transport", auth, upload.single('file'), businesstravelController.Othermodes_of_transport);
+router.post("/hotelStay", auth, upload.single('file'), businesstravelController.hotelStay);
 router.get("/flight_types", businesstravelController.flight_types);
 router.get("/getflightairportcode", auth, businesstravelController.getflightairportcode);
 router.post("/Addbusinessunit", auth, businesstravelController.Addbusinessunit);

@@ -289,7 +289,6 @@ exports.Addheatandsteam = async (req, res) => {
       readingValue, facilities } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
-
         readingValue: [Joi.string().empty().required()],
         unit: [Joi.string().empty().required()],
         note: [Joi.optional().allow("")],
@@ -298,6 +297,7 @@ exports.Addheatandsteam = async (req, res) => {
         SubCategorySeedID: [Joi.string().empty().required()],
         facilities: [Joi.string().empty().required()],
         typeID: [Joi.string().empty().required()],
+        file: [Joi.string().optional()]
       })
     );
     const result = schema.validate(req.body);
@@ -378,7 +378,8 @@ exports.Addheatandsteam = async (req, res) => {
         TenantID: 4,
         Active: 1,
         SendForApproval: 'yes',
-        scop3GHGEmission: GHGEmission1 ? GHGEmission1 : 0.00
+        scop3GHGEmission: GHGEmission1 ? GHGEmission1 : 0.00,
+        FileName: req.file != undefined ? req.file.filename : null
       }
 
 

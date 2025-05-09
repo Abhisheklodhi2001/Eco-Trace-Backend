@@ -497,6 +497,7 @@ exports.purchaseGoods = async (req, res) => {
         productcodestandard: [Joi.string().empty().required()],
         is_annual: [Joi.string().empty().required()],
         month: [Joi.string().empty().optional().allow("")],
+        file: [Joi.string().optional()]
       })
     );
     const result = schema.validate(req.body);
@@ -614,6 +615,7 @@ exports.purchaseGoods = async (req, res) => {
                   supplierunit: item.vendorunit ? item.vendorunit : "",
                   emission: emission ? (emission * item.valuequantity) : 0,
                   emission_factor_used: emission ? emission : 0,
+                  FileName: req.file != undefined ? req.file.filename : null,
                   user_id: user_id,
                   status: 'P',
                   facilities: facilities,
@@ -638,6 +640,7 @@ exports.purchaseGoods = async (req, res) => {
                 supplierunit: item.vendorunit ? item.vendorunit : "",
                 emission: emission ? (emission * item.valuequantity) : 0,
                 emission_factor_used: emission ? emission : 0,
+                FileName: req.file != undefined ? req.file.filename : null,
                 user_id: user_id,
                 status: 'P',
                 facilities: facilities,
@@ -864,7 +867,7 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
     }
   } catch (err) {
     console.log(err);
-    
+
     return res.status(500).json({
       success: false,
       message: "Internal server error " + err.message,

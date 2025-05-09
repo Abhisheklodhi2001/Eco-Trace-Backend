@@ -118,7 +118,7 @@ module.exports = {
 
   //updated code
   uplaodTemplate: async (data) => {
-    return db.query("INSERT INTO  `purchase_goods_categories`(typeofpurchase,productcodestandard,product_category,productcode,valuequantity,unit,vendor_id, supplier,supplierspecificEF,supplierunit,emission,emission_factor_used,user_id,status,facilities,year,month,is_annual) VALUES ?",
+    return db.query("INSERT INTO  `purchase_goods_categories`(typeofpurchase,productcodestandard,product_category,productcode,valuequantity,unit,vendor_id, supplier,supplierspecificEF,supplierunit,emission,emission_factor_used,FileName,user_id,status,facilities,year,month,is_annual) VALUES ?",
       [data.map((item) => [
         item.typeofpurchase,
         item.productcodestandard,
@@ -132,6 +132,7 @@ module.exports = {
         item.supplierunit,
         item.emission,
         item.emission_factor_used,
+        item.FileName,
         item.user_id,
         item.status,
         item.facilities,

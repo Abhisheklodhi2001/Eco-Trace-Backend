@@ -12,7 +12,7 @@ router.post("/Addrenewableelectricity", auth, upload.single('file'), scope2Contr
 
 router.post("/getrenewableelectricity", auth, scope2Controller.getrenewableelectricity);
 
-router.post("/Addheatandsteam", auth, scope2Controller.Addheatandsteam);
+router.post("/Addheatandsteam", auth, upload.single('file'), scope2Controller.Addheatandsteam);
 
 router.post("/getAllheatandsteam", auth, scope2Controller.getAllheatandsteam);
 

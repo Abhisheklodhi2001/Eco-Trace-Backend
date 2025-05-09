@@ -122,7 +122,8 @@ exports.flightTravel = async (req, res) => {
       flight_calc_mode: Joi.string().required(),
       jsonData: Joi.string().required(),
       year: Joi.number().required(),
-      facilities: Joi.number().required()
+      facilities: Joi.number().required(),
+      file: [Joi.string().optional()]
     });
 
     const result = schema.validate(req.body);
@@ -237,12 +238,12 @@ exports.flightTravel = async (req, res) => {
 
               let maxEF = flight_class1;
               let selectedFlightType = ef_factor1[0].flight_type;
-              
+
               if (flight_class2 > flight_class1) {
                 maxEF = flight_class2;
                 selectedFlightType = ef_factor2[0].flight_type;
               }
-              
+
               const flighttravel = {
                 flight_calc_mode,
                 flight_type: selectedFlightType,
@@ -258,6 +259,7 @@ exports.flightTravel = async (req, res) => {
                 distance: distanceResult || 0,
                 emission: Number((maxEF * no_of_passengers * distanceResult).toFixed(4)),
                 emission_factor: maxEF,
+                FileName: req.file != undefined ? req.file.filename : null,
                 user_id,
                 batch,
                 month,
@@ -321,6 +323,7 @@ exports.flightTravel = async (req, res) => {
               distance: distanceResult || 0,
               emission: Number((ef_factor * no_of_passengers * distanceResult).toFixed(4)),
               emission_factor: ef_factor,
+              FileName: req.file != undefined ? req.file.filename : null,
               user_id,
               batch,
               month,
@@ -359,6 +362,7 @@ exports.flightTravel = async (req, res) => {
             distance: distanceResult || 0,
             emission: Number((ef_factor * no_of_trips * distanceResult).toFixed(4)),
             emission_factor: ef_factor,
+            FileName: req.file != undefined ? req.file.filename : null,
             user_id,
             batch,
             month,
@@ -402,7 +406,8 @@ exports.Othermodes_of_transport = async (req, res) => {
     const schema = Joi.object({
       year: Joi.number().required(),
       facilities: Joi.number().required(),
-      jsonData: Joi.string().required()
+      jsonData: Joi.string().required(),
+      file: Joi.string().optional()
     });
 
     const result = schema.validate(req.body);
@@ -474,6 +479,7 @@ exports.Othermodes_of_transport = async (req, res) => {
                 type: type ? type : "",
                 no_of_passengers: no_of_passengers ? no_of_passengers : 0,
                 emission: ef,
+                FileName: req.file != undefined ? req.file.filename : null,
                 batch: batch ? batch : 1,
                 month: month,
                 year: year,
@@ -519,7 +525,8 @@ exports.hotelStay = async (req, res) => {
     const schema = Joi.object({
       year: Joi.number().required(),
       facilities: Joi.number().required(),
-      jsonData: Joi.string().required()
+      jsonData: Joi.string().required(),
+      file: Joi.string().optional()
     });
 
     const result = schema.validate(req.body);
@@ -615,6 +622,7 @@ exports.hotelStay = async (req, res) => {
                 no_of_nights_per_room: no_of_nights_per_room,
                 user_id: user_id,
                 emission: finalco2,
+                FileName: req.file != undefined ? req.file.filename : null,
                 batch: batch,
                 month: month,
                 year: year,

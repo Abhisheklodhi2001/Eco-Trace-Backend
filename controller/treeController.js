@@ -1148,13 +1148,9 @@ exports.UpdateChildInTree = async (req, res) => {
     let memberdetails = "";
     let family_id = jsonObject.family_id;
     if (new_child == 1 && old_id == 0) {
-
       const membersfetchMemberDetails_new = await fetchMemberDetails_new(family_id, tenant_id);
-
       if (membersfetchMemberDetails_new.length > 0) {
-
         const newchild = await fetchDetailsnewchild_id(family_id, jsonObject.id, tenant_id);
-
         const currentDateTime = moment();
         const memberData = {
           main_name: jsonObject.main_name,

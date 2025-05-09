@@ -364,7 +364,7 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
       });
     }
 
-    const user_id = req.user.user_id; // Authentication handled like GetSubCategoryTypes
+    const user_id = req.user.user_id;
 
     let array = [];
     let where = ` LEFT JOIN \`dbo.scopeseed\` S ON S.ID = MD.ScopeID WHERE MD.facilityId = '${facilityId}' ORDER BY MD.ScopeID ASC`;
@@ -388,7 +388,7 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
 
         await Promise.all(
           managePointCategories.map(async (item1) => {
-            let where1 = ` LEFT JOIN subcategoryseeddata C ON MD.ManageDataPointSubCategorySeedID = C.Id WHERE MD.ManageDataPointCategoriesId = '${item1.ID}' GROUP BY MD.ManageDataPointSubCategorySeedID`;
+            let where1 = ` LEFT JOIN subcategoryseeddata C ON MD.ManageDataPointSubCategorySeedID = C.Id WHERE MD.ManageDataPointCategoriesId = '${item1.ID}' GROUP BY MD.ManageDataPointSubCategorySeedID, C.Item`;
             let manageDataPointSubCategories = await getSelectedColumn(
               "\`dbo.managedatapointsubcategory\` MD",
               where1,
