@@ -2,7 +2,7 @@ const Joi = require("joi");
 const config = require("../config");
 const jwt = require("jsonwebtoken");
 
-const { getSelectedData, getData, country_check } = require("../models/common");
+const { getSelectedData, getData, country_check, getSelectedColumn } = require("../models/common");
 
 const {
   fetchWasteEmission,
@@ -630,52 +630,71 @@ const dataProgress = async (facilities, scopeObject) => {
     var homeOffice = { ...expectedOutput };
     count = 0;
     var Monthprogress = await getDataProgressHomeOffice(currentYear, facilities);
+
     if (Monthprogress.length > 0) {
+      let hasAnyMonth = false;
+
       for (let key in homeOffice) {
-        Monthprogress.find((elem) => {
-          if (elem.month == key) {
-            homeOffice[key] = 1;
-            count++;
-          }
-        });
+        const match = Monthprogress.find((elem) => elem.month == key);
+        if (match) {
+          hasAnyMonth = true;
+          break;
+        }
       }
-      var percentage = ((count / 12) * 100).toFixed(2);
-      scopeObject.scope3 += Number(percentage);
+
+      if (hasAnyMonth) {
+        for (let key in homeOffice) {
+          homeOffice[key] = 1;
+        }
+        var percentage = 100;
+        scopeObject.scope3 += Number(percentage);
+      } else {
+        var percentage = 0;
+      }
+
       DataProgress.push({
         category: "Home Office",
         data: homeOffice,
-        percentage: 100,
+        percentage: percentage,
         scope: "scope_3"
       });
     } else {
       DataProgress.push({ category: "Home Office", data: [], percentage: 0, scope: "scope_3" });
     }
 
-
     var employeeCommuting = { ...expectedOutput };
     count = 0;
     var Monthprogress = await getDataProgressEmployeeCommuting(currentYear, facilities);
+
     if (Monthprogress.length > 0) {
+      let hasAnyMonth = false;
+
       for (let key in employeeCommuting) {
-        Monthprogress.find((elem) => {
-          if (elem.month == key) {
-            employeeCommuting[key] = 1;
-            count++;
-          }
-        });
+        const match = Monthprogress.find((elem) => elem.month == key);
+        if (match) {
+          hasAnyMonth = true;
+          break;
+        }
       }
-      var percentage = ((count / 12) * 100).toFixed(2);
-      scopeObject.scope3 += Number(percentage);
+
+      let percentage = 0;
+      if (hasAnyMonth) {
+        for (let key in employeeCommuting) {
+          employeeCommuting[key] = 1;
+        }
+        percentage = 100;
+        scopeObject.scope3 += percentage;
+      }
+
       DataProgress.push({
         category: "Employee Commuting",
         data: employeeCommuting,
-        percentage: 100,
+        percentage: percentage,
         scope: "scope_3"
       });
     } else {
       DataProgress.push({ category: "Employee Commuting", data: [], percentage: 0, scope: "scope_3" });
     }
-
 
     var soldProducts = { ...expectedOutput };
     count = 0;
@@ -1031,18 +1050,106 @@ exports.getDataProgressForFacilities = async (req, res) => {
 
     let facilityArray = facilities.split(",");
     var FinalProgress = [];
-    for (element of facilityArray) {
-      var scopeObject = {}
-      scopeObject.scope1 = 0;
-      scopeObject.scope2 = 0;
-      scopeObject.scope3 = 0;
+
+    for (const element of facilityArray) {
+      let scopeObject = { scope1: 0, scope2: 0, scope3: 0 };
       const DataProgress = await dataProgress(element, scopeObject);
+      let array = [];
+
+      let where = ` LEFT JOIN \`dbo.scopeseed\` S ON S.ID = MD.ScopeID WHERE MD.facilityId = '${element}' ORDER BY MD.ScopeID ASC`;
+      const facilities = await getSelectedColumn(
+        "`dbo.managedatapoint` MD",
+        where,
+        "MD.*, S.scopeName"
+      );
+
+      await Promise.all(
+        facilities.map(async (item) => {
+          let where = ` JOIN \`dbo.categoryseeddata\` C ON MD.ManageDataPointCategorySeedID = C.Id WHERE MD.ManageDataPointId = '${item.ID}'`;
+          const managePointCategories = await getSelectedColumn(
+            "\`dbo.managedatapointcategory`\ MD",
+            where,
+            "C.CatName as catName, MD.*, MD.ManageDataPointCategorySeedID as manageDataPointCategorySeedID"
+          );
+
+          item.manageDataPointCategories = managePointCategories;
+          let subcategory = [];
+
+          await Promise.all(
+            managePointCategories.map(async (item1) => {
+              let where1 = ` LEFT JOIN subcategoryseeddata C ON MD.ManageDataPointSubCategorySeedID = C.Id WHERE MD.ManageDataPointCategoriesId = '${item1.ID}' GROUP BY MD.ManageDataPointSubCategorySeedID, C.Item`;
+              let manageDataPointSubCategories = await getSelectedColumn(
+                "\`dbo.managedatapointsubcategory\` MD",
+                where1,
+                "C.Item as subCatName, MD.*, MD.ManageDataPointSubCategorySeedID as manageDataPointSubCategorySeedID"
+              );
+
+              item1.manageDataPointSubCategories = manageDataPointSubCategories;
+              if (manageDataPointSubCategories.length > 0) {
+                subcategory.push(item1.manageDataPointSubCategories);
+              }
+            })
+          );
+
+          if (subcategory.length > 0) {
+            array.push(item);
+          }
+        })
+      );
+
+      let selectedScope1 = [];
+      let selectedScope2 = [];
+      let selectedScope3 = [];
+
+      const scope1 = array.filter((items) => items.ScopeID == 1);
+      if (scope1.length > 0) {
+        selectedScope1 = scope1[0].manageDataPointCategories.map((item) => item.catName);
+      }
+
+      const scope2 = array.filter((items) => items.ScopeID == 2);
+      if (scope2.length > 0) {
+        selectedScope2 = scope2[0].manageDataPointCategories.map((item) => item.catName);
+      }
+
+      const scope3 = array.filter((items) => items.ScopeID == 3);
+      if (scope3.length > 0) {
+        selectedScope3 = scope3[0].manageDataPointCategories.map((item) => item.catName);
+      }
+
       if (DataProgress.length > 0) {
-        scopeObject.scope1 = parseFloat(Number(scopeObject.scope1) / 4).toFixed(2);
-        scopeObject.scope2 = parseFloat(Number(scopeObject.scope2) / 2).toFixed(2);
-        scopeObject.scope3 = parseFloat(Number(scopeObject.scope3) / 15).toFixed(2);
-        console.log("scopeObject =>", scopeObject);
-        FinalProgress.push({ [element]: DataProgress, ...scopeObject });
+        let scope1Sum = 0;
+        let scope1Count = 0;
+        let scope2Sum = 0;
+        let scope2Count = 0;
+        let scope3Sum = 0;
+        let scope3Count = 0;
+        const matchedDataProgress = DataProgress.filter((val) => {
+          const catName = val.category;
+          const scope = val.scope;
+
+          if (scope === 'scope_1' && selectedScope1.includes(catName)) {
+            scope1Sum += Number(val.percentage);
+            scope1Count += 1;
+            return true;
+          }
+          if (scope === 'scope_2' && selectedScope2.includes(catName)) {
+            scope2Sum += Number(val.percentage);
+            scope2Count += 1;
+            return true;
+          }
+          if (scope === 'scope_3' && selectedScope3.includes(catName)) {
+            scope3Sum += Number(val.percentage);
+            scope3Count += 1;
+            return true;
+          }
+
+          return false;
+        });
+
+        scopeObject.scope1 = scope1Count > 0 ? parseFloat(scope1Sum / scope1Count).toFixed(2) : '0.00';
+        scopeObject.scope2 = scope2Count > 0 ? parseFloat(scope2Sum / scope2Count).toFixed(2) : '0.00';
+        scopeObject.scope3 = scope3Count > 0 ? parseFloat(scope3Sum / scope3Count).toFixed(2) : '0.00';
+        FinalProgress.push({ [element]: matchedDataProgress, ...scopeObject, scope3Sum, scope3Count });
       }
     }
 

@@ -7,6 +7,7 @@ const router = express.Router();
 router.post("/kpiInventory", auth, kpiReportController.kpiInventory);
 router.get("/kpiItemsList", auth, kpiReportController.kpiItemsList);
 router.post("/kpiInventoryFuelConsumption", auth, kpiReportController.kpiInventoryFuelConsumption);
+router.post("/getKpiInventoryStationaryCombustionde", auth, kpiReportController.getKpiInventoryStationaryCombustionde);
 router.post("/kpiInventoryEnergyUse", auth, kpiReportController.kpiInventoryEnergyUse);
 router.post("/kpiInventoryPassengerVehicleEmission", auth, kpiReportController.kpiInventoryPassengerVehicleEmission);
 router.post("/kpiInventoryTransportVehicle", auth, kpiReportController.kpiInventoryTransportVehicle);

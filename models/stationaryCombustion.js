@@ -6,6 +6,11 @@ module.exports = {
   fetchCombustionEmission: async (seed_id, type_id, country_id) => {
     return db.query(`select *  from stationarycombustion where  SubCategorySeedID= ? and SubCatTypeID= ? and country_id = ?`, [seed_id, type_id, country_id]);
   },
+
+  getStationaryComissionFactorByItemType: async (type) => {
+    return await db.query('select *  from stationarycombustion WHERE ItemType = ?', [type])
+  },
+
   checkCategoryInTemplate: async (facilityId) => {
     return db.query(`select C.CatName as catName, count(*) as count   \
                     from \`dbo.managedatapointcategory\` MDS,  \`dbo.categoryseeddata\` C, \`dbo.managedatapoint\` MDP  \

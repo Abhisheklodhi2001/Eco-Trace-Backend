@@ -8,6 +8,7 @@ const {
 
 const {
   fetchCombustionEmission,
+  getStationaryComissionFactorByItemType,
   insertCombustionEmission,
   getCombustionEmission,
   checkCategoryInTemplate
@@ -204,15 +205,53 @@ exports.stationaryCombustionEmission = async (req, res) => {
     let emsssionvalue = 0;
     let emsssionvalue1 = 0;
 
-    if ((emissionDetails[0].Item === "Petrol" || emissionDetails[0].Item === "Diesel") && blendType !== "No Blend") {
+    if (emissionDetails[0].Item === "Petrol" && blendType !== "No Blend") {
+      let multiplyFactor;
+      const getStationaryComissionFactor = await getStationaryComissionFactorByItemType('Bioethanol');
+      if (unit.toLowerCase() === kgUnit) {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_kg
+      }
+      else if (unit.toLowerCase() === litreUnit) {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_litre
+      }
+      else if (unit.toLowerCase() === kwhUnit) {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_kwh
+      }
+      else if (unit.toLowerCase() === tonnesUnit) {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_tonnes
+      }
       if (blendType === "Perc. Blend") {
         let percent = parseFloat(blendPercent / 100);
-        emsssionvalue = parseFloat((percent * 0.009) + ((1 - percent) * emissionFactor));
-        emsssionvalue1 = parseFloat((percent * 0.009) + ((1 - percent) * emissionFactor1));
+        emsssionvalue = parseFloat((percent * multiplyFactor) + ((1 - percent) * emissionFactor));
+        emsssionvalue1 = parseFloat((percent * multiplyFactor) + ((1 - percent) * emissionFactor1));
       }
       else if (blendType === "Average Blend") {
-        emsssionvalue = parseFloat((0.07 * 0.009) + ((1 - 0.07) * emissionFactor));
-        emsssionvalue1 = parseFloat((0.07 * 0.009) + ((1 - 0.07) * emissionFactor1));
+        emsssionvalue = parseFloat((0.07 * multiplyFactor) + ((1 - 0.07) * emissionFactor));
+        emsssionvalue1 = parseFloat((0.07 * multiplyFactor) + ((1 - 0.07) * emissionFactor1));
+      }
+    } else if (emissionDetails[0].Item === "Diesel" && blendType !== "No Blend") {
+      let multiplyFactor;
+      const getStationaryComissionFactor = await getStationaryComissionFactorByItemType('Biodiesel ME');
+      if (unit.toLowerCase() === kgUnit) {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_kg
+      }
+      else if (unit.toLowerCase() === litreUnit) {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_litre
+      }
+      else if (unit.toLowerCase() === kwhUnit) {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_kwh
+      }
+      else if (unit.toLowerCase() === tonnesUnit) {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_tonnes
+      }
+      if (blendType === "Perc. Blend") {
+        let percent = parseFloat(blendPercent / 100);
+        emsssionvalue = parseFloat((percent * multiplyFactor) + ((1 - percent) * emissionFactor));
+        emsssionvalue1 = parseFloat((percent * multiplyFactor) + ((1 - percent) * emissionFactor1));
+      }
+      else if (blendType === "Average Blend") {
+        emsssionvalue = parseFloat((0.07 * multiplyFactor) + ((1 - 0.07) * emissionFactor));
+        emsssionvalue1 = parseFloat((0.07 * multiplyFactor) + ((1 - 0.07) * emissionFactor1));
       }
     } else {
       emsssionvalue = emissionFactor;

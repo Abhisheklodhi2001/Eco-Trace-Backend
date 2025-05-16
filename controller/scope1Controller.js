@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const { Addassignedmanagedatapoint, AddstationarycombustionLiquid,
   Addrefrigerant, getrefrigerant, Allrefrigerants, Allfireextinguisher,
   Addfireextinguisher, getfireextinguisher, getelectricity, getRenewableelectricity, getheatandsteam,
-  getpassengervehicletypes, getdeliveryvehicletypesWithCountryId, getdeliveryvehicletypes, Addcompanyownedvehicles, getvehicletypesByName, getvehicletypes, getAllcompanyownedvehicles, Addmanagedatapointsubcategory, Addmanagedatapointcategory } = require("../models/scope1")
+  getpassengervehicletypes, getdeliveryvehicletypesWithCountryId, getdeliveryvehicletypes, Addcompanyownedvehicles, getvehicletypesByName, getvehicletypes, getAllcompanyownedvehicles, Addmanagedatapointsubcategory, Addmanagedatapointcategory, fetchStationaryCombustiondeByFacilityId, fetchRefrigerantsByFacilityId, fetchFireExtinguisherByFacilityId, fetchCompanyOwnedVehichleByFacilityId, fetchElectricityByFacilityId, fetchHeatAndSteamByFacilityId, fetchPurchasedGoodsAndServicesByFacilityId, fetchBussinessTravelByFacilityId } = require("../models/scope1")
 
 const {
   insertData,
@@ -18,6 +18,7 @@ const {
   getSelectedColumn,
   getSelectedData, country_check
 } = require("../models/common");
+const { error } = require("console");
 
 exports.electricitygridType = async (req, res) => {
   try {
@@ -2157,7 +2158,6 @@ exports.getAllcompanyownedvehicles = async (req, res) => {
 
 exports.getAllcategoryByfacility = async (req, res) => {
   try {
-
     const { id } = req.params;
     const schema = Joi.alternatives(
       Joi.object({
@@ -2219,5 +2219,54 @@ exports.getAllcategoryByfacility = async (req, res) => {
       error: err,
       status: 500,
     });
+  }
+};
+
+exports.getAttahcmentsbyFacilityID = async (req, res) => {
+  try {
+    const { facilityId } = req.query;
+    const schema = Joi.alternatives(
+      Joi.object({
+        facilityId: [Joi.number().empty().required()],
+      })
+    );
+    const result = schema.validate(req.query);
+    if (result.error) {
+      const message = result.error.details.map((i) => i.message).join(",");
+      return res.json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: 200,
+        success: true,
+      });
+    } else {
+      const fileUrl = `${config.base_url}/uploads/`
+      const [stationaryCombustionde, refrigerants, fireExtinguisher, companyOwnedVehichle, electricity, heatAndSteam, purchasedGoodsAndServices, bussinessTravel] = await Promise.all([
+        fetchStationaryCombustiondeByFacilityId(facilityId, fileUrl),
+        fetchRefrigerantsByFacilityId(facilityId, fileUrl),
+        fetchFireExtinguisherByFacilityId(facilityId, fileUrl),
+        fetchCompanyOwnedVehichleByFacilityId(facilityId, fileUrl),
+        fetchElectricityByFacilityId(facilityId, fileUrl),
+        fetchHeatAndSteamByFacilityId(facilityId, fileUrl),
+        fetchPurchasedGoodsAndServicesByFacilityId(facilityId, fileUrl),
+        fetchBussinessTravelByFacilityId(facilityId, fileUrl),
+      ])
+
+      return res.status(200).json({
+        error: false, message: "Attachments retrieved successfully", success: true, data: {
+          stationaryCombustionde,
+          refrigerants,
+          fireExtinguisher,
+          companyOwnedVehichle,
+          electricity,
+          heatAndSteam,
+          purchasedGoodsAndServices,
+          bussinessTravel
+        }
+      })
+    }
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Internal server error " + error.message, success: false })
   }
 };

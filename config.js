@@ -1,5 +1,5 @@
 module.exports = {
-  base_url: "http://13.200.247.29:4000",
+  base_url: "https://13.200.247.29:4000",
   APPLICATION_KEY: "",
   APPLICATION_SECRET: "",
   fcm_serverKey: "",

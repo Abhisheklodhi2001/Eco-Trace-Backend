@@ -396,6 +396,10 @@ module.exports = {
         return db.query(`select A.TypeName, SUM(A.ReadingValue) as emission, SUM(A.Scope3GHGEmission) as scope3_emission, COALESCE('Stationary Combustion', '')  as  category ,A.Month AS month_number, tbl_fuel_litre_GJ.litre_to_GJ, tbl_fuel_litre_GJ.GJ_To_KWH from stationarycombustionde A LEFT JOIN tbl_fuel_litre_GJ ON tbl_fuel_litre_GJ.id = A.TypeID ${where}`);
     },
 
+    getStationaryCombustiondeTypeByFacilty: async (facilities, year) => {
+        return await db.query('SELECT ReadingValue, TypeName, TypeID FROM `stationarycombustionde` WHERE facility_id = "' + facilities + '" AND Year = "' + year + '" AND Status = "S" GROUP BY TypeName ORDER BY ReadingValue DESC;')
+    },
+
     fuelStationaryCombusiton: async (facilities, year, finalyeardata) => {
         let where = "";
         where = ` where  A.Year = '${year}' and A.Status = 'S' `;

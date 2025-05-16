@@ -2,6 +2,7 @@ const express = require("express");
 const scope1Controller = require("../controller/scope1Controller");
 const auth = require("../middleware/auth");
 const upload = require("../middleware/upload_file");
+const { route } = require("./scope2");
 const router = express.Router();
 
 router.get("/GetSubCategoryTypes/:id", auth, scope1Controller.GetSubCategoryTypes);
@@ -26,6 +27,7 @@ router.post("/add-multiple-company-owned-vehicles", auth, upload.single('file'),
 router.post("/getAllcompanyownedvehicles", auth, scope1Controller.getAllcompanyownedvehicles);
 router.get("/getAllcategoryByfacility/:id", auth, scope1Controller.getAllcategoryByfacility);
 router.post("/electricitygridType", auth, scope1Controller.electricitygridType);
+router.get('/getAttahcmentsbyFacilityID', auth, scope1Controller.getAttahcmentsbyFacilityID);
 
 module.exports = router;
 

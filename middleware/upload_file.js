@@ -6,10 +6,10 @@ const storage = multer.diskStorage({
         cb(null, 'public/uploads/');
     },
     filename: function (req, file, cb) {
-        const originalName = path.parse(file.originalname).name;
+        const originalName = path.parse(file.originalname).name.replace(/\s+/g, '_');
         const ext = path.extname(file.originalname);
         const randomSuffix = Math.random().toString(36).substring(2, 5);
-        cb(null, originalName + '_' + randomSuffix + ext);
+        cb(null, `${originalName}_${randomSuffix}${ext}`);
     }
 });
 

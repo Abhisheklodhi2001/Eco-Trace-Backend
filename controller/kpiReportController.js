@@ -322,7 +322,7 @@ exports.kpiInventory = async (req, res) => {
                     await Promise.all(
                         array3.map(async (item) => {
                             let monthlyEmission = 0;
-                
+
                             if (item.month_number && monthlyData2.hasOwnProperty(item.month_number)) {
                                 if (item.category === "Employee Commuting" || item.category === "Home Office") {
                                     const dividedEmission = parseFloat(item.emission) / 12 || 0;
@@ -333,12 +333,12 @@ exports.kpiInventory = async (req, res) => {
                                     monthlyData2[item.month_number] += regularEmission;
                                     monthlyEmission = regularEmission;
                                 }
-                
+
                                 sum2 += monthlyEmission;
                             }
                         })
                     );
-                
+
                     if (categorydata.length > 0) {
                         for (let item of categorydata) {
                             if (item.month_number && monthlyData2.hasOwnProperty(item.month_number)) {
@@ -348,10 +348,10 @@ exports.kpiInventory = async (req, res) => {
                             }
                         }
                     }
-                
+
                     scope3month.push(Object.keys(monthlyData2));
                     scope3.push(Object.values(monthlyData2).map((num) => num !== null ? parseFloat(num / 1000).toFixed(3) : null));
-                }                              
+                }
 
                 let series = [
                     { name: "Scope 1", data: scope1[0] },
@@ -489,7 +489,7 @@ exports.kpiInventoryFuelConsumption = async (req, res) => {
                 monthlyData2[month] = null;
             });
 
-            const stationaryCombustionde = await kpiModel.stationaryCombustionde(facilities, year, type_id, finalyeardata);
+            const stationaryCombustionde = await kpiModel.stationaryCombustionde(facilities, year, type_id, finalyeardata);            
             if (stationaryCombustionde) {
                 let overallAnnualSum = 0;
                 let overallAnnualSum1 = 0;
@@ -532,6 +532,34 @@ exports.kpiInventoryFuelConsumption = async (req, res) => {
         }
     } catch (error) {
         return res.status(500).json({ error: true, message: "internal server error " + error.message, success: false })
+    }
+};
+
+exports.getKpiInventoryStationaryCombustionde = async (req, res) => {
+    try {
+        const { facilities, year } = req.body;
+        const schema = Joi.object({
+            facilities: Joi.string().allow("").required(),
+            year: Joi.string().allow("").required()
+        });
+
+        const result = schema.validate(req.body);
+        if (result.error) {
+            const errorMessage = result.error.details.map((i) => i.message).join(", ");
+            return res.status(400).json({
+                message: errorMessage,
+                error: errorMessage,
+                missingParams: result.error.details.map((i) => i.path.join(".")),
+                status: 400,
+                success: false,
+            });
+        } else {
+            const getStationaryCombustiondeType = await kpiModel.getStationaryCombustiondeTypeByFacilty(facilities, year);
+
+            return res.status(200).json({ error: false, message: "Successfully get stationary combustionde", success: true, data: getStationaryCombustiondeType });
+        }
+    } catch (error) {
+        return res.status(500).json({ error: true, message: "Internal server error " + error.message, success: false })
     }
 };
 
@@ -982,7 +1010,7 @@ exports.kpiInventoryTransportVehicle = async (req, res) => {
                     })
                 );
                 let sortedData = Object.entries(monthlyData1);
-                sortedData.unshift(["annual_total", Number(overallAnnualSum.toFixed(4))]);
+                sortedData.unshift(["annual_total", overallAnnualSum]);
                 monthlyData1 = Object.fromEntries(sortedData);
             }
 

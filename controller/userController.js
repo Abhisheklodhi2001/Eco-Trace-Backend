@@ -224,7 +224,6 @@ exports.login = async (req, res) => {
       });
     } else {
       const data = await fetchUserByEmailOrUsername(email);
-      console.log("data =>", data);
 
       let array = "";
       let where2 = ` where  A.is_super_admin ='1'`;
@@ -763,7 +762,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
             "*"
           );
           if (tenants.length > 0) {
-            item.user_name = tenants[0].tenantName;
+            item.user_name = tenants[0].userName;
           } else {
             item.user_name = "";
           }
@@ -3098,6 +3097,22 @@ exports.getAllusers = async (req, res) => {
               " A.*,R.Name as role, G.groupname as GroupName, G.id as group_id, G.is_subgroup, G.is_main_group"
             );
 
+            let groupIdFallback = null;
+            let groupNameFallback = null;
+            let groupMainFallback = null;
+            let groupSubFallback = null;
+            if (!getgroup1[0].group_id) {
+              const fallbackGroup = await getSelectedColumn(
+                "`dbo.group` AS grp",
+                `WHERE grp.tenantID = '${getgroup1[0].userId}' AND grp.is_main_group = 1`,
+                "grp.id, grp.groupname, grp.is_main_group, grp.is_subgroup"
+              );
+              groupIdFallback = fallbackGroup[0]?.id || null;
+              groupNameFallback = fallbackGroup[0]?.groupname || null;
+              groupMainFallback = fallbackGroup[0]?.is_main_group || null;
+              groupSubFallback = fallbackGroup[0]?.is_subgroup || null;
+            }
+
             if (
               getgroup1[0]?.role == "Super Admin" ||
               getgroup1[0]?.role == "Admin"
@@ -3127,10 +3142,10 @@ exports.getAllusers = async (req, res) => {
             item.facilityID = facility[0]?.facility_id;
             item.facilityName = facility[0]?.facilityName;
             item.role = getgroup1[0]?.role;
-            item.group_name = getgroup1[0]?.GroupName;
-            item.group_id = getgroup1[0]?.group_id;
-            item.is_subgroup = getgroup1[0]?.is_subgroup;
-            item.is_main_group = getgroup1[0]?.is_main_group;
+            item.group_name = getgroup1[0]?.GroupName == null ? groupNameFallback : getgroup1[0]?.GroupName;
+            item.group_id = getgroup1[0]?.group_id == null ? groupIdFallback : getgroup1[0]?.group_id;
+            item.is_subgroup = getgroup1[0]?.is_subgroup == null ? groupSubFallback : getgroup1[0]?.is_subgroup;
+            item.is_main_group = getgroup1[0]?.is_main_group == null ? groupMainFallback : getgroup1[0]?.is_main_group;
             item.facilities_id = getgroup1[0]?.facilityID.split(",").map(i => i.trim());
             item.password = "";
           })
@@ -6357,12 +6372,12 @@ exports.getPurchaseGoodsMatchedDataUsingPayloadId = async (req, res) => {
         purchaseGoodMatched.map(async (val, index) => {
           const [productResult] = await purchase_goods_categories_ef_by_match_productCategory_Id(val.match_productCategory_Id);
           const data = {
-            "S. No." : index + 1,
-            "Product Category" : val.product_category,
-            "Product Description" : val.product_description,
+            "S. No.": index + 1,
+            "Product Category": val.product_category,
+            "Product Description": val.product_description,
             "Purchase Date": val.purchase_date,
             "Value / Quantity": val.value,
-            "Unit" : val.unit,
+            "Unit": val.unit,
             "Vendor": val.vendor_name,
             "Vendor Specific EF": val.vendor_ef,
             "Vendor Specific Unit": "",
