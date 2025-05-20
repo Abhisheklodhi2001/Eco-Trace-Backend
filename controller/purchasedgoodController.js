@@ -715,15 +715,14 @@ exports.purchaseGoods = async (req, res) => {
 exports.bulkPurchaseGoodsUpload = async (req, res) => {
   try {
     const { facilities, jsonData, is_annual, productcodestandard, tenant_id } = req.body;
-    const schema = Joi.alternatives(
-      Joi.object({
-        facilities: [Joi.string().empty().required()],
-        jsonData: [Joi.string().empty().required()],
-        is_annual: [Joi.string().empty().required()],
-        productcodestandard: [Joi.string().empty().required()],
-        tenant_id: [Joi.number().required()],
-      })
-    );
+    const schema = Joi.object({
+      facilities: Joi.string().allow('').required(),
+      jsonData: Joi.string().allow('').required(),
+      is_annual: Joi.string().allow('').required(),
+      productcodestandard: Joi.string().allow('').required(),
+      tenant_id: Joi.number().required(),
+      file: Joi.string().optional()
+    });
     const result = schema.validate(req.body);
     if (result.error) {
       const message = result.error.details.map((i) => i.message).join(",");
@@ -807,6 +806,7 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
                   supplierunit: item.vendorunit ? item.vendorunit : "",
                   emission: emission ? (emission * item.valuequantity) : 0,
                   emission_factor_used: emission ? emission : 0,
+                  FileName: req.file != undefined ? req.file.filename : null,
                   user_id: user_id,
                   status: 'P',
                   facilities: facilities,

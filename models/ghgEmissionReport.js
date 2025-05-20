@@ -248,9 +248,9 @@ module.exports = {
             where += `  and  A.facilities IN (${facilities})`
         }
         if (finalyeardata == '2') {
-            where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
+            where += ` and  A.month IN ("Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
         } else {
-            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
+            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
         }
         return db.query("select SUM(A.emission) as emission,A.month AS month_number,COALESCE('Water Supply and Treatment', '')  as  category from water_supply_treatment_category A " + where);
     },
@@ -290,9 +290,9 @@ module.exports = {
             where += `  and  A.facility_id IN (${facilities})`
         }
         if (finalyeardata == '2') {
-            where += ` and  A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
+            where += ` and  A.month IN ("Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and  A.month !="" GROUP BY A.month`
         } else {
-            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
+            where += ` and  A.month IN ("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec") and  A.month !="" GROUP BY A.month`
         }
         return db.query("select SUM(A.emission) as emission,A.month AS month_number,COALESCE('Waste generated in operations', '')  as  category from waste_generated_emissions A " + where);
     },

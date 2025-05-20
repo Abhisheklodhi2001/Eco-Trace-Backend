@@ -676,10 +676,10 @@ exports.fetchScope2Comission = async (req, res) => {
         if (faciltyDetails.length !== 0) {
             const electricity = faciltyDetails.filter(item => item.SubCategorySeedID === 9);
             const recSolar = faciltyDetails.filter(item =>
-                item.SubCategorySeedID === 1002 && item.SourceName.toLowerCase() === 'solar'
+                item.SubCategorySeedID === 1002 && item.SourceName !== null && item.SourceName.toLowerCase() === 'solar'
             );
             const recWind = faciltyDetails.filter(item =>
-                item.SubCategorySeedID === 1002 && item.SourceName.toLowerCase() === 'wind'
+                item.SubCategorySeedID === 1002 && item.SourceName !== null && item.SourceName.toLowerCase() === 'wind'
             );
 
             const electricitySum = electricity.reduce((acc, curr) => {
@@ -808,7 +808,7 @@ exports.Scope3WiseEmssionOnly = async (req, res) => {
                 "Apr",
                 "May",
                 "Jun",
-                "July",
+                "Jul",
                 "Aug",
                 "Sep",
                 "Oct",
@@ -861,6 +861,7 @@ exports.Scope3WiseEmssionOnly = async (req, res) => {
                     facilitiesdata,
                     year
                 );
+
                 let flightTravelDetails = await flight_travelDetails(facilitiesdata, year);
                 let hotelstayDetails = await hotel_stayDetails(facilitiesdata, year);
                 let othermodes_of_transportDetails = await other_modes_of_transportDetails(facilitiesdata, year);

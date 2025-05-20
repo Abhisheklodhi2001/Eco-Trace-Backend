@@ -226,6 +226,7 @@ exports.Addrenewableelectricity = async (req, res) => {
         const factor_column_name = sourceName == 'Solar' ? ef_factor[0].solar : sourceName == 'Wind' ? ef_factor[0].wind : ef_factor[0].hydro;
         let Emission = parseFloat(readingValue * factor_column_name)
         category = {
+          sourceName: sourceName ? sourceName : "",
           Unit: unit ? unit : "",
           note: note ? note : "",
           GHGEmission: Emission,

@@ -156,14 +156,13 @@ exports.dashboardScope = async (req, res) => {
         finalyeardata = "2";
       }
 
-      //  console.log('215555555555555555555555555555555555',finalyeardata)
       let month = finalyear;
       let monthlyData = {};
       let monthlyData1 = {};
       let monthlyData2 = {};
       month.forEach((month) => {
         monthlyData[month] = 0;
-        monthlyData1[month] = 0; // Initialize all months with emission of 0
+        monthlyData1[month] = 0;
         monthlyData2[month] = 0;
       });
       let array = [];

@@ -46,6 +46,7 @@
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "path": "^0.12.7",
+    "pkg": "^5.8.1",
     "random-hash": "^4.0.1",
     "request": "^2.88.2",
     "require": "^0.4.4",
