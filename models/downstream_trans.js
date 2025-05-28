@@ -23,15 +23,18 @@ module.exports = {
 
   insertDownStreamVehicleStorageEmission: async (data) => {
     return db.query(
-      "INSERT INTO   `downstream_vehicle_storage_emissions` (vehicle_type, sub_category,no_of_vehicles,mass_of_product_trans,distance_travelled_km,emission,emission_storage,user_id,status,storage_facility_type,area_occupied,avg_no_of_days,facility_id,month,year) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      "INSERT INTO   `downstream_vehicle_storage_emissions` (vehicle_type, sub_category,no_of_vehicles,mass_of_product_trans,distance_travelled_km,emission, emission_factor_value, emission_factor_value_unit, emission_factor_storage, emission_factor_storage_unit, user_id,status,storage_facility_type,area_occupied,avg_no_of_days, facility_id,month,year) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       [
         data.vehicleType,
         data.subCategory,
         data.noOfVehicles,
         data.massOfProducts,
         data.distanceInKms,
-        data.emissionVehicle,
-        data.emissionStorage,
+        Number(data.emissionVehicle) + Number(data.emissionStorage),
+        data.emission_factor_value,
+        data.emission_factor_value_unit,
+        data.emission_factor_storage,
+        data.emission_factor_storage_unit,
         data.userId,
         data.status,
         data.storageFType,

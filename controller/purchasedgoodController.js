@@ -876,6 +876,189 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
   }
 };
 
+// exports.downStreamTransportation = async (req, res) => {
+//   try {
+//     const {
+//       vehicle_type,
+//       sub_category,
+//       noOfVehicles,
+//       mass_of_products,
+//       distanceInKms,
+//       storagef_type,
+//       area_occupied,
+//       averageNoOfDays,
+//       facility_id, year, month
+//     } = req.body;
+//     const schema = Joi.alternatives(
+//       Joi.object({
+//         vehicle_type: [Joi.string().optional().empty()],
+//         sub_category: [Joi.string().optional().empty()],
+//         noOfVehicles: [Joi.number().optional().empty()],
+//         mass_of_products: [Joi.number().optional().empty()],
+//         distanceInKms: [Joi.number().optional().empty()],
+//         storagef_type: [Joi.string().optional().empty()],
+//         area_occupied: [Joi.number().optional().empty()],
+//         averageNoOfDays: [Joi.number().optional().empty()],
+//         facility_id: [Joi.string().required().empty()],
+//         year: [Joi.string().empty().required()],
+//         month: [Joi.string().empty().required()],
+//       })
+//     );
+//     const result = schema.validate(req.body);
+//     if (result.error) {
+//       const message = result.error.details.map((i) => i.message).join(",");
+//       return res.json({
+//         message: result.error.details[0].message,
+//         error: message,
+//         missingParams: result.error.details[0].message,
+//         status: 200,
+//         success: true,
+//       });
+//     }
+//     let array = [];
+//     const user_id = req.user.user_id;
+//     let downStreamData = {};
+//     var EFV = 0;
+
+//     let countrydata = await country_check(facility_id);
+//     //console.log(countrydata[0].CountryId);
+//     if (countrydata.length == 0) {
+//       return res.json({
+//         success: false,
+//         message: "EF not Found for this country",
+//         status: 400,
+//       });
+//     }
+//     downStreamData.emissionStorage = 0;
+//     downStreamData.emissionVehicle = 0;
+//     if (checkNUllUnDString(vehicle_type)) {
+
+//       const vehicleIdRes = await fetchVehicleId(vehicle_type);
+//       let vehicleId = vehicleIdRes[0]?.id;
+//       const EFVRes = await fetchVehicleEmission(vehicleId, sub_category, countrydata[0].CountryId);
+//       if (EFVRes.length == 0) {
+//         return res.json({
+//           success: false,
+//           message: "No country found for this EF",
+//           status: 400,
+//         });
+//       } else {
+
+//         let yearRange = EFVRes[0]?.Fiscal_Year; // The string representing the year range
+//         let [startYear, endYear] = yearRange.split('-').map(Number);
+
+//         if (year >= startYear && year <= endYear) {
+//           EFV = EFVRes[0]?.emission_factor;
+//         } else if (year == startYear) {
+//           EFV = EFVRes[0]?.emission_factor;
+//         } else {
+//           return res.json({
+//             success: false,
+//             message: "EF not Found for this year",
+//             status: 400,
+//           });
+//         }
+//       }
+
+//       if (checkNUllUnD(EFV)) {
+//         let totalEmission = noOfVehicles * mass_of_products * distanceInKms * EFV;
+//         downStreamData.vehicleType = vehicle_type;
+//         downStreamData.subCategory = sub_category;
+//         downStreamData.noOfVehicles = noOfVehicles;
+//         downStreamData.massOfProducts = mass_of_products;
+//         downStreamData.distanceInKms = distanceInKms;
+//         downStreamData.emissionVehicle = totalEmission;
+//         downStreamData.emission_factor_value = EFV;
+//         downStreamData.emission_factor_value_unit = "kg co2e/km.tonnes";
+//         downStreamData.userId = user_id;
+//         downStreamData.status = "P";
+//         downStreamData.storageFType = "";
+//         downStreamData.areaOccupied = 0;
+//         downStreamData.averageNoOfDays = 0;
+//         downStreamData.facility_id = facility_id;
+
+//       }
+//     }
+//     if (checkNUllUnDString(storagef_type)) {
+//       const vehicleIdRes = await fetchVehicleId(storagef_type);
+//       const vehicleId = vehicleIdRes[0].id;
+//       const EFSRes = await fetchVehicleEmission(vehicleId, storagef_type, countrydata[0].CountryId);
+
+//       if (EFSRes.length == 0) {
+//         return res.json({
+//           success: false,
+//           message: "No country found for this EF",
+//           status: 400,
+//         });
+//       } else {
+//         let yearRange = EFSRes[0]?.Fiscal_Year; // The string representing the year range
+//         let [startYear, endYear] = yearRange.split('-').map(Number);
+//         var EFS = 0;
+
+//         if (year >= startYear && year <= endYear) {
+//           EFS = EFSRes[0]?.emission_factor;
+//         } else if (year == startYear) {
+//           EFS = EFSRes[0]?.emission_factor;
+//         } else {
+//           return res.json({
+//             success: false,
+//             message: "EF not Found for this year",
+//             status: 400,
+//           });
+//         }
+//       }
+
+//       let totalEmission = area_occupied * averageNoOfDays * EFS;
+//       downStreamData.storageFType = storagef_type;
+//       downStreamData.areaOccupied = area_occupied;
+//       downStreamData.averageNoOfDays = averageNoOfDays;
+//       downStreamData.emissionStorage = totalEmission;
+//       downStreamData.emission_factor_storage = EFS;
+//       downStreamData.emission_factor_storage_unit = "co2e tonnes/m2.day";
+//       downStreamData.userId = user_id;
+//       downStreamData.status = "P";
+//       downStreamData.facility_id = facility_id;
+//     }
+//     if (Object.keys(downStreamData).length != 0) {
+
+
+//       let months = JSON.parse(month);
+//       for (let monthdata of months) {
+//         downStreamData.month = monthdata;
+//         downStreamData.year = year;
+//         let resultInsert = await insertDownStreamVehicleStorageEmission(downStreamData)
+//         array.push(resultInsert.insertId);
+//       }
+
+
+//       if (array.length > 0) {
+//         return res.json({
+//           success: true,
+//           message: "Emissions Updated Succesfully",
+//           status: 200,
+//           downStreamData: downStreamData,
+//           insertId: array,
+//         });
+//       } else {
+//         return res.json({
+//           success: false,
+//           message: "Some Problem in Inserting the emission data by user",
+//           error: "Error Occured",
+//           status: 500,
+//         });
+//       }
+//     }
+//   } catch (err) {
+//     console.log(err);
+//     return res.json({
+//       success: false,
+//       message: "Internal server error",
+//       error: err,
+//       status: 500,
+//     });
+//   }
+// };
+
 exports.downStreamTransportation = async (req, res) => {
   try {
     const {
@@ -887,7 +1070,7 @@ exports.downStreamTransportation = async (req, res) => {
       storagef_type,
       area_occupied,
       averageNoOfDays,
-      facility_id, year, month
+      facility_id, year, month, mass_unit, distance_unit, area_occupied_unit
     } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
@@ -899,9 +1082,12 @@ exports.downStreamTransportation = async (req, res) => {
         storagef_type: [Joi.string().optional().empty()],
         area_occupied: [Joi.number().optional().empty()],
         averageNoOfDays: [Joi.number().optional().empty()],
-        facility_id: [Joi.string().required().empty()],
-        year: [Joi.string().empty().required()],
-        month: [Joi.string().empty().required()],
+        facility_id: [Joi.string().optional().empty()],
+        month: [Joi.string().optional().empty()],
+        year: [Joi.string().optional().empty()],
+        mass_unit: [Joi.string().optional().empty()],
+        distance_unit: [Joi.string().optional().empty()],
+        area_occupied_unit: [Joi.string().optional().empty()],
       })
     );
     const result = schema.validate(req.body);
@@ -915,38 +1101,26 @@ exports.downStreamTransportation = async (req, res) => {
         success: true,
       });
     }
-    let array = [];
+    let mass = "";
+    let distancekm = ""
+    let areaoccp = "";
     const user_id = req.user.user_id;
     let downStreamData = {};
+    downStreamData.emissionStorage = 0;
+    downStreamData.emissionVehicle = 0;
     var EFV = 0;
 
     let countrydata = await country_check(facility_id);
-    //console.log(countrydata[0].CountryId);
-    if (countrydata.length == 0) {
-      return res.json({
-        success: false,
-        message: "EF not Found for this country",
-        status: 400,
-      });
-    }
-    downStreamData.emissionStorage = 0;
-    downStreamData.emissionVehicle = 0;
+    if (countrydata.length == 0) return res.json({ success: false, message: "EF not Found for this country", status: 400 });
     if (checkNUllUnDString(vehicle_type)) {
-
       const vehicleIdRes = await fetchVehicleId(vehicle_type);
       let vehicleId = vehicleIdRes[0]?.id;
       const EFVRes = await fetchVehicleEmission(vehicleId, sub_category, countrydata[0].CountryId);
       if (EFVRes.length == 0) {
-        return res.json({
-          success: false,
-          message: "No country found for this EF",
-          status: 400,
-        });
+        return res.json({ success: false, message: "No country found for this EF", status: 400 });
       } else {
-
-        let yearRange = EFVRes[0]?.Fiscal_Year; // The string representing the year range
+        let yearRange = EFVRes[0]?.Fiscal_Year;
         let [startYear, endYear] = yearRange.split('-').map(Number);
-
         if (year >= startYear && year <= endYear) {
           EFV = EFVRes[0]?.emission_factor;
         } else if (year == startYear) {
@@ -960,23 +1134,52 @@ exports.downStreamTransportation = async (req, res) => {
         }
       }
 
+      downStreamData.emission_factor_unit = '';
+
+      if (mass_unit == 'tonnes' && mass_of_products) {
+        mass = parseFloat(mass_of_products * 1000);
+        downStreamData.emission_factor_unit = "";
+      } else {
+        mass = mass_of_products;
+        downStreamData.emission_factor_unit = "";
+      }
+
+      if (distance_unit == 'miles' && distanceInKms) {
+        distancekm = parseFloat(distanceInKms * 1.60934);
+        downStreamData.emission_factor_unit = "";
+      } else {
+        distancekm = distanceInKms;
+        downStreamData.emission_factor_unit = "";
+      }
+
       if (checkNUllUnD(EFV)) {
-        let totalEmission = noOfVehicles * mass_of_products * distanceInKms * EFV;
+        let totalEmission = parseFloat(noOfVehicles * mass * distancekm * EFV).toFixed(2);
         downStreamData.vehicleType = vehicle_type;
         downStreamData.subCategory = sub_category;
         downStreamData.noOfVehicles = noOfVehicles;
-        downStreamData.massOfProducts = mass_of_products;
-        downStreamData.distanceInKms = distanceInKms;
+        downStreamData.massOfProducts = mass;
+        downStreamData.distanceInKms = distancekm;
         downStreamData.emissionVehicle = totalEmission;
+        downStreamData.emission_factor_value = EFV;
+        downStreamData.emission_factor_value_unit = "kg co2e/km.tonnes";
         downStreamData.userId = user_id;
         downStreamData.status = "P";
         downStreamData.storageFType = "";
         downStreamData.areaOccupied = 0;
         downStreamData.averageNoOfDays = 0;
         downStreamData.facility_id = facility_id;
+        downStreamData.mass_unit = mass_unit;
+        downStreamData.distance_unit = distance_unit;
 
       }
     }
+
+    if (area_occupied_unit == 'm2') {
+      areaoccp = parseFloat(area_occupied * 10.7639)
+    } else {
+      areaoccp = area_occupied
+    }
+
     if (checkNUllUnDString(storagef_type)) {
       const vehicleIdRes = await fetchVehicleId(storagef_type);
       const vehicleId = vehicleIdRes[0].id;
@@ -988,11 +1191,11 @@ exports.downStreamTransportation = async (req, res) => {
           message: "No country found for this EF",
           status: 400,
         });
-      } else {
-        let yearRange = EFSRes[0]?.Fiscal_Year; // The string representing the year range
+      }
+      else {
+        let yearRange = EFSRes[0]?.Fiscal_Year;
         let [startYear, endYear] = yearRange.split('-').map(Number);
         var EFS = 0;
-
         if (year >= startYear && year <= endYear) {
           EFS = EFSRes[0]?.emission_factor;
         } else if (year == startYear) {
@@ -1006,17 +1209,19 @@ exports.downStreamTransportation = async (req, res) => {
         }
       }
 
-      let totalEmission = area_occupied * averageNoOfDays * EFS;
+      let totalEmission = parseFloat(areaoccp * averageNoOfDays * EFS).toFixed(2);
       downStreamData.storageFType = storagef_type;
-      downStreamData.areaOccupied = area_occupied;
+      downStreamData.areaOccupied = areaoccp;
       downStreamData.averageNoOfDays = averageNoOfDays;
       downStreamData.emissionStorage = totalEmission;
+      downStreamData.emission_factor_storage = EFS;
+      downStreamData.emission_factor_storage_unit = "co2e tonnes/m2.day";
       downStreamData.userId = user_id;
       downStreamData.status = "P";
       downStreamData.facility_id = facility_id;
     }
+    let array = [];
     if (Object.keys(downStreamData).length != 0) {
-
 
       let months = JSON.parse(month);
       for (let monthdata of months) {
@@ -1025,9 +1230,9 @@ exports.downStreamTransportation = async (req, res) => {
         let resultInsert = await insertDownStreamVehicleStorageEmission(downStreamData)
         array.push(resultInsert.insertId);
       }
-
-
-      console.log("downStreamData ==> ", downStreamData);
+      // const resultInsert = await insertDownStreamVehicleStorageEmission(
+      //   downStreamData
+      // );
       if (array.length > 0) {
         return res.json({
           success: true,
@@ -1212,7 +1417,7 @@ exports.upStreamTransportation = async (req, res) => {
       downStreamData.averageNoOfDays = averageNoOfDays;
       downStreamData.emissionStorage = totalEmission;
       downStreamData.emission_factor_storage = EFS;
-      downStreamData.emission_factor_storage_unit = "Tonnes co2e/m2.day";
+      downStreamData.emission_factor_storage_unit = "co2e tonnes/m2.day";
       downStreamData.userId = user_id;
       downStreamData.status = "P";
       downStreamData.facility_id = facility_id;

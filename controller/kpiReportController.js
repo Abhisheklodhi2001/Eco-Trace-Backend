@@ -489,7 +489,7 @@ exports.kpiInventoryFuelConsumption = async (req, res) => {
                 monthlyData2[month] = null;
             });
 
-            const stationaryCombustionde = await kpiModel.stationaryCombustionde(facilities, year, type_id, finalyeardata);            
+            const stationaryCombustionde = await kpiModel.stationaryCombustionde(facilities, year, type_id, finalyeardata);
             if (stationaryCombustionde) {
                 let overallAnnualSum = 0;
                 let overallAnnualSum1 = 0;
@@ -853,7 +853,7 @@ exports.kpiInventoryPassengerVehicleEmission = async (req, res) => {
                     })
                 );
                 let sortedData = Object.entries(monthlyData1);
-                sortedData.unshift(["annual_total", overallAnnualSum]);
+                sortedData.unshift(["annual_total", Number(overallAnnualSum.toFixed(4))]);
                 monthlyData1 = Object.fromEntries(sortedData);
             }
 
@@ -870,7 +870,7 @@ exports.kpiInventoryPassengerVehicleEmission = async (req, res) => {
                     })
                 );
                 let sortedData = Object.entries(monthlyData2);
-                sortedData.unshift(["annual_total", overallAnnualSum]);
+                sortedData.unshift(["annual_total", Number(overallAnnualSum.toFixed(4))]);
                 monthlyData2 = Object.fromEntries(sortedData);
             }
 
@@ -887,7 +887,7 @@ exports.kpiInventoryPassengerVehicleEmission = async (req, res) => {
                     })
                 );
                 let sortedData = Object.entries(monthlyData3);
-                sortedData.unshift(["annual_total", overallAnnualSum]);
+                sortedData.unshift(["annual_total", Number(overallAnnualSum.toFixed(4))]);
                 monthlyData3 = Object.fromEntries(sortedData);
             }
 
@@ -1309,7 +1309,7 @@ exports.kpiInventoryEmployeeCommute = async (req, res) => {
                     })
                 );
                 let sortedData = Object.entries(monthlyData1);
-                sortedData.unshift(["annual_total", overallAnnualSum]);
+                sortedData.unshift(["annual_total", Number(overallAnnualSum.toFixed(4))]);
                 monthlyData1 = Object.fromEntries(sortedData);
             }
 
@@ -1327,7 +1327,7 @@ exports.kpiInventoryEmployeeCommute = async (req, res) => {
                     })
                 );
                 let sortedData = Object.entries(monthlyData2);
-                sortedData.unshift(["annual_total", overallAnnualSum]);
+                sortedData.unshift(["annual_total", Number(overallAnnualSum.toFixed(4))]);
                 monthlyData2 = Object.fromEntries(sortedData);
             }
 
@@ -1449,19 +1449,19 @@ exports.kpiInventoryWasteGenerated = async (req, res) => {
 
                         if (item.month_number && monthlyDiverteTreatment.hasOwnProperty(item.month_number)) {
                             monthlyDiverteTreatment[item.month_number] += Number((item.emission / 1000).toFixed(4)) || null;
-                            overallAnnualSum1 += Number((item.emission / 1000).toFixed(4)) || null;
+                            overallAnnualSum1 += Number((item.emission / 1000)) || null;
                         }
                     })
                 );
                 monthlyWasteDiversion = { annual_total: overallAnnualSum, ...monthlyWasteDiversion };
-                monthlyDiverteTreatment = { annual_total: overallAnnualSum1, ...monthlyDiverteTreatment };
+                monthlyDiverteTreatment = { annual_total: Number(overallAnnualSum1.toFixed(4)), ...monthlyDiverteTreatment };
             }
             if (categorydata2) {
                 await Promise.all(
                     categorydata2.map(async (item) => {
                         if (item.month_number && monthlyDivertedEmission.hasOwnProperty(item.month_number)) {
                             monthlyDivertedEmission[item.month_number] += parseFloat(item.total_waste) || null;
-                            overallAnnualSum2 += parseFloat(item.total_waste) || null;
+                            overallAnnualSum2 += Number((item.total_waste).toFixed(4)) || null;
                         }
                     })
                 );
@@ -1472,7 +1472,7 @@ exports.kpiInventoryWasteGenerated = async (req, res) => {
                     categorydata3.map(async (item) => {
                         if (item.month_number && monthlyDivertedEmission.hasOwnProperty(item.month_number)) {
                             monthlyDivertedEmission[item.month_number] += parseFloat(item.total_waste) || null;
-                            overallAnnualSum2 += parseFloat(item.total_waste) || null;
+                            overallAnnualSum2 += Number((item.total_waste).toFixed(4)) || null;
                         }
                     })
                 );
@@ -1483,7 +1483,7 @@ exports.kpiInventoryWasteGenerated = async (req, res) => {
                     categorydata4.map(async (item) => {
                         if (item.month_number && monthlyDivertedEmission.hasOwnProperty(item.month_number)) {
                             monthlyDivertedEmission[item.month_number] += parseFloat(item.total_waste) || null;
-                            overallAnnualSum2 += parseFloat(item.total_waste) || null;
+                            overallAnnualSum2 += Number((item.total_waste).toFixed(4)) || null;
                         }
                     })
                 );
@@ -1501,6 +1501,8 @@ exports.kpiInventoryWasteGenerated = async (req, res) => {
             });
         }
     } catch (error) {
+        console.log(error);
+
         return res.status(500).json({ error: true, message: "internal server error " + error.message, success: false });
     }
 };
@@ -1610,7 +1612,7 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
                     overallAnnualSum += parseFloat(item.water_discharge) || null;
                 }
             });
-            waterDischargeByMonth = { annual_total: overallAnnualSum, ...waterDischargeByMonth };
+            waterDischargeByMonth = { annual_total: Number(overallAnnualSum.toFixed(4)), ...waterDischargeByMonth };
 
             waterWithdrawal?.forEach((item) => {
                 if (item.month_number && waterUsageByMonth.hasOwnProperty(item.month_number)) {
@@ -1618,7 +1620,7 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
                     overallAnnualSum1 += parseFloat(item.water_withdrawl) || null;
                 }
             });
-            waterUsageByMonth = { annual_total: overallAnnualSum1, ...waterUsageByMonth };
+            waterUsageByMonth = { annual_total: Number(overallAnnualSum1.toFixed(4)), ...waterUsageByMonth };
 
             Object.keys(waterUsageByMonth).forEach((month) => {
                 if (waterDischargeByMonth[month]) {
@@ -1632,7 +1634,7 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
                     overallAnnualSum2 += parseFloat(item.water_treatment) || null;
                 }
             });
-            waterTreatmentByMonth = { annual_total: overallAnnualSum2, ...waterTreatmentByMonth };
+            waterTreatmentByMonth = { annual_total: Number(overallAnnualSum2.toFixed(4)), ...waterTreatmentByMonth };
 
             waterEmission?.forEach((item) => {
                 if (item.month_number && waterEmissionByMonth.hasOwnProperty(item.month_number)) {
@@ -1640,7 +1642,7 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
                     overallAnnualSum3 += Number((item.emission / 1000).toFixed(4)) || null;
                 }
             });
-            waterEmissionByMonth = { annual_total: overallAnnualSum3, ...waterEmissionByMonth };
+            waterEmissionByMonth = { annual_total: Number(overallAnnualSum3.toFixed(4)), ...waterEmissionByMonth };
 
             return res.json({
                 success: true,
