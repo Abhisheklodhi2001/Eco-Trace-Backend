@@ -7,7 +7,7 @@ const { fetchDetailsByFamilyID, insertFamily, fetchDetails, insertMemberDetails,
   fetchRelationbyIdFamilyId, fetchMemberDetailsById, fetchDetailsbyId, fetchMemberDetailsBylevel, fetchDetailsbydefault } = require("../models/tree")
 const { getSelectedColumn, updateData, deleteData } = require("../models/common");
 const baseurl = config.base_url;
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs');
 
 exports.allTreedata = async (req, res) => {
   try {

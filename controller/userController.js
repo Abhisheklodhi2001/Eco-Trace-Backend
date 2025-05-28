@@ -117,7 +117,7 @@ const {
 } = require("../models/businesstravel");
 
 const baseurl = config.base_url;
-const bcrypt = require("bcrypt");
+const bcrypt = require('bcryptjs');
 const JWT_SECRET = 'my-32-character-ultra-secure-and-ultra-long-secret'
 
 function generateRandomString(length) {

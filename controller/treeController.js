@@ -8,7 +8,7 @@ const { fetchDetailsByFamilyID, insertFamily, insertFamily_new, fetchDetails, in
   fetchDetailtenant_id, fetchDetailsbyId, fetchDetailsnewchild, fetchMemberDetails_new, fetchMemberDetailsById_new, fetchRelationbyIdFamilyId_new, addFacilities, fetchDetailsbydefault, fetchgroupdetailForFacilites, addGroupForCreateTree } = require("../models/tree")
 const { getSelectedColumn, updateData, deleteData } = require("../models/common");
 const baseurl = config.base_url;
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { charLength } = require("random-hash/dist/baseN");
 
 exports.allTreedata = async (req, res) => {

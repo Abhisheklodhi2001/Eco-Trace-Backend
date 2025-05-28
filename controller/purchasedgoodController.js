@@ -1331,8 +1331,9 @@ exports.vehicleCategories = async (req, res) => {
 
 exports.vehicleSubCategories = async (req, res) => {
   try {
-    const id = req.query.id;
-    let where = `where vehicle_category_id = ${id}`;
+    const { id, facility_id } = req.query;
+    let countrydata = await country_check(facility_id);
+    let where = `where vehicle_category_id = ${id} AND country_id = ${countrydata[0].CountryId}`;
     const vehicleDetails = await getData("vehicle_subcategory", where);
     if (vehicleDetails.length > 0) {
       return res.json({

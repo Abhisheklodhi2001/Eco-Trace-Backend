@@ -165,7 +165,7 @@ exports.dashboardScope = async (req, res) => {
         monthlyData1[month] = 0;
         monthlyData2[month] = 0;
       });
-      let array = [];
+
       let array1 = [];
       let array2 = [];
       let array3 = [];
@@ -208,16 +208,8 @@ exports.dashboardScope = async (req, res) => {
           facilitiesdata = "0";
         }
 
-        categorydata = await getCombustionEmission(
-          facilitiesdata,
-          year,
-          finalyeardata
-        );
-        categorydata2 = await Allrefrigerants(
-          facilitiesdata,
-          year,
-          finalyeardata
-        );
+        categorydata = await getCombustionEmission(facilitiesdata, year, finalyeardata);
+        categorydata2 = await Allrefrigerants(facilitiesdata, year, finalyeardata);
         categorydata3 = await Allfireextinguisher(
           facilitiesdata,
           year,
@@ -404,28 +396,31 @@ exports.dashboardScope = async (req, res) => {
           ...categorydata20,
           ...categorydata21,
         ];
+
         if (array3) {
           await Promise.all(
             array3.map(async (item) => {
-              let employeeamount = 0;
-              let homecategory = 0;
+              const emission = parseFloat(item.emission) || 0;
 
               if (
-                item.month_number &&
-                monthlyData2.hasOwnProperty(item.month_number)
+                item.category === "Employee Commuting" ||
+                item.category === "Home Office"
               ) {
-                monthlyData2[item.month_number] += parseFloat(item.emission) || 0;
-                if (item.category == "Employee Commuting") {
-                  employeeamount = parseFloat(item.emission);
-                  monthlyData2[item.month_number] += parseFloat(item.emission / 12);
-                }
-                if (item.category == "Home Office") {
-                  homecategory = parseFloat(item.emission);
-                  monthlyData2[item.month_number] += parseFloat(item.emission / 12);
-                }
+                const portion = emission / 12;
 
-                sum2 += parseFloat(item.emission) + employeeamount + homecategory;
+                for (const key of Object.keys(monthlyData2)) {
+                  monthlyData2[key] += portion;
+                }
+              } else {
+                const monthIndex = parseInt(item.month_number);
+                const monthKey = finalyear[monthIndex];
+
+                if (monthKey && monthlyData2.hasOwnProperty(monthKey)) {
+                  monthlyData2[monthKey] += emission;
+                }
               }
+
+              sum2 += emission;
             })
           );
 
