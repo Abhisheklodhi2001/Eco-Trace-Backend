@@ -1108,29 +1108,16 @@ exports.upStreamTransportation = async (req, res) => {
     var EFV = 0;
 
     let countrydata = await country_check(facility_id);
-    //console.log(countrydata[0].CountryId);
-    if (countrydata.length == 0) {
-      return res.json({
-        success: false,
-        message: "EF not Found for this country",
-        status: 400,
-      });
-    }
+    if (countrydata.length == 0) return res.json({ success: false, message: "EF not Found for this country", status: 400 });
     if (checkNUllUnDString(vehicle_type)) {
       const vehicleIdRes = await fetchVehicleId(vehicle_type);
       let vehicleId = vehicleIdRes[0]?.id;
       const EFVRes = await fetchVehicleEmission(vehicleId, sub_category, countrydata[0].CountryId);
-
       if (EFVRes.length == 0) {
-        return res.json({
-          success: false,
-          message: "No country found for this EF",
-          status: 400,
-        });
+        return res.json({ success: false, message: "No country found for this EF", status: 400 });
       } else {
-        let yearRange = EFVRes[0]?.Fiscal_Year; // The string representing the year range
+        let yearRange = EFVRes[0]?.Fiscal_Year;
         let [startYear, endYear] = yearRange.split('-').map(Number);
-
         if (year >= startYear && year <= endYear) {
           EFV = EFVRes[0]?.emission_factor;
         } else if (year == startYear) {
@@ -1144,20 +1131,23 @@ exports.upStreamTransportation = async (req, res) => {
         }
       }
 
+      downStreamData.emission_factor_unit = '';
 
       if (mass_unit == 'tonnes' && mass_of_products) {
-        mass = parseFloat(mass_of_products * 1000)
+        mass = parseFloat(mass_of_products * 1000);
+        downStreamData.emission_factor_unit = "";
       } else {
-        mass = mass_of_products
+        mass = mass_of_products;
+        downStreamData.emission_factor_unit = "";
       }
 
       if (distance_unit == 'miles' && distanceInKms) {
-        distancekm = parseFloat(distanceInKms * 1.60934)
+        distancekm = parseFloat(distanceInKms * 1.60934);
+        downStreamData.emission_factor_unit = "";
       } else {
-        distancekm = distanceInKms
+        distancekm = distanceInKms;
+        downStreamData.emission_factor_unit = "";
       }
-
-
 
       if (checkNUllUnD(EFV)) {
         let totalEmission = parseFloat(noOfVehicles * mass * distancekm * EFV).toFixed(2);
@@ -1167,6 +1157,8 @@ exports.upStreamTransportation = async (req, res) => {
         downStreamData.massOfProducts = mass;
         downStreamData.distanceInKms = distancekm;
         downStreamData.emissionVehicle = totalEmission;
+        downStreamData.emission_factor_value = EFV;
+        downStreamData.emission_factor_value_unit = "kg co2e/km.tonnes";
         downStreamData.userId = user_id;
         downStreamData.status = "P";
         downStreamData.storageFType = "";
@@ -1198,8 +1190,7 @@ exports.upStreamTransportation = async (req, res) => {
         });
       }
       else {
-
-        let yearRange = EFSRes[0]?.Fiscal_Year; // The string representing the year range
+        let yearRange = EFSRes[0]?.Fiscal_Year;
         let [startYear, endYear] = yearRange.split('-').map(Number);
         var EFS = 0;
         if (year >= startYear && year <= endYear) {
@@ -1220,6 +1211,8 @@ exports.upStreamTransportation = async (req, res) => {
       downStreamData.areaOccupied = areaoccp;
       downStreamData.averageNoOfDays = averageNoOfDays;
       downStreamData.emissionStorage = totalEmission;
+      downStreamData.emission_factor_storage = EFS;
+      downStreamData.emission_factor_storage_unit = "Tonnes co2e/m2.day";
       downStreamData.userId = user_id;
       downStreamData.status = "P";
       downStreamData.facility_id = facility_id;
@@ -1237,7 +1230,6 @@ exports.upStreamTransportation = async (req, res) => {
       // const resultInsert = await insertUpStreamVehicleStorageEmission(
       //   downStreamData
       // );
-      console.log("downStreamData ==> ", downStreamData);
       if (array.length > 0) {
         return res.json({
           success: true,
@@ -1320,12 +1312,7 @@ exports.vehicleCategories = async (req, res) => {
     }
   } catch (err) {
     console.log(err);
-    return res.json({
-      success: false,
-      message: "Internal server error",
-      error: err,
-      status: 500,
-    });
+    return res.json({ success: false, message: "Internal server error", error: err, status: 500, });
   }
 };
 
