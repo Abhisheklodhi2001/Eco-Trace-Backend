@@ -3,7 +3,7 @@ const config = require("../config");
 const xlsx = require("xlsx");
 const jwt = require("jsonwebtoken");
 
-const { getSelectedData, getData,country_check } = require("../models/common");
+const { getSelectedData, getData, country_check } = require("../models/common");
 
 const { insertUpLeaseEmission, insertdownLeaseEmission } = require("../models/upLease");
 
@@ -11,10 +11,10 @@ const { insertUpLeaseEmission, insertdownLeaseEmission } = require("../models/up
 const {
   fetchVehicleId,
   fetchVehicleEmission,
- } = require("../models/downstream_trans");
+} = require("../models/downstream_trans");
 
-const {checkNUllUnD} = require("../services/helper")
- 
+const { checkNUllUnD } = require("../services/helper")
+
 exports.upLeaseEmissionCalculate = async (req, res) => {
   try {
     const {
@@ -34,12 +34,12 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
       is_facility,
       is_vehicle,
       unit,
-      facility_id ,distance_unit
+      facility_id, distance_unit
     } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
         is_facility: [Joi.number().required().empty()],
-       // months: Joi.array().items(Joi.string().required()).required(),
+        // months: Joi.array().items(Joi.string().required()).required(),
         months: [Joi.string().required().empty()],
         year: [Joi.string().required().empty()],
         facility_type: [Joi.string().optional().empty()],
@@ -55,8 +55,8 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
         distance_travelled: [Joi.number().optional().empty()],
         is_vehicle: [Joi.number().required().empty()],
         unit: [Joi.string().optional().empty()],
-        facility_id : [Joi.number().required().empty()],
-        distance_unit : [Joi.string().optional().empty()],
+        facility_id: [Joi.number().required().empty()],
+        distance_unit: [Joi.string().optional().empty()],
       })
     );
     const result = schema.validate(req.body);
@@ -67,7 +67,7 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     const user_id = req.user.user_id;
@@ -79,79 +79,78 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
 
     let distancekm = 0;
     let areaoccp = 0;
-    if(distance_unit == 'miles' && distance_travelled){
-      distancekm = parseFloat(distance_travelled * 1.60934) 
-    }else{  
+    if (distance_unit == 'miles' && distance_travelled) {
+      distancekm = parseFloat(distance_travelled * 1.60934)
+    } else {
       distancekm = distance_travelled
     }
 
-    if(unit == 'm2' && franchise_space){
+    if (unit == 'm2' && franchise_space) {
       areaoccp = parseFloat(franchise_space * 10.7639)
-    }else{
+    } else {
       areaoccp = franchise_space
     }
+
     let countrydata = await country_check(facility_id);
-    //console.log(countrydata[0].CountryId);
-    if(countrydata.length == 0){
+
+    if (countrydata.length == 0) {
       return res.json({
         success: false,
         message: "No country found for this EF",
         status: 400,
-        });
+      });
     }
-    //Check Facility Data 
+
     if (Number(is_facility)) {
-       upLeaseData = {
+      upLeaseData = {
         user_id: user_id,
         facility_type: facility_type,
         category: category,
         sub_category: sub_category,
         calculation_method: calculation_method,
-        franchise_space:checkNUllUnD(franchise_space),
+        franchise_space: checkNUllUnD(franchise_space),
         scope1_emission: checkNUllUnD(scope1_emission),
-        scope2_emission:checkNUllUnD(scope2_emission),
+        scope2_emission: checkNUllUnD(scope2_emission),
         emission: 0,
         month: "",
         year: year,
-        unit: unit ? unit :"",
-        facility_id:facility_id ? facility_id :"",
-        distance_travelled:distance_travelled,
-        distance_unit:distance_unit?distance_unit :"",
-        vehicle_type:vehicle_type ? vehicle_type :"",
-        vehicle_subtype:vehicle_subtype ? vehicle_subtype :"",
-        vehicle_emission:0,
-        no_of_vehicles:no_of_vehicles?no_of_vehicles:0,
+        unit: unit ? unit : "",
+        facility_id: facility_id ? facility_id : "",
+        distance_travelled: distance_travelled,
+        distance_unit: distance_unit ? distance_unit : "",
+        vehicle_type: vehicle_type ? vehicle_type : "",
+        vehicle_subtype: vehicle_subtype ? vehicle_subtype : "",
+        vehicle_emission: 0,
+        no_of_vehicles: no_of_vehicles ? no_of_vehicles : 0,
 
       };
       if (calculation_method === "Average data method") {
-
         let where = `where categories = '${category}' and sub_categories = '${sub_category}' and country_id = '${countrydata[0].CountryId}'`;
-        const emissionDetails = await getSelectedData(
-          "franchise_categories_subcategories",
-          where,
-          "*"
-        );
+        const emissionDetails = await getSelectedData("franchise_categories_subcategories", where, "*");
         if (emissionDetails.length > 0) {
-
           let yearRange = emissionDetails[0]?.Fiscal_Year; // The string representing the year range
           let [startYear, endYear] = yearRange.split('-').map(Number);
-       
+
           if (year >= startYear && year <= endYear) {
             const ef = emissionDetails[0].ef;
             let totalEmission = ef * areaoccp;
+            upLeaseData.emission_factor_lease = ef;
+            upLeaseData.emission_factor_lease_unit = 'tonnes co2e/m2.month';
             upLeaseData.emission = totalEmission;
-          } else if (year == startYear) { 
+          } else if (year == startYear) {
             const ef = emissionDetails[0].ef;
             let totalEmission = ef * areaoccp;
+            upLeaseData.emission_factor_lease = ef;
+            upLeaseData.emission_factor_lease_unit = 'tonnes co2e/m2.month';
             upLeaseData.emission = totalEmission;
-          }else {
+          } else {
             return res.json({
               success: false,
               message: "EF not Found for this year",
               status: 400,
-              });
+            });
           }
-       
+
         } else {
           return res.json({
             status: true,
@@ -161,8 +160,7 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
           });
         }
       } else if (calculation_method === "Facility Specific method") {
-        upLeaseData.emission =
-          Number(scope1_emission) + Number(scope2_emission);
+        upLeaseData.emission = Number(scope1_emission) + Number(scope2_emission);
       } else {
         return res.json({
           status: false,
@@ -171,68 +169,68 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
           status: 500,
         });
       }
-
-    
     }
-    //Check Vehicle Data as well 
-    if(Number(is_vehicle))
-    {
+
+    if (Number(is_vehicle)) {
       upLeaseData = {
         user_id: user_id,
         facility_type: "",
         category: category ? category : "",
         sub_category: sub_category ? sub_category : "",
-        calculation_method: calculation_method ? calculation_method :"",
+        calculation_method: calculation_method ? calculation_method : "",
         franchise_space: checkNUllUnD(franchise_space),
         scope1_emission: checkNUllUnD(scope1_emission),
         scope2_emission: checkNUllUnD(scope2_emission),
-        emission:  upLeaseData.emission ?  upLeaseData.emission: 0,
+        emission: upLeaseData.emission ? upLeaseData.emission : 0,
+        emission_factor_lease: upLeaseData.emission_factor_lease ? upLeaseData.emission_factor_lease : 0.000,
+        emission_factor_lease_unit: upLeaseData.emission_factor_lease_unit ? upLeaseData.emission_factor_lease_unit : null,
         month: "",
         year: year,
         unit: unit,
-        facility_id:facility_id ? facility_id :"",
-        distance_travelled:distance_travelled,
-        distance_unit:distance_unit?distance_unit :"",
-        vehicle_type:vehicle_type ? vehicle_type :"",
-        vehicle_subtype:vehicle_subtype ? vehicle_subtype :"",
-        vehicle_emission:0,
-        no_of_vehicles:no_of_vehicles?no_of_vehicles:0,
-
+        facility_id: facility_id ? facility_id : "",
+        distance_travelled: distance_travelled,
+        distance_unit: distance_unit ? distance_unit : "",
+        vehicle_type: vehicle_type ? vehicle_type : "",
+        vehicle_subtype: vehicle_subtype ? vehicle_subtype : "",
+        vehicle_emission: 0,
+        no_of_vehicles: no_of_vehicles ? no_of_vehicles : 0,
       };
       const vehicleIdRes = await fetchVehicleId(vehicle_type);
       let vehicleId = vehicleIdRes[0].id;
-      const efRes = await fetchVehicleEmission(vehicleId, vehicle_subtype,countrydata[0].CountryId);
-      if(efRes.length == 0){
+      const efRes = await fetchVehicleEmission(vehicleId, vehicle_subtype, countrydata[0].CountryId);
+      if (efRes.length == 0) {
         return res.json({
           success: false,
           message: "No country found for this EF",
           status: 400,
-          });
-      }else{
+        });
+      } else {
 
         let yearRange = efRes[0]?.Fiscal_Year; // The string representing the year range
         let [startYear, endYear] = yearRange.split('-').map(Number);
-     
+
         if (year >= startYear && year <= endYear) {
-            const ef = efRes[0]?.emission_factor
-            let noOfVehicles = checkNUllUnD(no_of_vehicles);
-            let distanceTravelled = checkNUllUnD(distancekm);
-            const emission = Number(noOfVehicles * ef * distanceTravelled);
-            upLeaseData.vehicle_emission = emission;
-    
-        } else if (year == startYear) { 
-          const ef = efRes[0]?.emission_factor
+          const ef = efRes[0]?.emission_factor;
+          upLeaseData.emission_factor_vehichle = ef;
+          upLeaseData.emission_factor_vehicle_unit = 'kg co2e/km';
           let noOfVehicles = checkNUllUnD(no_of_vehicles);
           let distanceTravelled = checkNUllUnD(distancekm);
           const emission = Number(noOfVehicles * ef * distanceTravelled);
           upLeaseData.vehicle_emission = emission;
-        
-        }else {
+        } else if (year == startYear) {
+          const ef = efRes[0]?.emission_factor;
+          upLeaseData.emission_factor_vehichle = ef;
+          upLeaseData.emission_factor_vehicle_unit = 'kg co2e/km';
+          let noOfVehicles = checkNUllUnD(no_of_vehicles);
+          let distanceTravelled = checkNUllUnD(distancekm);
+          const emission = Number(noOfVehicles * ef * distanceTravelled);
+          upLeaseData.vehicle_emission = emission;
+        } else {
           return res.json({
             success: false,
             message: "EF not Found for this year",
             status: 400,
-            });
+          });
         }
       }
 
@@ -243,7 +241,7 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
       // }
     }
 
-    if(upLeaseData){
+    if (upLeaseData) {
 
       for (let month of monthsArr) {
         upLeaseData.month = month;
@@ -251,7 +249,7 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
         resultInserted.push(tempInserted.insertId);
       }
 
-     }
+    }
 
     if (resultInserted.length > 0) {
       return res.json({
@@ -259,7 +257,7 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
         message: "Emissions Updated Succesfully",
         status: 200,
         upLeaseData: upLeaseData,
-        vehicleData : vehicleData,
+        vehicleData: vehicleData,
         insertIds: resultInserted,
       });
     } else {
@@ -333,7 +331,7 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
       is_facility,
       is_vehicle,
       unit,
-      facility_id,distance_unit
+      facility_id, distance_unit
     } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
@@ -352,9 +350,9 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
         no_of_vehicles: [Joi.number().optional().empty()],
         distance_travelled: [Joi.number().optional().empty()],
         is_vehicle: [Joi.number().required().empty()],
-        unit : [Joi.string().optional().empty()],
-        facility_id : [Joi.number().required().empty()],
-        distance_unit:[Joi.string().required().empty()],
+        unit: [Joi.string().optional().empty()],
+        facility_id: [Joi.number().required().empty()],
+        distance_unit: [Joi.string().required().empty()],
       })
     );
     const result = schema.validate(req.body);
@@ -365,7 +363,7 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     const user_id = req.user.user_id;
@@ -376,54 +374,53 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
 
     let distancekm = 0;
     let areaoccp = 0;
-    if(distance_unit == 'miles' && distance_travelled){
-      distancekm = parseFloat(distance_travelled * 1.60934) 
-    }else{  
+    if (distance_unit == 'miles' && distance_travelled) {
+      distancekm = parseFloat(distance_travelled * 1.60934)
+    } else {
       distancekm = distance_travelled
     }
 
-    if(unit == 'm2' && franchise_space){
+    if (unit == 'm2' && franchise_space) {
       areaoccp = parseFloat(franchise_space * 10.7639)
-    }else{
+    } else {
       areaoccp = franchise_space
     }
 
     let countrydata = await country_check(facility_id);
     //console.log(countrydata[0].CountryId);
-    if(countrydata.length == 0){
+    if (countrydata.length == 0) {
       return res.json({
         success: false,
         message: "EF not Found for this country",
         status: 400,
-        });
+      });
     }
-    
+
     //Check Facility Data 
     if (Number(is_facility)) {
-
-       downLeaseData = {
+      downLeaseData = {
         user_id: user_id,
         facility_type: facility_type,
         category: category,
         sub_category: sub_category,
         calculation_method: calculation_method,
-        franchise_space:checkNUllUnD(franchise_space),
-        scope1_emission:checkNUllUnD(scope1_emission),
-        scope2_emission:checkNUllUnD(scope2_emission),
+        franchise_space: checkNUllUnD(franchise_space),
+        scope1_emission: checkNUllUnD(scope1_emission),
+        scope2_emission: checkNUllUnD(scope2_emission),
         emission: 0,
         month: "",
         year: year,
         unit: unit,
-        facility_id:facility_id ? facility_id :"",
-        distance_travelled:distance_travelled?distance_travelled:"",
-        distance_unit:distance_unit?distance_unit:"",
-        vehicle_type: vehicle_type ? vehicle_type :"",
+        facility_id: facility_id ? facility_id : "",
+        distance_travelled: distance_travelled ? distance_travelled : "",
+        distance_unit: distance_unit ? distance_unit : "",
+        vehicle_type: vehicle_type ? vehicle_type : "",
         vehicle_subtype: vehicle_subtype ? vehicle_subtype : "",
-        vehicle_emission:0,
-        no_of_vehicles:no_of_vehicles?no_of_vehicles:0,
+        vehicle_emission: 0,
+        no_of_vehicles: no_of_vehicles ? no_of_vehicles : 0,
       };
       if (calculation_method === "Average data method") {
-       
+
         let where = `where categories = '${category}' and sub_categories = '${sub_category}' and country_id = '${countrydata[0].CountryId}'`;
         const emissionDetails = await getSelectedData(
           "franchise_categories_subcategories",
@@ -434,21 +431,25 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
 
           let yearRange = emissionDetails[0]?.Fiscal_Year; // The string representing the year range
           let [startYear, endYear] = yearRange.split('-').map(Number);
-       
+
           if (year >= startYear && year <= endYear) {
             const ef = emissionDetails[0].ef;
             let totalEmission = ef * areaoccp;
+            downLeaseData.emission_factor_lease = ef;
+            downLeaseData.emission_factor_lease_unit = 'tonnes co2e/m2.month';
             downLeaseData.emission = totalEmission;
-          } else if (year == startYear) { 
+          } else if (year == startYear) {
             const ef = emissionDetails[0].ef;
             let totalEmission = ef * areaoccp;
+            downLeaseData.emission_factor_lease = ef;
+            downLeaseData.emission_factor_lease_unit = 'tonnes co2e/m2.month';
             downLeaseData.emission = totalEmission;
-          }else {
+          } else {
             return res.json({
               success: false,
               message: "EF not Found for this year",
               status: 400,
-              });
+            });
           }
 
         } else {
@@ -478,87 +479,86 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
       // }
     }
     //Check Vehicle Data as well 
-    if(Number(is_vehicle))
-    {
+    if (Number(is_vehicle)) {
       downLeaseData = {
         user_id: user_id,
-        facility_type:facility_type,
+        facility_type: facility_type,
         category: category,
         sub_category: sub_category,
         calculation_method: calculation_method,
         franchise_space: checkNUllUnD(franchise_space),
         scope1_emission: checkNUllUnD(scope1_emission),
         scope2_emission: checkNUllUnD(scope2_emission),
-        emission: downLeaseData.emission ?  downLeaseData.emission : 0,
+        emission: downLeaseData.emission ? downLeaseData.emission : 0,
+        emission_factor_lease: downLeaseData.emission_factor_lease ? downLeaseData.emission_factor_lease : 0.000,
+        emission_factor_lease_unit: downLeaseData.emission_factor_lease_unit ? downLeaseData.emission_factor_lease_unit : null,
         month: "",
         year: year,
         unit: unit,
-        facility_id:facility_id ? facility_id :"",
-        distance_travelled:distance_travelled ? distance_travelled :"",
-        distance_unit:distance_unit ? distance_unit :"",
-        vehicle_type: vehicle_type ? vehicle_type :"",
+        facility_id: facility_id ? facility_id : "",
+        distance_travelled: distance_travelled ? distance_travelled : "",
+        distance_unit: distance_unit ? distance_unit : "",
+        vehicle_type: vehicle_type ? vehicle_type : "",
         vehicle_subtype: vehicle_subtype ? vehicle_subtype : "",
-        vehicle_emission:0,
-        no_of_vehicles:no_of_vehicles?no_of_vehicles:0,
+        vehicle_emission: 0,
+        no_of_vehicles: no_of_vehicles ? no_of_vehicles : 0,
 
       };
       const vehicleIdRes = await fetchVehicleId(vehicle_type);
       let vehicleId = vehicleIdRes[0].id;
-      const efRes = await fetchVehicleEmission(vehicleId, vehicle_subtype , countrydata[0].CountryId);
+      const efRes = await fetchVehicleEmission(vehicleId, vehicle_subtype, countrydata[0].CountryId);
 
-      if(efRes.length == 0){
+      if (efRes.length == 0) {
         return res.json({
           success: false,
           message: "No country found for this EF",
           status: 400,
-          });
-      }else{
-
+        });
+      } else {
         let yearRange = efRes[0]?.Fiscal_Year; // The string representing the year range
         let [startYear, endYear] = yearRange.split('-').map(Number);
-     
+
         if (year >= startYear && year <= endYear) {
           const ef = efRes[0]?.emission_factor;
           let noOfVehicles = checkNUllUnD(no_of_vehicles);
-          let  distanceTravelled = checkNUllUnD(distancekm);
+          let distanceTravelled = checkNUllUnD(distancekm);
+          downLeaseData.emission_factor_vehichle = ef;
+          downLeaseData.emission_factor_vehicle_unit = 'kg co2e/km';
           const emission = Number(noOfVehicles * ef * distanceTravelled);
           downLeaseData.vehicle_emission = emission;
-        } else if (year == startYear) { 
+        } else if (year == startYear) {
           const ef = efRes[0]?.emission_factor;
           let noOfVehicles = checkNUllUnD(no_of_vehicles);
-          let  distanceTravelled = checkNUllUnD(distancekm);
+          let distanceTravelled = checkNUllUnD(distancekm);
+          downLeaseData.emission_factor_vehichle = ef;
+          downLeaseData.emission_factor_vehicle_unit = 'kg co2e/km';
           const emission = Number(noOfVehicles * ef * distanceTravelled);
           downLeaseData.vehicle_emission = emission;
-        }else {
+        } else {
           return res.json({
             success: false,
             message: "EF not Found for this year",
             status: 400,
-            });
+          });
         }
       }
-      
-    
-      
     }
 
-
-
-    if(downLeaseData){
+    if (downLeaseData) {
       for (let month of monthsArr) {
         vehicleData.month = month;
         var tempInserted = await insertdownLeaseEmission(downLeaseData);
         resultInserted.push(tempInserted.insertId);
       }
-      
     }
+    
     if (resultInserted.length > 0) {
       return res.json({
         success: true,
         message: "Emissions Updated Succesfully",
         status: 200,
         downLeaseData: downLeaseData,
-        vehicleData : vehicleData,
+        vehicleData: vehicleData,
         insertIds: resultInserted,
       });
     } else {

@@ -37,7 +37,7 @@ exports.electricitygridType = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let countrydata = await country_check(facilities);
@@ -179,7 +179,7 @@ exports.GetUnits = async (req, res) => {
         errors: result.error.details.map((i) => i.message),
         status: 400,
         success: false,
-      });
+      })
     }
 
     const user_id = req.user.user_id;
@@ -362,7 +362,7 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
         errors: result.error.details.map((i) => i.message),
         status: 400,
         success: false,
-      });
+      })
     }
 
     const user_id = req.user.user_id;
@@ -534,7 +534,7 @@ exports.AddassignedDataPointbyfacility = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -920,7 +920,7 @@ exports.AddassignedDataPointbyfacility = async (req, res) => {
 //           error: message,
 //           missingParams: result.error.details[0].message,
 //           status: 200,
-//           success: true,
+//           success: false,
 //       });
 //       }else{
 //       const authHeader = req.headers.auth;
@@ -1310,7 +1310,7 @@ exports.AddstationarycombustionLiquid = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -1395,7 +1395,7 @@ exports.Addrefrigerant = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
 
@@ -1576,7 +1576,7 @@ exports.Addfireextinguisher = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let user_id = req.user.user_id;
@@ -2124,7 +2124,7 @@ exports.getAllcompanyownedvehicles = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -2172,7 +2172,7 @@ exports.getAllcategoryByfacility = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let subcategory = [];
@@ -2238,7 +2238,7 @@ exports.getAttahcmentsbyFacilityID = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const fileUrl = `${config.base_url}/uploads/`

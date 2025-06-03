@@ -485,7 +485,7 @@ LIMIT 1; ', [facility_id, year]);
         const placeholders = facilityIds.map(() => '?').join(', ');
         const query = `
         SELECT * FROM \`dbo.renewableelectricityde\` 
-        WHERE (facilities IN (${placeholders}) OR year = ?) 
+        WHERE (facilities IN (${placeholders}) AND year = ?) 
         AND Status = 'S' 
         ORDER BY CreatedDate DESC;
     `;

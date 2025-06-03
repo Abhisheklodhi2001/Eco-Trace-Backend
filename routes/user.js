@@ -25,7 +25,7 @@ router.post("/getGroups", auth, userController.getGroups);
 
 router.post("/Addfacilities", auth, userController.Addfacilities);
 
-router.get("/allfacilitiesbyRole/:tenant_id", userController.allfacilitiesbyRole);
+router.get("/allfacilitiesbyRole/:tenant_id", auth, userController.allfacilitiesbyRole);
 
 router.post("/allfacilitiesbyId", auth, userController.allfacilitiesbyId);
 
@@ -33,11 +33,11 @@ router.post("/Updatefacilities", auth, userController.Updatefacilities);
 
 router.get("/getAllroles", auth, userController.getAllroles);
 
-router.post("/register", userController.register);
+router.post("/register", auth, userController.register);
 
 router.post("/getAllusers", auth, userController.getAllusers);
 
-router.post("/Updateregister", userController.Updateregister);
+router.post("/Updateregister", auth, userController.Updateregister);
 //
 router.get("/getcountries", auth, userController.getcountries);
 
@@ -63,7 +63,7 @@ router.post("/getComapnyDetail", auth, userController.getComapnyDetail);
 
 router.post("/AddComapnyDetail", auth, upload.single('file'), userController.AddComapnyDetail)
 
-router.post("/packageById", userController.packageById)
+router.post("/packageById", auth, userController.packageById)
 
 router.get("/getComapnyCategory", auth, userController.getComapnyCategory)
 
@@ -115,7 +115,7 @@ router.post("/getSubGroups", auth, userController.getSubGroups);
 
 router.post("/Updatecountry", auth, userController.Updatecountry);
 
-router.post("/AddSuperAdmin", userController.AddSuperAdmin);
+router.post("/AddSuperAdmin", auth, userController.AddSuperAdmin);
 
 
 // forgot password routes 
@@ -124,17 +124,17 @@ router.get('/verify-token/:token/', userController.verifyToken);
 router.post('/update-password', userController.updatePassword);
 
 // Abhishek Lodhi
-router.get('/get-excelsheet', userController.getExcelSheet);
+router.get('/get-excelsheet', auth, userController.getExcelSheet);
 router.post('/get-purchase-categories-ef', auth, userController.getPurchaseCategoriesEf);
 router.get('/get-all-purchase-categories-ef', auth, userController.getAllPurchaseCategoriesEf);
 router.post('/add-vehicle-feet', auth, userController.addVehicleFeet);
 router.post('/update-vehicle-feet', auth, userController.updateVehicleFeet);
 router.post('/update-vehicle-feet-by-id', auth, userController.updateVehicleFeetById);
 router.post('/get-vehicle-fleet-by-facility-id', auth, userController.getVehicleFleetByFacilityId);
-router.get('/download-excel-vehicle-fleet-by-facility-id', userController.downloadExcelVehicleFleetByFacilityId);
-router.get('/download-excel-vehicle-fleet-by-facility-category-id', userController.downloadExcelVehicleFleetByFacilityCategoryId);
-router.post('/add-purchase-goods-match-unmatch-data', userController.addPurchaseGoodsMatchUnmatch);
-router.post('/get-purchase-good-data-using-user-facilityId', userController.getPurchaseGoodsByUserAndFacilityId);
-router.post('/get-purchase-good-matched-data-using-payload-id', userController.getPurchaseGoodsMatchedDataUsingPayloadId);
+router.get('/download-excel-vehicle-fleet-by-facility-id', auth, userController.downloadExcelVehicleFleetByFacilityId);
+router.get('/download-excel-vehicle-fleet-by-facility-category-id', auth, userController.downloadExcelVehicleFleetByFacilityCategoryId);
+router.post('/add-purchase-goods-match-unmatch-data', auth, userController.addPurchaseGoodsMatchUnmatch);
+router.post('/get-purchase-good-data-using-user-facilityId', auth, userController.getPurchaseGoodsByUserAndFacilityId);
+router.post('/get-purchase-good-matched-data-using-payload-id', auth, userController.getPurchaseGoodsMatchedDataUsingPayloadId);
 
 module.exports = router;

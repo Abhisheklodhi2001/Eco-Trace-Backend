@@ -22,7 +22,7 @@ exports.GhgScopewiseEmssion = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let month = [
@@ -416,7 +416,7 @@ exports.GhgdashboardWasteTotal = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let categorydata15 = "";
@@ -551,7 +551,7 @@ exports.getTopCombustionEmission = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         }
 
@@ -614,7 +614,7 @@ exports.fetchScope1EmissionData = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         }
 
@@ -750,7 +750,7 @@ exports.purchaseGoodAndService = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         }
         let purchaseGoodDetailsByTypeOfPurchase3 = await purchaseGoodAndServicesModel(faciltyId, year, 3);
@@ -798,7 +798,7 @@ exports.Scope3WiseEmssionOnly = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let month = [
@@ -900,6 +900,7 @@ exports.Scope3WiseEmssionOnly = async (req, res) => {
                 predefinedCategories.forEach(category => {
                     categoryTotals3[category] = 0;
                 });
+                console.log("array3 =>", array3);
 
                 if (array3) {
                     await Promise.all(
@@ -964,7 +965,7 @@ exports.getGhgWasteEmissionData = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             const wasteData = await getWasteData(facilities, year);
@@ -999,7 +1000,7 @@ exports.ghgBussinessTravelServices = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             const flightTravelResponse = await flightTravel(facilities, year);
@@ -1030,7 +1031,7 @@ exports.ghgEmployeeCommute = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             const employeeCommuteResponse = await employeeCommute(facilities, year);
@@ -1059,7 +1060,7 @@ exports.ghgEnergyConsumptionWellTank = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let categorydata,
@@ -1150,7 +1151,7 @@ exports.ghgEnergyConsumptionMonth = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             const user_id = req.user.user_id;
@@ -1370,7 +1371,7 @@ exports.ghgEnergyConsumption = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let array1 = [];
@@ -1460,7 +1461,7 @@ exports.ghgTopEmissionGenerating = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let month = [
@@ -1717,7 +1718,7 @@ exports.GhgScopewiseEmssionYearRangeWise = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let array1 = [];
@@ -1926,7 +1927,7 @@ exports.GhgEmssionYearRangeWise = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let array3 = [];
@@ -2076,7 +2077,7 @@ exports.GhgEmssionPerNumberOfEmployee = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             const employeePerEmissionResponse = await employeePerEmission(facilities, base_year, current_year);
@@ -2105,7 +2106,7 @@ exports.GhgEmissionFileByFacilityIdAndCatgory = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             let response;
@@ -2178,7 +2179,7 @@ exports.GhgSubcategoryTypesByCategoryId = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             const subCategoryTypesResponse = await findSubCategoryTypesByCategoryId(category_id);

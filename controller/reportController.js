@@ -172,7 +172,7 @@ exports.reportFilterPurchaseGoods = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -235,7 +235,7 @@ exports.reportDownStreamVehicles = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -298,7 +298,7 @@ exports.reportUpStreamVehicles = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -362,7 +362,7 @@ exports.reportFranchiseEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -426,7 +426,7 @@ exports.reportInvestmentEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -489,7 +489,7 @@ exports.reportStationaryCombustion = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -572,7 +572,7 @@ exports.reportUpstreamLeaseEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -635,7 +635,7 @@ exports.reportDownstreamLeaseEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -698,7 +698,7 @@ exports.reportWasteGeneratedEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -761,7 +761,7 @@ exports.reportFlightTravel = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -824,7 +824,7 @@ exports.reportOtherTransport = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -887,7 +887,7 @@ exports.reportHotelStays = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -951,7 +951,7 @@ exports.reportEmployeeCommuting = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1015,7 +1015,7 @@ exports.reportHomeOffice = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1078,7 +1078,7 @@ exports.reportSoldProducts = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1154,7 +1154,7 @@ exports.reportEndOfLifeTreatment = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1226,7 +1226,7 @@ exports.reportProOfSoldProducts = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1289,7 +1289,7 @@ exports.reportRegfriegrant = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1361,7 +1361,7 @@ exports.reportFireExtinguisher = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1433,7 +1433,7 @@ exports.reportRenewableElectricity = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1499,7 +1499,7 @@ exports.reportHeatandSteam = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1565,7 +1565,7 @@ exports.reportWaterSupplyandTreatment = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1631,7 +1631,7 @@ exports.reportCompanyOwnedVehicles = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1777,7 +1777,7 @@ exports.reportFilterMultipleCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     var multiReport = [];
@@ -2167,7 +2167,7 @@ exports.reportFilterMultipleCategoryNew = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -3060,7 +3060,7 @@ exports.reportFilterMultipleCategoryConsolidated = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     var multiReport = [];
@@ -3862,7 +3862,7 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     var multiReport = [];
@@ -5266,7 +5266,7 @@ exports.getEmisionByLocation = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -5327,7 +5327,7 @@ exports.getVendorProductDashboard = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 

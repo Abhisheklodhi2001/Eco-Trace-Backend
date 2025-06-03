@@ -33,7 +33,7 @@ exports.Addelectricity = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let user_id = req.user.user_id;
@@ -176,7 +176,7 @@ exports.Addrenewableelectricity = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let user_id = req.user.user_id;
@@ -309,7 +309,7 @@ exports.Addheatandsteam = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let user_id = req.user.user_id;
@@ -441,7 +441,7 @@ exports.getAllelectricity = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let user_id = req.user.user_id;
@@ -493,7 +493,7 @@ exports.getrenewableelectricity = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let user_id = req.user.user_id;
@@ -544,7 +544,7 @@ exports.getAllheatandsteam = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let user_id = req.user.user_id;

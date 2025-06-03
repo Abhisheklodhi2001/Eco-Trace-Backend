@@ -14,6 +14,11 @@ module.exports = {
       vehicle_type,
     ]);
   },
+  fetchVehicleByVehicleTypeId: async (id) => {
+    return db.query("select id from vehicletypes where id = ?", [
+      id
+    ]);
+  },
   fetchVehicleEmission: async (vehicle_id, vehicle_type, country_id) => {
     return db.query(
       "select * from vehicle_subcategory where vehicle_category_id = ? and vehicle_type = ? and country_id = ?",

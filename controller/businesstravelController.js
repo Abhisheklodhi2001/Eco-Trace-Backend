@@ -83,7 +83,7 @@ exports.subvehicleType = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let where = ` where vehicletypes_id = '${vehicletypes_id}'`;
@@ -111,6 +111,71 @@ exports.subvehicleType = async (req, res) => {
       error: err,
       status: 500,
     });
+  }
+};
+
+exports.OtherModesOfTransportTypeName = async (req, res) => {
+  const { facility_id } = req.body;
+
+  try {
+    const schema = Joi.object({
+      facility_id: Joi.string().required()
+    });
+
+    const result = schema.validate(req.body);
+
+    if (result.error) {
+      const message = result.error.details.map(i => i.message).join(",");
+      return res.json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: 400,
+        success: false,
+      });
+    }
+    let countrydata = await country_check(facility_id);
+    const findTypeNameResponse = await getSelectedColumn("other_modes_of_transport_ef", 'WHERE country_id = "' + countrydata[0].CountryId + '" GROUP BY type_name', "id, type_name AS modes, country_id");
+    if (findTypeNameResponse.length > 0) {
+      return res.status(200).json({ error: false, message: "Data fetched successfully", success: true, data: findTypeNameResponse });
+    } else {
+      return res.status(404).json({ error: true, message: "No records found", success: false });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Intenal Server Error " + error.message, success: false });
+  }
+};
+
+exports.OtherModesOfTransportNodeTypeByTypeName = async (req, res) => {
+  const { type_name, facility_id } = req.body;
+  try {
+    const schema = Joi.object({
+      type_name: Joi.string().required(),
+      facility_id: Joi.number().required()
+    });
+
+    const result = schema.validate(req.body);
+
+    if (result.error) {
+      const message = result.error.details.map(i => i.message).join(",");
+      return res.json({
+        message: result.error.details[0].message,
+        error: message,
+        missingParams: result.error.details[0].message,
+        status: 400,
+        success: false,
+      });
+    }
+
+    let countrydata = await country_check(facility_id);
+    const findTypeNameResponse = await getSelectedColumn("other_modes_of_transport_ef", 'WHERE type_name = "' + type_name + '" AND country_id = "' + countrydata[0].CountryId + '"', "id, mode_type, type_name, country_id");
+    if (findTypeNameResponse.length > 0) {
+      return res.status(200).json({ error: false, message: "Data fetched successfully", success: true, data: findTypeNameResponse });
+    } else {
+      return res.status(404).json({ error: true, message: "No records found", success: false });
+    }
+  } catch (error) {
+    return res.status(500).json({ error: true, message: "Intenal Server Error " + error.message, success: false });
   }
 };
 
@@ -190,27 +255,27 @@ exports.flightTravel = async (req, res) => {
             const distance2 = viaPoint.distanceTo(toPoint, true);
             distanceResult = distance1 + distance2;
 
-            if (return_flight === true || return_flight === 'true') {
-              distanceResult *= 2;
-            }
-            if (isNaN(distanceResult)) distanceResult = 0;
-
             const getEmissionFactor = async (distance) => {
               let minDistance = 0;
-              let maxDistance = 0;
+              let maxDistance = Infinity;
 
-              if (distance >= 0 && distance <= 1400) {
-                minDistance = 0;
-                maxDistance = 1400;
-              } else if (distance > 1400 && distance <= 3000) {
-                minDistance = 1401;
-                maxDistance = 3000;
-              } else if (distance > 3000 && distance <= 13000) {
-                minDistance = 3001;
-                maxDistance = 13000;
-              } else if (distance > 13000) {
-                minDistance = 13001;
-                maxDistance = Infinity;
+              const flightTypes = await getSelectedColumn("flight_types", 'ORDER BY avg_distance ASC', '*');
+
+              flightTypes.sort((a, b) => Number(a.avg_distance) - Number(b.avg_distance));
+
+              for (let i = 0; i < flightTypes.length; i++) {
+                const current = Number(flightTypes[i].avg_distance);
+
+                if (distance <= current) {
+                  maxDistance = current;
+                  minDistance = i === 0 ? 0 : Number(flightTypes[i - 1].avg_distance) + 1;
+                  break;
+                }
+
+                if (i === flightTypes.length - 1) {
+                  minDistance = current;
+                  maxDistance = Infinity;
+                }
               }
 
               let where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id`;
@@ -256,8 +321,8 @@ exports.flightTravel = async (req, res) => {
                 via: via || '',
                 no_of_passengers: no_of_passengers || 0,
                 reference_id: reference_id || 0,
-                distance: distanceResult || 0,
-                emission: Number((maxEF * no_of_passengers * distanceResult).toFixed(4)),
+                distance: return_flight == 'Yes' ? distanceResult * 2 : distanceResult || 0,
+                emission: return_flight == 'Yes' ? Number((maxEF * no_of_passengers * distanceResult).toFixed(4)) * 2 : Number((maxEF * no_of_passengers * distanceResult).toFixed(4)),
                 emission_factor: maxEF,
                 FileName: req.file != undefined ? req.file.filename : null,
                 user_id,
@@ -275,24 +340,26 @@ exports.flightTravel = async (req, res) => {
             distanceResult = fromPoint.distanceTo(toPoint, true);
 
             let minDistance = 0;
-            let maxDistance = 0;
+            let maxDistance = Infinity;
 
-            if (distanceResult >= 0 && distanceResult <= 1400) {
-              minDistance = 0;
-              maxDistance = 1400;
-            } else if (distanceResult > 1400 && distanceResult <= 3000) {
-              minDistance = 1401;
-              maxDistance = 3000;
-            } else if (distanceResult > 3000 && distanceResult <= 13000) {
-              minDistance = 3001;
-              maxDistance = 13000;
-            } else if (distanceResult > 13000) {
-              minDistance = 13001;
-              maxDistance = Infinity;
+            const flightTypes = await getSelectedColumn("flight_types", 'ORDER BY avg_distance ASC', '*');
+
+            flightTypes.sort((a, b) => Number(a.avg_distance) - Number(b.avg_distance));
+
+            for (let i = 0; i < flightTypes.length; i++) {
+              const current = Number(flightTypes[i].avg_distance);
+
+              if (distanceResult <= current) {
+                maxDistance = current;
+                minDistance = i === 0 ? 0 : Number(flightTypes[i - 1].avg_distance) + 1;
+                break;
+              }
+
+              if (i === flightTypes.length - 1) {
+                minDistance = current;
+                maxDistance = Infinity;
+              }
             }
-
-            if (return_flight === true || return_flight === 'true') distanceResult *= 2;
-            if (isNaN(distanceResult)) distanceResult = 0;
 
             let where = `LEFT JOIN flight_travel_ef ON flight_travel_ef.flight_type_id = flight_types.id`;
 
@@ -320,8 +387,8 @@ exports.flightTravel = async (req, res) => {
               via: via || '',
               no_of_passengers: no_of_passengers || 0,
               reference_id: reference_id || 0,
-              distance: distanceResult || 0,
-              emission: Number((ef_factor * no_of_passengers * distanceResult).toFixed(4)),
+              distance: return_flight == 'Yes' ? distanceResult * 2 : distanceResult || 0,
+              emission: return_flight == 'Yes' ? Number((ef_factor * no_of_passengers * distanceResult).toFixed(4)) * 2 : Number((ef_factor * no_of_passengers * distanceResult).toFixed(4)),
               emission_factor: ef_factor,
               FileName: req.file != undefined ? req.file.filename : null,
               user_id,
@@ -343,8 +410,9 @@ exports.flightTravel = async (req, res) => {
           const ef_factor = flight_class == 'Economy' ? flight_type_ef[0].economy : flight_class == 'Business' ? flight_type_ef[0].business : flight_type_ef[0].first_class;
 
           distanceResult = flight_type_ef[0].avg_distance;
+          console.log("distanceResult =>", distanceResult);
 
-          if (return_flight === true || return_flight === 'true') distanceResult *= 2;
+          if (return_flight === true || return_flight == 'true' || return_flight == 'Yes') distanceResult *= 2;
           if (isNaN(distanceResult)) distanceResult = 0;
 
           const flighttravel = {
@@ -442,13 +510,10 @@ exports.Othermodes_of_transport = async (req, res) => {
             no_of_passengers, batch, month } = val;
           let countrydata = await country_check(facilities);
           if (countrydata.length > 0) {
-            let where = ``;
             var ef = '';
-            if (fuel_type) {
-              where += ` where fuel_type = '${fuel_type}' and type_name = '${mode_of_trasport}' and country_id = '${countrydata[0].CountryId}'`;
-            } else {
-              where += ` where mode_type = '${type}' and type_name = '${mode_of_trasport}' and country_id = '${countrydata[0].CountryId}'`;
-            }
+            var emission_factor_unit = '';
+
+            let where = ` where mode_type = '${type}' and type_name = '${mode_of_trasport}' and country_id = '${countrydata[0].CountryId}'`;
             const efs = await getSelectedColumn("other_modes_of_transport_ef", where, "*");
 
             if (efs.length > 0) {
@@ -457,16 +522,20 @@ exports.Othermodes_of_transport = async (req, res) => {
               if (year >= startYear && year <= endYear) {
                 if (mode_of_trasport == 'Car' || mode_of_trasport == 'Auto') {
                   ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled);
+                  emission_factor_unit = 'kg co2e/km';
                 }
                 if (mode_of_trasport == 'Rail' || mode_of_trasport == 'Ferry' || mode_of_trasport == 'Bus') {
                   ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled * no_of_passengers);
+                  emission_factor_unit = 'kg co2e/passengers.km';
                 }
               } else if (year == startYear) {
                 if (mode_of_trasport == 'Car' || mode_of_trasport == 'Auto') {
                   ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled);
+                  emission_factor_unit = 'kg co2e/km';
                 }
                 if (mode_of_trasport == 'Rail' || mode_of_trasport == 'Ferry' || mode_of_trasport == 'Bus') {
                   ef = parseFloat(efs[0]?.ef * no_of_trips * distance_travelled * no_of_passengers);
+                  emission_factor_unit = 'kg co2e/passengers.km';
                 }
               }
               let data_info = {
@@ -479,6 +548,7 @@ exports.Othermodes_of_transport = async (req, res) => {
                 type: type ? type : "",
                 no_of_passengers: no_of_passengers ? no_of_passengers : 0,
                 emission: ef,
+                emission_factor_unit: emission_factor_unit,
                 FileName: req.file != undefined ? req.file.filename : null,
                 batch: batch ? batch : 1,
                 month: month,
@@ -559,9 +629,8 @@ exports.hotelStay = async (req, res) => {
           const { country_of_stay, type_of_hotel, no_of_occupied_rooms, no_of_nights_per_room, batch, month } = val;
           let countrydata = await country_check(facilities);
           if (countrydata.length > 0) {
-            const hotelBooking = await getOffsetByCountry(country_of_stay, countrydata[0].CountryId);
+            const hotelBooking = await getOffsetByCountry(country_of_stay);
             let rating_type = "none";
-            console.log("hotelBooking =>", hotelBooking);
 
             if (hotelBooking.length > 0) {
               let yearRange = hotelBooking[0]?.Fiscal_Year;
@@ -571,7 +640,6 @@ exports.hotelStay = async (req, res) => {
                   case "star_2":
                     finalco2 = hotelBooking[0].star_2;
                     rating_type = "2 Star";
-                    console.log(finalco2, 'finalco2finalco2finalco2');
                     break;
                   case "star_3":
                     finalco2 = hotelBooking[0].star_3;
@@ -595,7 +663,6 @@ exports.hotelStay = async (req, res) => {
                   case "star_2":
                     finalco2 = hotelBooking[0].star_2;
                     rating_type = "2 Star";
-                    console.log(finalco2, 'finalco2finalco2finalco2');
                     break;
                   case "star_3":
                     finalco2 = hotelBooking[0].star_3;
@@ -621,7 +688,8 @@ exports.hotelStay = async (req, res) => {
                 no_of_occupied_rooms: no_of_occupied_rooms,
                 no_of_nights_per_room: no_of_nights_per_room,
                 user_id: user_id,
-                emission: finalco2,
+                emission: (finalco2 * no_of_nights_per_room * no_of_occupied_rooms),
+                emission_factor_unit: 'kg c02e/room.night',
                 FileName: req.file != undefined ? req.file.filename : null,
                 batch: batch,
                 month: month,
@@ -708,7 +776,7 @@ exports.Addbusinessunit = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -790,7 +858,7 @@ exports.deletebusinessunit = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const authHeader = req.headers.auth;
@@ -851,7 +919,7 @@ exports.AddemployeeCommuting = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -1045,7 +1113,7 @@ exports.AddhomeofficeCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -1113,6 +1181,8 @@ exports.AddhomeofficeCategory = async (req, res) => {
               noofdays: item.noofdays ? item.noofdays : 0,
               noofmonths: item.noofmonths ? item.noofmonths : 0,
               emission: emission_kg,
+              emission_factor: assumptions[0]?.finalEFkgco2,
+              emission_factor_unit: "kg C02e/hr",
               user_id: user_id,
               batch: batch,
               facilities: facilities,
@@ -1241,7 +1311,7 @@ exports.gethotel_stay = async (req, res) => {
     //     error: message,
     //     missingParams: result.error.details[0].message,
     //     status: 200,
-    //     success: true,
+    //     success: false,
     //   });
     // }else{
     const user_id = req.user.user_id;
@@ -1296,7 +1366,7 @@ exports.getothermodesofTransport = async (req, res) => {
     //     error: message,
     //     missingParams: result.error.details[0].message,
     //     status: 200,
-    //     success: true,
+    //     success: false,
     //   });
     // }else{
     const user_id = req.user.user_id;
@@ -1352,7 +1422,7 @@ exports.getflight_travel = async (req, res) => {
     //     error: message,
     //     missingParams: result.error.details[0].message,
     //     status: 200,
-    //     success: true,
+    //     success: false,
     //   });
     // }else{
 
@@ -1440,7 +1510,7 @@ exports.getsoldproductCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
 
@@ -1573,7 +1643,7 @@ exports.AddSoldProductsCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       var allinsertedID = [];
@@ -1825,7 +1895,7 @@ exports.getAllsoldproductCategory = async (req, res) => {
     //     error: message,
     //     missingParams: result.error.details[0].message,
     //     status: 200,
-    //     success: true,
+    //     success: false,
     //   });
     // }else{
 
@@ -1983,7 +2053,7 @@ exports.getendoflife_waste_type_subcategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let where = ` where waste_type ='${type}'`;
@@ -2043,7 +2113,7 @@ exports.AddendoflifeCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       var allinsertedID = [];
@@ -2062,6 +2132,15 @@ exports.AddendoflifeCategory = async (req, res) => {
         });
       }
 
+      let lanef = '';
+      let combustionef = '';
+      let recyclingef = '';
+      let composingef = '';
+      let landfill = '';
+      let incineration = '';
+      let recycling = '';
+      let composting = '';
+
       if (subcategory) {
         const subCategory = await endof_lifeSubCatmission_factors(subcategory, countrydata[0].CountryId);
         if (subCategory.length > 0) {
@@ -2075,14 +2154,16 @@ exports.AddendoflifeCategory = async (req, res) => {
           // if(waste_unit == 'litres'){
           //   prductef = subCategory[0]['litres'];
           // }
-          let lanef = parseFloat(subCategory[0].landfill * landfill * total_waste)
-          let combustionef = parseFloat(subCategory[0].incineration * combustion * total_waste)
-          let recyclingef = parseFloat(subCategory[0].recycling * recycling * total_waste)
-          let composingef = parseFloat(subCategory[0].composting * composing * total_waste)
+          landfill = subCategory[0].landfill;
+          lanef = parseFloat(subCategory[0].landfill * landfill * total_waste)
+          incineration = subCategory[0].incineration;
+          combustionef = parseFloat(subCategory[0].incineration * combustion * total_waste)
+          recycling = subCategory[0].recycling;
+          recyclingef = parseFloat(subCategory[0].recycling * recycling * total_waste)
+          composting = subCategory[0].composting;
+          composingef = parseFloat(subCategory[0].composting * composing * total_waste)
 
-
-
-          let yearRange = subCategory[0]?.Fiscal_Year; // The string representing the year range
+          let yearRange = subCategory[0]?.Fiscal_Year;
           let [startYear, endYear] = yearRange.split('-').map(Number);
 
           if (year >= startYear && year <= endYear) {
@@ -2096,31 +2177,6 @@ exports.AddendoflifeCategory = async (req, res) => {
               status: 400,
             });
           }
-
-        }
-        else {
-          return res.json({
-            success: false,
-            message: "EF not Found End of life treatment category",
-            status: 400,
-          });
-        }
-
-
-      } else {
-        const subCategory = await endoflife_waste_type(waste_type, countrydata[0].CountryId);
-        if (subCategory.length > 0) {
-          if (waste_unit == 'tonnes') {
-            prductef = subCategory[0]['tonnes'];
-          }
-          if (waste_unit == 'kg') {
-            prductef = subCategory[0]['kg'];
-          }
-          if (waste_unit == 'litres') {
-            prductef = subCategory[0]['litres'];
-          }
-
-          finalproductEF = parseFloat(prductef * total_waste);
         } else {
           return res.json({
             success: false,
@@ -2130,11 +2186,8 @@ exports.AddendoflifeCategory = async (req, res) => {
         }
       }
 
-      if (finalproductEF) {
-        emission = parseFloat(finalproductEF);
-      }
+      if (finalproductEF) emission = parseFloat(finalproductEF);
 
-      console.log(emission, "emissionemissionemission")
       let array = {
         waste_type: waste_type,
         subcategory: subcategory,
@@ -2146,6 +2199,11 @@ exports.AddendoflifeCategory = async (req, res) => {
         recycling: recycling,
         composing: composing,
         emission: emission ? emission : 0,
+        emission_factor_lan: landfill ? landfill : 0,
+        emission_factor_combustion: incineration ? incineration : 0,
+        emission_factor_recycling: recycling ? recycling : 0,
+        emission_factor_composing: composting ? composting : 0,
+        emission_factor_unit: 'kg CO2e/tonnes',
         user_id: user_id,
         facilities: facilities,
         year: year,
@@ -2208,7 +2266,7 @@ exports.getendof_lifetreatment_category = async (req, res) => {
     //     error: message,
     //     missingParams: result.error.details[0].message,
     //     status: 200,
-    //     success: true,
+    //     success: false,
     //   });
     // }else{
     const user_id = req.user.user_id;
@@ -2275,7 +2333,7 @@ exports.AddwatersupplytreatmentCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -2292,12 +2350,14 @@ exports.AddwatersupplytreatmentCategory = async (req, res) => {
         });
       }
       let emsision = 0;
+
       if (water_supply) {
         const watersupply = await water_supply_treatment_type(1, countrydata[0].CountryId);
         const watertreatment = await water_supply_treatment_type(2, countrydata[0].CountryId);
 
         let water_supply_ef = "";
         let water_treatment_ef = "";
+        let withdrawn_emission_factor_used = "";
 
         if (watersupply.length > 0) {
           let yearRange = watersupply[0]?.Fiscal_Year; // The string representing the year range
@@ -2305,17 +2365,21 @@ exports.AddwatersupplytreatmentCategory = async (req, res) => {
           if (year >= startYear && year <= endYear) {
             if (water_supply_unit == '1') {
               let totalem = parseFloat(watersupply[0]?.kgCO2e_cubic_metres * water_supply) + parseFloat(watertreatment[0]?.kgCO2e_cubic_metres)
+              withdrawn_emission_factor_used = watersupply[0]?.kgCO2e_cubic_metres;
               water_supply_ef = totalem;
             } else if (water_supply_unit == '2') {
-              let totalem = parseFloat(watersupply[0]?.kgCO2e_million_litres * water_supply) + parseFloat(watertreatment[0]?.kgCO2e_million_litres)
+              let totalem = parseFloat(watersupply[0]?.kgCO2e_Kilo_litres * water_supply) + parseFloat(watertreatment[0]?.kgCO2e_Kilo_litres)
+              withdrawn_emission_factor_used = watersupply[0]?.kgCO2e_Kilo_litres;
               water_supply_ef = totalem
             }
           } else if (year == startYear) {
             if (water_supply_unit == '1') {
               let totalem = parseFloat(watersupply[0]?.kgCO2e_cubic_metres * water_supply) + parseFloat(watertreatment[0]?.kgCO2e_cubic_metres)
+              withdrawn_emission_factor_used = watersupply[0]?.kgCO2e_cubic_metres;
               water_supply_ef = totalem;
             } else if (water_supply_unit == '2') {
-              let totalem = parseFloat(watersupply[0]?.kgCO2e_million_litres * water_supply) + parseFloat(watertreatment[0]?.kgCO2e_million_litres)
+              let totalem = parseFloat(watersupply[0]?.kgCO2e_Kilo_litres * water_supply) + parseFloat(watertreatment[0]?.kgCO2e_Kilo_litres)
+              withdrawn_emission_factor_used = watersupply[0]?.kgCO2e_Kilo_litres;
               water_supply_ef = totalem
             }
           } else {
@@ -2349,7 +2413,7 @@ exports.AddwatersupplytreatmentCategory = async (req, res) => {
         //     status: 400,
         //     });
         // }
-        emsision = parseFloat(water_supply_ef);
+        emsision = parseFloat(water_supply_ef).toFixed(4);
 
         let category = {
           water_supply: water_supply ? water_supply : "",
@@ -2357,12 +2421,14 @@ exports.AddwatersupplytreatmentCategory = async (req, res) => {
           water_supply_unit: water_supply_unit ? water_supply_unit : "",
           water_treatment_unit: water_treatment_unit ? water_treatment_unit : "",
           emission: emsision ? emsision : "",
+          withdrawn_emission: emsision ? emsision : "",
+          withdrawn_emission_factor_used: withdrawn_emission_factor_used ? withdrawn_emission_factor_used : "",
+          emission_factor_unit: "kg C02e/KL",
           facilities: facilities ? facilities : "",
           user_id: user_id,
           batch: batch,
           year: year
         }
-
         let months = JSON.parse(month);
         for (let monthdata of months) {
           category.month = monthdata;
@@ -2377,8 +2443,6 @@ exports.AddwatersupplytreatmentCategory = async (req, res) => {
           }
         }
       }
-
-      console.log("inset id========>>", insertId, "insertMonth====", insertMonth);
       if (water_withdrawl) {
         let array = [];
         let json = JSON.parse(water_withdrawl);
@@ -2409,6 +2473,7 @@ exports.AddwatersupplytreatmentCategory = async (req, res) => {
         );
         const water_supplytreatmentcategory2 = await insert_water_withdrawl_by_source(array);
       }
+
       let dischargearray = [];
       if (water_discharge_only) {
         let array1 = [];
@@ -2491,10 +2556,46 @@ exports.AddwatersupplytreatmentCategory = async (req, res) => {
         const water_supplytreatmentcategory1 = await insert_water_discharge_by_destination(array1);
       }
 
+      let emissiondata = '';
+      let waterTreated = 0;
+      let treatment_emission_factor_used = "";
+      if (water_treatment) {
+        const watertreatment = await water_supply_treatment_type(2, countrydata[0].CountryId);
+        if (watertreatment.length > 0) {
+          let yearRange = watertreatment[0]?.Fiscal_Year; // The string representing the year range
+          let [startYear, endYear] = yearRange.split('-').map(Number);
+          if (year >= startYear && year <= endYear) {
+            if (water_supply_unit == '1') {
+              waterTreated = parseFloat(watertreatment[0]?.kgCO2e_cubic_metres * totalwater);
+              let totalem = parseFloat(watertreatment[0]?.kgCO2e_cubic_metres * totalwater) + parseFloat(emsision);
+              treatment_emission_factor_used = watertreatment[0]?.kgCO2e_cubic_metres;
+              emissiondata = totalem;
+            } else if (water_supply_unit == '2') {
+              waterTreated = parseFloat(watertreatment[0]?.kgCO2e_Kilo_litres * totalwater);
+              let totalem = parseFloat(watertreatment[0]?.kgCO2e_Kilo_litres * totalwater) + parseFloat(emsision)
+              treatment_emission_factor_used = watertreatment[0]?.kgCO2e_Kilo_litres;
+              emissiondata = totalem
+            }
+          } else if (year == startYear) {
+            if (water_supply_unit == '1') {
+              waterTreated = parseFloat(watertreatment[0]?.kgCO2e_cubic_metres * totalwater);
+              let totalem = parseFloat(watertreatment[0]?.kgCO2e_cubic_metres * totalwater) + parseFloat(emsision)
+              treatment_emission_factor_used = watertreatment[0]?.kgCO2e_cubic_metres;
+              emissiondata = totalem;
+            } else if (water_supply_unit == '2') {
+              waterTreated = parseFloat(watertreatment[0]?.kgCO2e_Kilo_litres * totalwater);
+              let totalem = parseFloat(watertreatment[0]?.kgCO2e_Kilo_litres * totalwater) + parseFloat(emsision)
+              treatment_emission_factor_used = watertreatment[0]?.kgCO2e_Kilo_litres;
+              emissiondata = totalem
+            }
+          }
+        }
+      }
+
+      let non_water_treated = water_treatment - totalwater;
       if (insertId) {
         for (let i = 0; i < insertId.length; i++) {
-          let emissiondata = emsision * totalwater;
-          const waterpplyory1 = await updateWater_ef(emissiondata, insertId[i]);
+          const waterpplyory1 = await updateWater_ef(emissiondata, parseFloat(waterTreated).toFixed(4), treatment_emission_factor_used, totalwater, non_water_treated, insertId[i]);
         }
         let where = ` where user_id =  '${user_id}' and facilities = '${facilities}'`;
         const water_supplytreatmentcategory1 = await getSelectedColumn("water_supply_treatment_category", where, "*");
@@ -2542,7 +2643,7 @@ exports.getwatersupplytreatmentCategory = async (req, res) => {
     //     error: message,
     //     missingParams: result.error.details[0].message,
     //     status: 200,
-    //     success: true,
+    //     success: false,
     //   });
     // }else{
     const user_id = req.user.user_id;
@@ -2638,7 +2739,7 @@ exports.getsectorCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
 
@@ -2688,7 +2789,7 @@ exports.getsubsectorCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let where = ` where sub_sector != "" and Sector = '${sector}' `;
@@ -2751,7 +2852,7 @@ exports.Addprocessing_of_sold_productsCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -3028,7 +3129,7 @@ exports.GetSubCategoryTypes = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
 
@@ -3160,7 +3261,7 @@ exports.GetAllcategoryByScope = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
 
@@ -3221,7 +3322,7 @@ exports.getAssignedDataPointbyfacility = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
 
@@ -3293,7 +3394,7 @@ exports.AddassignedDataPointbyfacility = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const authHeader = req.headers.auth;
@@ -3369,7 +3470,7 @@ exports.AddstationarycombustionLiquid = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const authHeader = req.headers.auth;
@@ -3536,7 +3637,7 @@ exports.vehicleCategories_lease = async (req, res) => {
 
 exports.vehicleSubCategories_lease = async (req, res) => {
   try {
-    const {id, facility_id} = req.query;
+    const { id, facility_id } = req.query;
     let countrydata = await country_check(facility_id);
     let where = `where vehicle_category_id = ${id} AND country_id = ${countrydata[0].CountryId}`;
     const vehicleDetails = await getData("vehicle_subcategory", where);
@@ -3632,7 +3733,7 @@ exports.employeeCommunitySubCategory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 

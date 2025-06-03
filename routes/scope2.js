@@ -16,7 +16,7 @@ router.post("/Addheatandsteam", auth, upload.single('file'), scope2Controller.Ad
 
 router.post("/getAllheatandsteam", auth, scope2Controller.getAllheatandsteam);
 
-router.get("/getAllRegions", scope2Controller.getAllRegions)
+router.get("/getAllRegions", auth, scope2Controller.getAllRegions)
 //
 module.exports = router;
 

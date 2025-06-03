@@ -71,7 +71,7 @@ exports.wasteGeneratedEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     const user_id = req.user.user_id;
@@ -81,6 +81,7 @@ exports.wasteGeneratedEmission = async (req, res) => {
     wasteGeneratedData = {
       user_id: user_id,
       product: product,
+      waste_type_id: id,
       waste_type: waste_type,
       total_waste: total_waste,
       method: method,
@@ -106,6 +107,8 @@ exports.wasteGeneratedEmission = async (req, res) => {
       waste_type,
       countrydata[0].CountryId
     );
+    console.log("total_waste =>", total_waste);
+    
     if (emissionDetails.length > 0) {
       let yearRange = emissionDetails[0]?.Fiscal_Year; // The string representing the year range
       let [startYear, endYear] = yearRange.split("-").map(Number);
@@ -113,10 +116,14 @@ exports.wasteGeneratedEmission = async (req, res) => {
       if (year >= startYear && year <= endYear) {
         const ef = emissionDetails[0].ef;
         let totalEmission = Number(ef) * Number(total_waste);
+        wasteGeneratedData.emission_factor_useed = ef;
+        wasteGeneratedData.emission_factor_unit = 'kg CO2e/kg';
         wasteGeneratedData.emission = totalEmission;
       } else if (year == startYear) {
         const ef = emissionDetails[0].ef;
         let totalEmission = Number(ef) * Number(total_waste);
+        wasteGeneratedData.emission_factor_useed = ef;
+        wasteGeneratedData.emission_factor_unit = 'kg CO2e/kg';
         wasteGeneratedData.emission = totalEmission;
       } else {
         return res.json({
@@ -999,7 +1006,7 @@ exports.getDataProgress = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1044,7 +1051,7 @@ exports.getDataProgressForFacilities = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 

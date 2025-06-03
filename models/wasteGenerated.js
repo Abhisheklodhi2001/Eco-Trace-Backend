@@ -8,14 +8,17 @@ module.exports = {
   },
   insertWasteGeneratedEmission: async (data) => {
     return db.query(
-      "INSERT INTO   `waste_generated_emissions` (user_id, waste_type, method, total_waste, unit, emission, status, month,year, facility_id,waste_loop,product) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-      [
+      "INSERT INTO   `waste_generated_emissions` (user_id, waste_type_id, waste_type, method, total_waste, unit, emission, emission_factor_used, emission_factor_unit, status, month,year, facility_id,waste_loop,product) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      [ 
         data.user_id,
+        data.waste_type_id,
         data.waste_type,
         data.method,
         data.total_waste,
         data.unit,
         data.emission,
+        data.emission_factor_used,
+        data.emission_factor_unit,
         "P",
         data.month,
         data.year,

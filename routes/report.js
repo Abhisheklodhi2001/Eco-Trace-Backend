@@ -26,14 +26,14 @@ router.post("/reportRenewableElectricity", auth, reportController.reportRenewabl
 router.post("/reportHeatandSteam", auth, reportController.reportHeatandSteam);
 router.post("/reportWaterSupplyandTreatment", auth, reportController.reportWaterSupplyandTreatment);
 router.post("/reportCompanyOwnedVehicles", auth, reportController.reportCompanyOwnedVehicles);
-router.post("/reportFilterMultipleCategory", reportController.reportFilterMultipleCategory);
-router.post("/reportFilterMultipleCategoryNew", reportController.reportFilterMultipleCategoryNew);
-router.post("/reportFilterMultipleCategoryConsolidated", reportController.reportFilterMultipleCategoryConsolidated);
-router.post("/waterReport", reportController.waterReport);
-router.post("/waterReportConsolidated", reportController.waterReportConsolidated);
-router.post("/reportFilterMultipleCategoryAudit", reportController.reportFilterMultipleCategoryAudit);
-router.post("/vendorReport", reportController.vendorReport);
-router.post("/vendorDashboardReport", reportController.vendorDashboardReport);
+router.post("/reportFilterMultipleCategory", auth, reportController.reportFilterMultipleCategory);
+router.post("/reportFilterMultipleCategoryNew", auth, reportController.reportFilterMultipleCategoryNew);
+router.post("/reportFilterMultipleCategoryConsolidated", auth, reportController.reportFilterMultipleCategoryConsolidated);
+router.post("/waterReport", auth, reportController.waterReport);
+router.post("/waterReportConsolidated", auth, reportController.waterReportConsolidated);
+router.post("/reportFilterMultipleCategoryAudit", auth, reportController.reportFilterMultipleCategoryAudit);
+router.post("/vendorReport", auth, reportController.vendorReport);
+router.post("/vendorDashboardReport", auth, reportController.vendorDashboardReport);
 router.post("/getEmisionByLocation", auth, reportController.getEmisionByLocation);
 router.post("/getVendorProductDashboard", auth, reportController.getVendorProductDashboard);
 

@@ -116,6 +116,12 @@ module.exports = {
     );
   },
 
+  fetchVehicleByTypeId: async (id) => {
+    return db.query("select id from vehicletypes where id  = ?", [
+      id,
+    ]);
+  },
+
   //updated code
   uplaodTemplate: async (data) => {
     return db.query("INSERT INTO  `purchase_goods_categories`(typeofpurchase,productcodestandard,product_category,productcode,valuequantity,unit,vendor_id, supplier,supplierspecificEF,supplierunit,emission,emission_factor_used,FileName,user_id,status,facilities,year,month,is_annual) VALUES ?",

@@ -105,6 +105,7 @@ const {
 
 const {
   fetchVehicleId,
+  fetchVehicleByVehicleTypeId,
   fetchVehicleEmission,
 } = require("../models/downstream_trans");
 
@@ -239,7 +240,7 @@ exports.login = async (req, res) => {
       if (data.length !== 0) {
         if (email == data[0].Email || email == data[0].userName) {
           if (password == data[0]?.Password) {
-            const toke = jwt.sign({ user_id: data[0].Id }, JWT_SECRET);
+            const toke = jwt.sign({ user_id: data[0].Id }, JWT_SECRET, { expiresIn: '24h' });
             let data1 = await fetchUserByEmail(email);
             await Promise.all(
               data1.map(async (item) => {
@@ -580,8 +581,8 @@ exports.GetpendingDataEnteries = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let array = [];
 
@@ -717,6 +718,8 @@ exports.GetpendingDataEnteries = async (req, res) => {
           facilities,
           year
         );
+        console.log("categorydata =>", categorydata);
+
         array = [...categorydata];
       }
 
@@ -1097,11 +1100,8 @@ exports.GetpendingDataEnteries = async (req, res) => {
               //   mode= "Bus"
               // }
               let where = ``;
-              if (item.fuel_type) {
-                where += ` where fuel_type = '${item.fuel_type}' and type_name = '${item.mode_of_trasport}' `;
-              } else {
-                where += ` where mode_type = '${item.type}' and type_name = '${item.mode_of_trasport}' `;
-              }
+
+              where += ` where mode_type = '${item.type}' and type_name = '${item.mode_of_trasport}' `;
               const efs = await getSelectedColumn(
                 "other_modes_of_transport_ef",
                 where,
@@ -1267,6 +1267,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
               where,
               item.method + " as ef"
             );
+            console.log("emissionDetails =>", emissionDetails);
 
             //select ${column} as ef from endoflife_waste_type_subcategory where  waste_type= ? and type= ?`,[id,waste_type]
             if (emissionDetails.length > 0) {
@@ -1313,7 +1314,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
           }
           if (categoryID == "10") {
             if (item.vehicle_type) {
-              const vehicleIdRes = await fetchVehicleId(item.vehicle_type);
+              const vehicleIdRes = await fetchVehicleByVehicleTypeId(item.vehicle_type);
 
               let vehicleId = vehicleIdRes[0]?.id;
               if (vehicleId) {
@@ -1346,8 +1347,8 @@ exports.GetpendingDataEnteries = async (req, res) => {
 
           if (categoryID == "17") {
             if (item.vehicle_type) {
-              const vehicleIdRes = await fetchVehicleId(item.vehicle_type);
-              let vehicleId = vehicleIdRes[0].id;
+              const vehicleIdRes = await fetchVehicleByVehicleTypeId(item.vehicle_type);
+              let vehicleId = vehicleIdRes[0]?.id;
               const EFVRes = await fetchVehicleEmission(
                 vehicleId,
                 item.sub_category
@@ -1361,7 +1362,7 @@ exports.GetpendingDataEnteries = async (req, res) => {
               const vehicleIdRes = await fetchVehicleId(
                 item.storage_facility_type
               );
-              const vehicleId = vehicleIdRes[0].id;
+              const vehicleId = vehicleIdRes[0]?.id;
               const EFSRes = await fetchVehicleEmission(
                 vehicleId,
                 item.storage_facility_type
@@ -1468,8 +1469,8 @@ exports.GetpendingDataEnteriesFuelType = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let array = [];
 
@@ -1655,8 +1656,8 @@ exports.UpdateelecEntry = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let array = [];
 
@@ -1734,8 +1735,8 @@ exports.UpdateelecEntryReject = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let array = [];
 
@@ -1827,8 +1828,8 @@ exports.Addgroup = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let user = "";
       if (group_by == 1) {
@@ -1918,8 +1919,8 @@ exports.Updategroupmapping = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let array = [];
 
@@ -1980,8 +1981,8 @@ exports.removeGroup = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let array = [];
 
@@ -2478,8 +2479,8 @@ exports.Addfacilities = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let user = {
         AssestName: AssestName,
@@ -2562,8 +2563,8 @@ exports.Updatefacilities = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let where1 = ` where ID = '${ID}'`;
       const facilities = await getSelectedColumn(
@@ -2702,7 +2703,7 @@ exports.register = async (req, res) => {
         missingParams: result.error.details[0].message,
         status: 400,
         success: false,
-      });
+      })
     } else {
       let facilities = "";
       const data = await fetchEmailUser(email);
@@ -2879,7 +2880,7 @@ exports.register = async (req, res) => {
 //         missingParams: result.error.details[0].message,
 //         status: 400,
 //         success: false,
-//       });
+//    false;
 //     } else {
 //       const data = await fetchEmailUser(email);
 //       if (data.length !== 0) {
@@ -3077,8 +3078,8 @@ exports.getAllusers = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const getgroup = await fetchAllusers(tenantId);
       var facility = [];
@@ -3186,8 +3187,8 @@ exports.removeUser = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let array = [];
 
@@ -3266,8 +3267,8 @@ exports.getstateByCountries = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let where = ` where  CountryID ='${CountryID}'  `;
       const getgroup = await getSelectedColumn("`dbo.state`", where, "*");
@@ -3309,8 +3310,8 @@ exports.getcityBystate = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let where = ` where  StateID ='${StateID}'  `;
       const getgroup = await getSelectedColumn("`dbo.city`", where, "*");
@@ -3600,8 +3601,8 @@ exports.Adduser_offseting = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -3751,8 +3752,8 @@ exports.AddComapnyDetail = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let where1 = ` where 	Id = '${tenant_id}'`;
       const tenants = await getSelectedColumn("`dbo.tenants` ", where1, "*");
@@ -4041,8 +4042,8 @@ exports.deleteVendor = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4120,8 +4121,8 @@ exports.updateuser_offseting = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4203,8 +4204,8 @@ exports.deleteuser_offseting = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4253,8 +4254,8 @@ exports.addHazardous_nonhazardous = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4359,8 +4360,8 @@ exports.deleteHazardous_nonhazardous = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4414,8 +4415,8 @@ exports.updateHazardous_nonhazardous = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4514,8 +4515,8 @@ exports.AddVendor = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4590,8 +4591,8 @@ exports.updateVendor = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const checkRefrenceId = await getSelectedData('vendor', `where user_id =${tenant_id} and refer_id = ${refer_id} and id != ${id}`, '*');
       if (checkRefrenceId.length > 0) {
@@ -4661,8 +4662,8 @@ exports.AddCostcenter = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4717,8 +4718,8 @@ exports.updatecostCenter = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4779,8 +4780,8 @@ exports.deletecostCenter = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4880,8 +4881,8 @@ exports.Addfinancial_year = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -4949,8 +4950,8 @@ exports.updatefinancial_year = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -5040,8 +5041,8 @@ exports.deletefinancial_year = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -5126,8 +5127,8 @@ exports.updateActions = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       const user_id = req.user.user_id;
 
@@ -5361,8 +5362,8 @@ exports.Updatecountry = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
-      });
+        success: false,
+      })
     } else {
       let array = [];
 
@@ -5440,7 +5441,7 @@ exports.AddSuperAdmin = async (req, res) => {
         missingParams: result.error.details[0].message,
         status: 400,
         success: false,
-      });
+      })
     } else {
       let facilities = "";
       const data = await fetchEmailUser(email);
@@ -5767,7 +5768,7 @@ exports.getPurchaseCategoriesEf = async (req, res) => {
       });
     }
 
-    let productArray;
+    let productfalse;
     try {
       productArray = JSON.parse(product);
     } catch (parseError) {
@@ -5857,7 +5858,7 @@ exports.addVehicleFeet = async (req, res) => {
         success: false,
       });
     } else {
-      const user_id = req.user.user_id;
+      const user_id = req.user.usefalse
 
       const vehicles = JSON.parse(vehicleJson);
 
@@ -5933,7 +5934,7 @@ exports.updateVehicleFeet = async (req, res) => {
         success: false,
       });
     } else {
-      const user_id = req.user.user_id;
+      const user_id = req.user.usefalse
 
       const vehicles = JSON.parse(vehicleJson);
 
@@ -6019,7 +6020,7 @@ exports.updateVehicleFeetById = async (req, res) => {
         success: false,
       });
     } else {
-      const user_id = req.user.user_id;
+      const user_id = req.user.usefalse
 
       const countryResponse = await country_check(facility_id);
       if (!countryResponse.length) return res.status(400).json({ error: true, message: "Invalid Facility ID", success: false });
@@ -6073,7 +6074,7 @@ exports.getVehicleFleetByFacilityId = async (req, res) => {
       });
     } else {
       const getFacilityResponse = await getVehicleFleetByFacilityId(facility_id);
-      if (getFacilityResponse.length > 0) {
+      if (getFacilityResponse.length) {
         return res.status(200).json({
           error: false,
           message: "Vehicle fleet retrieved successfully",
@@ -6081,7 +6082,7 @@ exports.getVehicleFleetByFacilityId = async (req, res) => {
           data: getFacilityResponse,
         });
       } else {
-        return res.status(404).json({
+        return res.status(200).json({
           error: true,
           message: "No vehicle fleet found for the given facility ID",
           success: false,
@@ -6338,7 +6339,7 @@ exports.getPurchaseGoodsByUserAndFacilityId = async (req, res) => {
       });
     }
 
-    const getPurchaseGoodsPayloads = await getPurchaseGoodsPayloadsByUserAndFacilityId(userId, facilityID);
+    const getPurchaseGoodsPayloads = getPurchaseGoodsPayloadsByUserAndFacilityId(userId, facilityID);
     if (getPurchaseGoodsPayloads.length > 0) {
       return res.status(200).json({ error: false, message: "Purchase goods payloads fetched successfully.", success: true, data: getPurchaseGoodsPayloads });
     } else {

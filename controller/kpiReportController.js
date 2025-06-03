@@ -2530,7 +2530,7 @@ exports.getKpiInventoryEmissionIntensity = async (req, res) => {
                 error: message,
                 missingParams: result.error.details[0].message,
                 status: 200,
-                success: true,
+                success: false,
             });
         } else {
             if (facilities) {

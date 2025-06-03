@@ -6,6 +6,7 @@ const moment = require("moment");
 const { checkNUllUnD, checkNUllUnDString } = require("../services/helper");
 
 const {
+  fetchVehicleByTypeId,
   uplaodTemplate,
   fetchPurchaseGood,
   fetchEFPurchaseGoods,
@@ -83,7 +84,7 @@ exports.getTypesofpurchase = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -133,7 +134,7 @@ exports.purchaseGoodsAllcategories = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -216,7 +217,7 @@ exports.uploadTemplate = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -333,7 +334,7 @@ exports.getpruchaseProductCode = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -382,7 +383,7 @@ exports.calculatePurchaseGood = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -508,7 +509,7 @@ exports.purchaseGoods = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -731,7 +732,7 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -912,7 +913,7 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
 //         error: message,
 //         missingParams: result.error.details[0].message,
 //         status: 200,
-//         success: true,
+//         success: false,
 //       });
 //     }
 //     let array = [];
@@ -1098,7 +1099,7 @@ exports.downStreamTransportation = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     let mass = "";
@@ -1113,7 +1114,7 @@ exports.downStreamTransportation = async (req, res) => {
     let countrydata = await country_check(facility_id);
     if (countrydata.length == 0) return res.json({ success: false, message: "EF not Found for this country", status: 400 });
     if (checkNUllUnDString(vehicle_type)) {
-      const vehicleIdRes = await fetchVehicleId(vehicle_type);
+      const vehicleIdRes = await fetchVehicleByTypeId(vehicle_type);
       let vehicleId = vehicleIdRes[0]?.id;
       const EFVRes = await fetchVehicleEmission(vehicleId, sub_category, countrydata[0].CountryId);
       if (EFVRes.length == 0) {
@@ -1137,7 +1138,7 @@ exports.downStreamTransportation = async (req, res) => {
       downStreamData.emission_factor_unit = '';
 
       if (mass_unit == 'tonnes' && mass_of_products) {
-        mass = parseFloat(mass_of_products * 1000);
+        mass = parseFloat(mass_of_products / 1000);
         downStreamData.emission_factor_unit = "";
       } else {
         mass = mass_of_products;
@@ -1175,7 +1176,7 @@ exports.downStreamTransportation = async (req, res) => {
     }
 
     if (area_occupied_unit == 'm2') {
-      areaoccp = parseFloat(area_occupied * 10.7639)
+      areaoccp = parseFloat(area_occupied)
     } else {
       areaoccp = area_occupied
     }
@@ -1300,7 +1301,7 @@ exports.upStreamTransportation = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     let mass = "";
@@ -1315,7 +1316,7 @@ exports.upStreamTransportation = async (req, res) => {
     let countrydata = await country_check(facility_id);
     if (countrydata.length == 0) return res.json({ success: false, message: "EF not Found for this country", status: 400 });
     if (checkNUllUnDString(vehicle_type)) {
-      const vehicleIdRes = await fetchVehicleId(vehicle_type);
+      const vehicleIdRes = await fetchVehicleByTypeId(vehicle_type);
       let vehicleId = vehicleIdRes[0]?.id;
       const EFVRes = await fetchVehicleEmission(vehicleId, sub_category, countrydata[0].CountryId);
       if (EFVRes.length == 0) {
@@ -1339,13 +1340,12 @@ exports.upStreamTransportation = async (req, res) => {
       downStreamData.emission_factor_unit = '';
 
       if (mass_unit == 'tonnes' && mass_of_products) {
-        mass = parseFloat(mass_of_products * 1000);
+        mass = parseFloat(mass_of_products / 1000);
         downStreamData.emission_factor_unit = "";
       } else {
         mass = mass_of_products;
         downStreamData.emission_factor_unit = "";
       }
-
       if (distance_unit == 'miles' && distanceInKms) {
         distancekm = parseFloat(distanceInKms * 1.60934);
         downStreamData.emission_factor_unit = "";
@@ -1354,7 +1354,7 @@ exports.upStreamTransportation = async (req, res) => {
         downStreamData.emission_factor_unit = "";
       }
 
-      if (checkNUllUnD(EFV)) {
+      if (checkNUllUnD(EFV)) {        
         let totalEmission = parseFloat(noOfVehicles * mass * distancekm * EFV).toFixed(2);
         downStreamData.vehicleType = vehicle_type;
         downStreamData.subCategory = sub_category;
@@ -1377,7 +1377,7 @@ exports.upStreamTransportation = async (req, res) => {
     }
 
     if (area_occupied_unit == 'm2') {
-      areaoccp = parseFloat(area_occupied * 10.7639)
+      areaoccp = parseFloat(area_occupied)
     } else {
       areaoccp = area_occupied
     }
@@ -1654,7 +1654,7 @@ exports.franchiseEmissionCalculate = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -1896,7 +1896,7 @@ exports.getPurchaseGoodEmissions = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -2054,7 +2054,7 @@ exports.calculateInvestmentEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -2302,7 +2302,7 @@ exports.calculateInvestmentEmission = async (req, res) => {
 //         error: message,
 //         missingParams: result.error.details[0].message,
 //         status: 200,
-//         success: true,
+//         success: false,
 //       });
 //     }
 //     const authHeader = req.headers.auth;

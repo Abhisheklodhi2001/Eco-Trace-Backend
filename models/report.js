@@ -163,7 +163,7 @@ module.exports = {
     offset
   ) => {
     //return db.query(`select * from employee_commuting_category where status  ='S'  and facilities ='${facility}' and year ='${year}' and month in (${month}) ORDER BY created_at ASC`);
-    return db.query(`select f.*,dbu.tenantName as user_name from employee_commuting_category  f,\`dbo.tenants\` dbu  where dbu.id= f.user_id and f.status  ='S'  and f.facilities ='${facility}' and f.year ='${year}' ORDER BY f.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
+    return db.query(`SELECT f.*, dbu.tenantName AS user_name, C.category, S.subcategory FROM employee_commuting_category f, \`dbo.tenants\` dbu, employee_community_typeoftransport C, employee_community_typeoftransport S WHERE dbu.id = f.user_id AND C.category_id = f.typeoftransport AND S.id = f.subtype AND f.status = 'S' AND f.facilities = '${facility}' AND f.year = '${year}' GROUP BY f.id ORDER BY f.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
   },
 
   getHomeOfficeReport: async (
@@ -210,7 +210,7 @@ module.exports = {
     return db.query(`select f.waste_type, f.subcategory, f.total_waste, f.waste_unit, f.emission, f.landfill, f.combustion, f.recycling, f.composing, f.facilities, f.year, f.month ,dbu.tenantName as user_name\
                     from  endof_lifetreatment_category  f,\`dbo.tenants\` dbu  where  dbu.id= f.user_id and  f.status  ='S'  and f.facilities ='${facility}' and f.year ='${year}' and f.month in (${month}) ORDER BY f.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
   },
-  
+
   getWasteTypebyId: async (id) => {
     return db.query("select type from endoflife_waste_type where id = ?", [
       id,
@@ -229,13 +229,13 @@ module.exports = {
                     from  processing_of_sold_products_category  f,\`dbo.tenants\` dbu  where  dbu.id= f.user_id and f.status  ='S'  and f.facilities ='${facility}' and f.year ='${year}' and f.month in (${month}) ORDER BY f.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
   },
 
-  getRefrigerantReport: async(user_id,
+  getRefrigerantReport: async (user_id,
     facility,
     year,
     month,
     pageSize,
     offset
-  )=> {
+  ) => {
     return db.query(`select f.refamount , f.GHGEmission as emission, f.unit, f.subCategoryTypeId as sub_id, f.TypeName, f.facilities, f.year, f.months,dbu.tenantName as user_name \
                     from  \`dbo.refrigerantde\`  f,\`dbo.tenants\` dbu where  dbu.id= f.user_id and  f.status  ='S'  and f.facilities ='${facility}' and f.year ='${year}' and f.months in (${month})  ORDER BY f.CreatedDate ASC LIMIT ${pageSize} OFFSET ${offset}`);
   },
@@ -246,13 +246,13 @@ module.exports = {
     ]);
   },
 
-  getFireExtinguisherReport: async(user_id,
+  getFireExtinguisherReport: async (user_id,
     facility,
     year,
     month,
     pageSize,
     offset
-  )=> {
+  ) => {
     return db.query(`select f.numberofextinguisher , f.GHGEmission as emission, f.unit, f.quantityOfCO2makeup as quantity, f.SubCategorySeedID as sub_id, f.facilities, f.year, f.months, dbu.tenantName as user_name \
                     from  \`dbo.fireextinguisherde\`  f,\`dbo.tenants\` dbu  where  dbu.id= f.user_id and  f.status  ='S'  and f.facilities ='${facility}' and f.year ='${year}' and f.months in (${month}) ORDER BY f.CreatedDate ASC LIMIT ${pageSize} OFFSET ${offset}`);
   },

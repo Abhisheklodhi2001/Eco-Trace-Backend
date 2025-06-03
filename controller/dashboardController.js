@@ -76,7 +76,7 @@ exports.dashboardScope = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -515,7 +515,7 @@ exports.dashboardScope = async (req, res) => {
 //         error: message,
 //         missingParams: result.error.details[0].message,
 //         status: 200,
-//         success: true,
+//         success: false,
 //     });
 //     }else{
 //       let month = ["Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar"];
@@ -688,7 +688,7 @@ exports.dashboardTop5 = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let month = [
@@ -975,7 +975,7 @@ exports.getdashboardfacilities = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const UserFacility = await getData(
@@ -1082,7 +1082,7 @@ exports.ScopewiseEmssion = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let month = [
@@ -1405,7 +1405,7 @@ exports.UpDownwiseEmssion = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let month = [
@@ -1537,7 +1537,7 @@ exports.dashboardEmssionByactivities = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let month = [
@@ -1746,7 +1746,7 @@ exports.dashboardEmssionByVendors = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let categoryTotals = {};
@@ -1809,7 +1809,7 @@ exports.businessdashboardemssionByTravel = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let array3 = [];
@@ -1916,7 +1916,7 @@ exports.businessdashboardemssionByAir = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let array3 = [];
@@ -2050,7 +2050,7 @@ exports.businessdashboardemssionBygroundTravel = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let array3 = [];
@@ -2155,7 +2155,7 @@ exports.businessdashboardemssion = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -2330,7 +2330,7 @@ exports.businessdashboardemssion = async (req, res) => {
 //         error: message,
 //         missingParams: result.error.details[0].message,
 //         status: 200,
-//         success: true,
+//         success: false,
 //     });
 //     }else{
 //       let month = ["Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar"];
@@ -2423,7 +2423,7 @@ exports.dashboardWastetop5 = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let array3 = [];
@@ -2447,6 +2447,7 @@ exports.dashboardWastetop5 = async (req, res) => {
           facilitiesdata,
           year
         );
+        
         let item1 = [];
         if (categorydata15) {
           await Promise.all(
@@ -2550,7 +2551,7 @@ exports.dashboardWasteTotal = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let categorydata15 = "";
@@ -2690,7 +2691,7 @@ exports.dashboardWasteEmissionhaz = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -2755,7 +2756,7 @@ exports.dashboardWasteEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let month = [
@@ -2860,7 +2861,7 @@ exports.dashboardWasteUpDownwiseEmssion = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let month = [
@@ -2948,7 +2949,7 @@ exports.dashboardWasteUpDownwiseEmssion = async (req, res) => {
           success: true,
           message: "Succesfully fetched category",
           series: ["Upstream", "Downstream"],
-          upstream_downstream: [sumUpstream, sumDownstream],
+          upstream_downstream: [sumDownstream,sumUpstream],
           status: 200,
         });
       }
@@ -2981,7 +2982,7 @@ exports.dashboardWaterTotal = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let categorydata15 = "";
@@ -3018,8 +3019,13 @@ exports.dashboardWaterTotal = async (req, res) => {
           facilitiesdata,
           year
         );
+
         let treatment_unit = "";
         let supply_unit = "";
+        let total_water_withdrawn = 0;
+        let total_water_consummed = 0;
+        let total_discharge = 0;
+        let total_water_treated = 0;
         if (categorydata15) {
           await Promise.all(
             categorydata15.map(async (item) => {
@@ -3065,7 +3071,7 @@ exports.dashboardWaterTotal = async (req, res) => {
               }
               if (item.water_treatment_unit == "2") {
                 totaltreated = parseFloat(
-                  (sum1discharge * unitvalue[0]?.kgCO2e_million_litres) / 1000
+                  (sum1discharge * unitvalue[0]?.kgCO2e_Kilo_litres) / 1000
                 );
               }
 
@@ -3076,10 +3082,14 @@ exports.dashboardWaterTotal = async (req, res) => {
               }
               if (item.water_supply_unit == "2") {
                 totalwaterwithdrawl = parseFloat(
-                  (sum1 * unitvalue2[0]?.kgCO2e_million_litres) / 1000
+                  (sum1 * unitvalue2[0]?.kgCO2e_Kilo_litres) / 1000
                 );
               }
-              totalemssion = parseFloat(totaltreated + totalwaterwithdrawl);
+              total_water_withdrawn += parseFloat(item.water_supply);
+              total_water_consummed += parseFloat(item.water_supply - item.water_treatment);
+              total_discharge += parseFloat(item.water_treatment);
+              total_water_treated += parseFloat(item.water_treated ? item.water_treated : 0);
+              totalemssion += parseFloat(item.emission ? item.emission / 1000 : 0);
             })
           );
         }
@@ -3087,13 +3097,10 @@ exports.dashboardWaterTotal = async (req, res) => {
         return res.json({
           success: true,
           message: "Succesfully fetched category",
-          water_withdrawn:
-            parseFloat(totalwaterwithdrawl).toFixed(3) + " " + "KL",
-          water_treated: parseFloat(totaltreated).toFixed(3) + " " + "KL",
-          water_discharge: parseFloat(sum3) + " " + "KL",
-          water_consumed:
-            parseFloat(sum3 - totalwaterwithdrawl).toFixed(3) + " " + "KL",
-
+          water_withdrawn: parseFloat(total_water_withdrawn).toFixed(3) + " " + "KL",
+          water_treated: parseFloat(total_water_treated).toFixed(3) + " " + "KL",
+          water_discharge: parseFloat(total_discharge) + " " + "KL",
+          water_consumed: parseFloat(total_water_consummed).toFixed(3) + " " + "KL",
           water_total: parseFloat(totalemssion).toFixed(3) + " " + "tC02e",
           status: 200,
         });
@@ -3127,7 +3134,7 @@ exports.dashboardWaterwithdrawnby_source = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let water_withdrawlarray = [];
@@ -3153,15 +3160,13 @@ exports.dashboardWaterwithdrawnby_source = async (req, res) => {
               const water_withdrawl = await getSelectedColumn(
                 "water_withdrawl_by_source G",
                 where1,
-                "SUM(G.kilolitres) as sum,G.water_withdrawl"
+                "G.totalwaterwithdrawl,G.water_withdrawl"
               );
               await Promise.all(
                 water_withdrawl.map(async (item1) => {
-                  sum1 += parseFloat(item1.sum);
-                  scopesum.push(parseFloat(parseFloat(item1.sum).toFixed(3)));
                   water_withdrawlarray.push({
                     water_withdrawl: item1.water_withdrawl,
-                    emission: parseFloat(parseFloat(item1.sum).toFixed(3)),
+                    emission: parseFloat(parseFloat(item1.totalwaterwithdrawl).toFixed(3)),
                   });
                 })
               );
@@ -3216,7 +3221,7 @@ exports.dashboardWaterDischargedbydestination = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let water_dischargearray = [];
@@ -3242,15 +3247,13 @@ exports.dashboardWaterDischargedbydestination = async (req, res) => {
               const water_discharge = await getSelectedColumn(
                 "water_discharge_by_destination_only G",
                 where1,
-                "SUM(G.kilolitres) as sum,G.water_discharge"
+                "G.totaldischarge,G.water_discharge"
               );
               await Promise.all(
                 water_discharge.map(async (item1) => {
-                  sum1 += parseFloat(item1.sum);
-                  scopesum.push(parseFloat(parseFloat(item1.sum).toFixed(3)));
                   water_dischargearray.push({
                     water_discharge: item1.water_discharge,
-                    emission: parseFloat(parseFloat(item1.sum).toFixed(3)),
+                    emission: parseFloat(parseFloat(item1.totaldischarge).toFixed(3)),
                   });
                 })
               );
@@ -3304,7 +3307,7 @@ exports.dashboardWaterTreatedbydestination = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let water_dischargearray = [];
@@ -3323,6 +3326,8 @@ exports.dashboardWaterTreatedbydestination = async (req, res) => {
           facilitiesdata,
           year
         );
+        console.log("categorydata8", categorydata8);
+
         if (categorydata8) {
           await Promise.all(
             categorydata8.map(async (item) => {
@@ -3330,15 +3335,13 @@ exports.dashboardWaterTreatedbydestination = async (req, res) => {
               const water_discharge = await getSelectedColumn(
                 "water_discharge_by_destination G",
                 where1,
-                "SUM(G.totalwaterdischarge) as sum,G.water_discharge"
+                "G.totalwaterdischarge,G.water_discharge"
               );
               await Promise.all(
                 water_discharge.map(async (item1) => {
-                  sum1 += parseFloat(item1.sum);
-                  scopesum.push(parseFloat(parseFloat(item1.sum).toFixed(3)));
                   water_dischargearray.push({
                     water_discharge: item1.water_discharge,
-                    emission: parseFloat(parseFloat(item1.sum).toFixed(3)),
+                    emission: parseFloat(parseFloat(item1.totalwaterdischarge / item.water_treatment).toFixed(3)),
                   });
                 })
               );
@@ -3393,7 +3396,7 @@ exports.dashboardWaterTreatedbylevel = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let water_dischargearray = [];
@@ -3483,7 +3486,7 @@ exports.dashboardWaterEmission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let categorydata15 = "";
@@ -3526,69 +3529,15 @@ exports.dashboardWaterEmission = async (req, res) => {
         if (categorydata15) {
           await Promise.all(
             categorydata15.map(async (item) => {
-              let totalemssion = 0;
-              let waterwithdrawn = item.water_supply;
-
-              let waterdischarged = item.water_treatment;
-
-              if (waterdischarged) {
-                sum2 += parseFloat(waterdischarged);
-              }
-
-              if (waterwithdrawn) {
-                sum1 = parseFloat(waterwithdrawn);
-              }
-
-              let where2 =
-                ' where G.water_supply_treatment_id = "' + item.id + '"';
-              const discharge = await getSelectedColumn(
-                "water_discharge_by_destination G",
-                where2,
-                " SUM(G.totalwaterdischarge) AS totalsum"
-              );
-              await Promise.all(
-                discharge.map(async (item) => {
-                  sum3 += parseFloat(item.totalsum);
-                })
-              );
-
-              if (item.water_treatment_unit == "1") {
-                totaltreated = parseFloat(
-                  (sum3 * unitvalue[0]?.kgCO2e_cubic_metres) / 1000
-                );
-              }
-
-              if (item.water_treatment_unit == "2") {
-                totaltreated = parseFloat(
-                  (sum3 * unitvalue[0]?.kgCO2e_million_litres) / 1000
-                );
-              }
-
-              if (item.water_supply_unit == "1") {
-                totalwaterwithdrawl = parseFloat(
-                  (sum1 * unitvalue2[0]?.kgCO2e_cubic_metres) / 1000
-                );
-              }
-
-              if (item.water_supply_unit == "2") {
-                totalwaterwithdrawl = parseFloat(
-                  (sum1 * unitvalue2[0]?.kgCO2e_million_litres) / 1000
-                );
-              }
-
-              totalemssion = parseFloat(totaltreated + totalwaterwithdrawl);
-              totalwaterwithdrawlpercent +=
-                parseFloat(totalwaterwithdrawl / totalemssion) * 100;
-
-              totalwatertreatedpercent +=
-                parseFloat(totaltreated / totalemssion) * 100;
+              totalwaterwithdrawlpercent += parseFloat(item.withdrawn_emission ?? 0);
+              totalwatertreatedpercent += parseFloat(item.treatment_emission ?? 0);
             })
           );
         }
 
-        console.log(totalwatertreatedpercent);
-        let water_treated = parseFloat(totalwatertreatedpercent).toFixed(3);
-        let water_wiitdrawn = parseFloat(totalwaterwithdrawlpercent).toFixed(3);
+
+        let water_treated = parseFloat(totalwatertreatedpercent / 1000).toFixed(4);
+        let water_wiitdrawn = parseFloat(totalwaterwithdrawlpercent / 1000).toFixed(4);
         array.push(parseFloat(water_wiitdrawn), parseFloat(water_treated));
         const sum = array.reduce((acc, curr) => acc + curr, 0);
 
@@ -3633,13 +3582,10 @@ exports.dashboardWaterTreated_nonTreated = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
-      let categorydata15 = "";
-      let sum1 = 0;
-      let sum2 = 0;
-      let sum3 = 0;
+      let treatmentpercent = 0;
       let notreatmentpercent = 0;
       let array = [];
       if (facilities) {
@@ -3657,34 +3603,13 @@ exports.dashboardWaterTreated_nonTreated = async (req, res) => {
         if (categorydata15) {
           await Promise.all(
             categorydata15.map(async (item) => {
-              let waterdischarged = item.water_treatment;
-              if (waterdischarged) {
-                sum2 += parseFloat(waterdischarged);
-              }
-
-              let where2 =
-                ' where G.water_supply_treatment_id = "' + item.id + '"';
-              const discharge = await getSelectedColumn(
-                "water_discharge_by_destination G",
-                where2,
-                " SUM(G.totalwaterdischarge) AS totalsum"
-              );
-              await Promise.all(
-                discharge.map(async (item) => {
-                  sum3 += parseFloat(item.totalsum);
-                  sum1 += parseFloat(sum3 / sum2);
-                })
-              );
-
-              let notreatment = parseFloat(sum2 - sum3);
-              notreatmentpercent += parseFloat(notreatment / sum2);
+              treatmentpercent += parseFloat(item.water_treated ? item.water_treated : 0);
+              notreatmentpercent += parseFloat(item.water_non_treated ? item.water_non_treated : 0);
             })
           );
         }
 
-        let water_treated = parseFloat(sum1 * 100).toFixed(3);
-        let water_non_treated = parseFloat(notreatmentpercent * 100).toFixed(3);
-        array.push(parseFloat(water_treated), parseFloat(water_non_treated));
+        array.push(parseFloat(treatmentpercent), parseFloat(notreatmentpercent));
         const sum = array.reduce((acc, curr) => acc + curr, 0);
 
         return res.json({
@@ -3725,7 +3650,7 @@ exports.dashboardenergyConsumption = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let array1 = [];
@@ -3828,7 +3753,7 @@ exports.dashboardenergyConsumptionRenewable = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let categorydata, categorydata2;
@@ -3894,7 +3819,7 @@ exports.dashboardenergyConsumptionWellTank = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let categorydata,
@@ -4003,7 +3928,7 @@ exports.dashboardenergyConsumptionMonth = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -4236,7 +4161,7 @@ exports.dashboardWasteBreakdown = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let month = [
@@ -4294,19 +4219,19 @@ exports.dashboardWasteBreakdown = async (req, res) => {
         );
 
         let sumreuse = waste1[0]["emission"]
-          ? parseFloat(waste1[0]["emission"] / 1000)
+          ? parseFloat(waste1[0]["emission"])
           : 0;
 
         let openloop = waste3[0]["emission"]
-          ? parseFloat(waste3[0]["emission"] / 1000)
+          ? parseFloat(waste3[0]["emission"])
           : 0;
 
         let closeloop = waste4[0]["emission"]
-          ? parseFloat(waste4[0]["emission"] / 1000)
+          ? parseFloat(waste4[0]["emission"])
           : 0;
 
         let sumcomposting = waste2[0]["emission"]
-          ? parseFloat(waste2[0]["emission"] / 1000)
+          ? parseFloat(waste2[0]["emission"])
           : 0;
 
         array3.push(sumreuse, openloop, closeloop, sumcomposting);
@@ -4356,7 +4281,7 @@ exports.dashboardnetZero = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let month = ["Emissions", "Offset", "Reducted and Avoided Emissions"];
@@ -4570,7 +4495,7 @@ exports.dashboardCostcentreBreakdown = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       const user_id = req.user.user_id;
@@ -4648,7 +4573,7 @@ exports.getdashboardfacilitiessubgroup = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let facilities = "";
@@ -5202,7 +5127,7 @@ exports.financedashboardtop5emission = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     } else {
       let array3 = [];

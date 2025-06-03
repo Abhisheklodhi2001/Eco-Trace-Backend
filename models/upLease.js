@@ -5,7 +5,7 @@ const baseurl = config.base_url;
 module.exports = {
   insertUpLeaseEmission: async (data) => {
     return db.query(
-      "INSERT INTO  `upstreamLease_emission` (facility_type,category,sub_category,calculation_method,franchise_space,scope1_emission,scope2_emission,emission,user_id,status,month,year,unit,facility_id,distance_travelled,distance_unit,vehicle_type,vehicle_subtype,vehicle_emission,no_of_vehicles) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      "INSERT INTO  `upstreamLease_emission` (facility_type,category,sub_category,calculation_method,franchise_space,scope1_emission,scope2_emission,emission,emission_factor_lease, emission_factor_lease_unit,emission_factor_vehichle,emission_factor_vehicle_unit,user_id,status,month,year,unit,facility_id,distance_travelled,distance_unit,vehicle_type,vehicle_subtype,vehicle_emission,no_of_vehicles) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       [
         data.facility_type,
         data.category,
@@ -14,7 +14,11 @@ module.exports = {
         data.franchise_space,
         data.scope1_emission,
         data.scope2_emission,
-        data.emission,
+        Number(data.emission) + Number(data.vehicle_emission),
+        data.emission_factor_lease,
+        data.emission_factor_lease_unit,
+        data.emission_factor_vehichle,
+        data.emission_factor_vehicle_unit,
         data.user_id,
         "P",
         data.month,
@@ -33,7 +37,7 @@ module.exports = {
 
   insertdownLeaseEmission: async (data) => {
     return db.query(
-      "INSERT INTO   `downstreamLease_emission` (facility_type,category,sub_category,calculation_method,franchise_space,scope1_emission,scope2_emission,emission,user_id,status,month,year,unit,facility_id,distance_travelled,distance_unit,vehicle_type,vehicle_subtype,vehicle_emission,no_of_vehicles) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      "INSERT INTO   `downstreamLease_emission` (facility_type,category,sub_category,calculation_method,franchise_space,scope1_emission,scope2_emission,emission,emission_factor_lease, emission_factor_lease_unit,emission_factor_vehichle,emission_factor_vehicle_unit,user_id,status,month,year,unit,facility_id,distance_travelled,distance_unit,vehicle_type,vehicle_subtype,vehicle_emission,no_of_vehicles) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       [
         data.facility_type,
         data.category,
@@ -42,7 +46,11 @@ module.exports = {
         data.franchise_space,
         data.scope1_emission,
         data.scope2_emission,
-        data.emission,
+        Number(data.emission) + Number(data.vehicle_emission),
+        data.emission_factor_lease,
+        data.emission_factor_lease_unit,
+        data.emission_factor_vehichle,
+        data.emission_factor_vehicle_unit,
         data.user_id,
         "P",
         data.month,

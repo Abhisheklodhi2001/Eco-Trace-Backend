@@ -21,6 +21,8 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 
+
+
 app.use(express.json());
 app.use(cors());
 app.use(
@@ -70,29 +72,40 @@ app.get("/", (req, res) => {
   }
 });
 
-// success page for forgot password
-
 app.use('/success', express.static(path.join(__dirname + "/controller/view/message.html")));
 
+app.get("/server", (req, res) => {
+  return res.status(200).json({ message: "Eco Trace server is running" });
+})
 
+const PORT = 4000;
 
 // https
-//   .createServer(
-//     {
-//       ca: fs.readFileSync("/var/www/html/ssl/ca_bundle.crt"),
-//       key: fs.readFileSync("/var/www/html/ssl/private.key"),
-//       cert: fs.readFileSync("/var/www/html/ssl/certificate.crt"),
-//     },
-//     app
-//   )
-//   .listen(4000, () => {
-//     console.log("server is runing at port 4000");
-//   });
-
-const PORT = 4500;
+//     .createServer(
+//         {
+//             ca: fs.readFileSync("/var/www/html/ssl/ca_bundle.crt"),
+//             key: fs.readFileSync("/var/www/html/ssl/private.key"),
+//             cert: fs.readFileSync("/var/www/html/ssl/certificate.crt"),
+//         },
+//         app
+//     )
+//     .listen(PORT, () => {
+//         console.log(`server is runing at port ${PORT}`);
+//     });
+// https.createServer(
+//   {
+//     key: fs.readFileSync("/var/www/html/ssl/Private_key_1.key"),
+//     cert: fs.readFileSync("/var/www/html/ssl/certificate.crt"),
+//     ca: fs.readFileSync("/var/www/html/ssl/ca_bundle.crt"),
+//   },
+//   app
+// ).listen(PORT, () => {
+//   console.log(`Server is running at port ${PORT}`);
+// });
 
 app.listen(PORT, function () {
   console.log(`Node app is running on port ${PORT}`);
 });
+
 
 module.exports = app;

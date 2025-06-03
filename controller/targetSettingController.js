@@ -47,7 +47,7 @@ exports.getEmissionInventory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
     // Scope3 Business travel and employee commute
@@ -205,7 +205,7 @@ exports.getTargetSettingDetails = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -312,7 +312,7 @@ exports.getActions = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 
@@ -642,7 +642,7 @@ exports.getTargetEmissionInventory = async (req, res) => {
         error: message,
         missingParams: result.error.details[0].message,
         status: 200,
-        success: true,
+        success: false,
       });
     }
 

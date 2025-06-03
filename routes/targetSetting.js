@@ -3,7 +3,7 @@ const targetSettingController = require("../controller/targetSettingController")
 const auth = require("../middleware/auth");
 const router = express.Router();
 
-router.post("/getEmissionInventory", targetSettingController.getEmissionInventory);
+router.post("/getEmissionInventory", auth, targetSettingController.getEmissionInventory);
 router.post("/addTargetSetting", auth, targetSettingController.addTargetSetting);
 router.get("/getTargetSettingDetails/:tenant_id", auth, targetSettingController.getTargetSettingDetails);
 router.post("/addActions", auth, targetSettingController.addActions);

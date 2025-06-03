@@ -107,7 +107,7 @@ module.exports = {
     },
 
     employee_commuting_categoryDetails: async (facilities, year) => {
-        return db.query("select COALESCE('employee_commuting_category', '')  as  tablename ,A.*,B.type,B.category as category_name ,COALESCE('', '')  as  subcatName ,COALESCE('', '')  as subcategoryID from employee_commuting_category A LEFT JOIN  employee_community_typeoftransport B ON B.id = A.typeoftransport where A.facilities= ? and A.year = ?   ORDER BY A.id DESC", [facilities, year]);
+        return db.query("SELECT COALESCE('employee_commuting_category', '') AS tablename, A.*, B.category AS category_name, C.subcategory AS type, COALESCE('', '') AS subcatName, COALESCE('', '') AS subcategoryID FROM employee_commuting_category A LEFT JOIN employee_community_typeoftransport B ON B.category_id = A.typeoftransport LEFT JOIN employee_community_typeoftransport C ON C.id = A.subtype WHERE A.facilities = ? AND A.year = ? GROUP BY A.id ORDER BY A.id DESC;", [facilities, year]);
     },
 
     homeoffice_categoryDetails: async (facilities, year) => {
@@ -141,11 +141,11 @@ module.exports = {
     },
 
     upstream_vehicle_storage_emissions: async (facilities, year) => {
-        return db.query("select  COALESCE('upstream_vehicle_storage_emissions', '')  as  tablename ,A.*,COALESCE('', '')  as  subcatName ,COALESCE('', '')  as subcategoryID from upstream_vehicle_storage_emissions A  where A.facility_id= ? and year = ?   ORDER BY A.id DESC", [facilities, year]);
+        return db.query("SELECT COALESCE( 'upstream_vehicle_storage_emissions', '' ) AS tablename, A.*, COALESCE('', '') AS subcatName, COALESCE('', '') AS subcategoryID, vehicletypes.vehicle_type AS vehicle_type_name FROM upstream_vehicle_storage_emissions A LEFT JOIN vehicletypes ON vehicletypes.id = A.vehicle_type WHERE A.facility_id = ? AND YEAR = ? ORDER BY A.id DESC;", [facilities, year]);
     },
 
     downstream_vehicle_storage_emissions: async (facilities, year) => {
-        return db.query("select COALESCE('downstream_vehicle_storage_emissions', '')  as  tablename ,A.*,COALESCE('', '')  as  subcatName ,COALESCE('', '')  as subcategoryID from downstream_vehicle_storage_emissions A  where A.facility_id= ? and year = ?   ORDER BY A.id DESC", [facilities, year]);
+        return db.query("SELECT COALESCE( 'upstream_vehicle_storage_emissions', '' ) AS tablename, A.*, COALESCE('', '') AS subcatName, COALESCE('', '') AS subcategoryID, vehicletypes.vehicle_type AS vehicle_type_name FROM upstream_vehicle_storage_emissions A LEFT JOIN vehicletypes ON vehicletypes.id = A.vehicle_type WHERE A.facility_id = ? AND YEAR = ? ORDER BY A.id DESC;", [facilities, year]);
     },
 
     updateAllData: async (tablename, id, status) => {

@@ -5,17 +5,19 @@ const upload = require("../middleware/upload_file");
 
 const router = express.Router();
 
-router.get("/AllvehicleType", businesstravelController.AllvehicleType);
+router.get("/AllvehicleType", auth, businesstravelController.AllvehicleType);
 router.post("/flightTravel", auth, upload.single('file'), businesstravelController.flightTravel);
 router.post("/subvehicleType", auth, businesstravelController.subvehicleType);
+router.post("/Othermodes_of_transport_type_name", auth, businesstravelController.OtherModesOfTransportTypeName);
+router.post("/get_Othermodes_of_transport_node_type_by_type_name", auth, businesstravelController.OtherModesOfTransportNodeTypeByTypeName);
 router.post("/Othermodes_of_transport", auth, upload.single('file'), businesstravelController.Othermodes_of_transport);
 router.post("/hotelStay", auth, upload.single('file'), businesstravelController.hotelStay);
-router.get("/flight_types", businesstravelController.flight_types);
+router.get("/flight_types", auth, businesstravelController.flight_types);
 router.get("/getflightairportcode", auth, businesstravelController.getflightairportcode);
 router.post("/Addbusinessunit", auth, businesstravelController.Addbusinessunit);
 router.get("/getAllbussinessUnit", auth, businesstravelController.getAllbussinessUnit);
 router.post("/AddemployeeCommuting", auth, businesstravelController.AddemployeeCommuting);
-router.get("/typeof_homeoffice", businesstravelController.typeof_homeoffice);
+router.get("/typeof_homeoffice", auth, businesstravelController.typeof_homeoffice);
 router.post("/AddhomeofficeCategory", auth, businesstravelController.AddhomeofficeCategory);
 router.get("/gethomeofficeCategory", auth, businesstravelController.gethomeofficeCategory);
 router.get("/getemployeecommutingCategory", auth, businesstravelController.getemployeecommutingCategory);
@@ -40,8 +42,8 @@ router.post("/Addprocessing_of_sold_productsCategory", auth, businesstravelContr
 router.get("/getprocessing_of_sold_productsCategory", auth, businesstravelController.getprocessing_of_sold_productsCategory);
 router.get("/vehicleCategories_lease", auth, businesstravelController.vehicleCategories_lease);
 router.get("/vehicleSubCategories_lease", auth, businesstravelController.vehicleSubCategories_lease);
-router.get("/employeeCommunityCategory", businesstravelController.employeeCommunityCategory);
-router.get("/employeeCommunitySubCategory/:category", businesstravelController.employeeCommunitySubCategory);
+router.get("/employeeCommunityCategory", auth, businesstravelController.employeeCommunityCategory);
+router.get("/employeeCommunitySubCategory/:category", auth, businesstravelController.employeeCommunitySubCategory);
 router.post("/getcurrencyByfacilities", auth, businesstravelController.getcurrencyByfacilities);
 
 module.exports = router;
