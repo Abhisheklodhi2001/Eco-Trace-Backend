@@ -78,7 +78,7 @@ module.exports = {
                       subcategoryseeddata scsd   \
                       where   sc.facility_id in (${facility}) and  \
                       sc.year =${year}  and sc.month in (${month}) and  sc.status='S' and  \
-                      sc.facility_id= f.ID  and sc.TypeID = scef.ID   and  scsd.Id = sc.SubCategoriesID \
+                      sc.facility_id= f.ID  and sc.TypeID = scef.SubCatTypeID and  scsd.Id = sc.SubCategoriesID \
                       group by DataPoint2, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
@@ -107,7 +107,7 @@ module.exports = {
   },
 
   getWasteGeneratedEmissionReportMultiAudit: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Waste Generated' as category, ewts.waste_type as DataPoint1, method as DataPoint2, ewts.kg, ewts.tonnes, ewts.litres,  \
+    return db.query(`select 'Scope3' as scope, 'Waste Generated' as category, ewts.waste_type as DataPoint1, method as DataPoint2,  \
                      sum(wge.emission) as Emission,  wge.year as Years, wge.month as Months, ewts.reference,  \
                     f.AssestName as facility from  waste_generated_emissions wge, \`dbo.facilities\`  f, endoflife_waste_type_subcategory ewts \
                     where   wge.facility_id in (${facility}) and  \
@@ -250,14 +250,14 @@ module.exports = {
   },
 
   getElecricityReportMultiAudit : async (facility, year, month) => {
-    return db.query(`select 'Scope' as scope, 'Renewable Electricity' as category, scsd.Item as DataPoint1, rens.SourceName as DataPoint2, electra.Unit, electra.kgCO2e_kwh as emission_factor, 'kgCO2e_kg' as emission_factor_name,\
+    return db.query(`select 'Scope' as scope, 'Renewable Electricity' as category, scsd.Item as DataPoint1, rende.SourceName as DataPoint2, electra.Unit, electra.kgCO2e_kwh as emission_factor, 'kgCO2e_kg' as emission_factor_name,\
                      sum(rende.GHGEmission) as Emission,  rende.year as Years, rende.months as Months, electra.reference, \
                      f.AssestName as facility from  \`dbo.renewableelectricityde\`  rende, \`dbo.facilities\`  f,  \
                       \`dbo.renewableelectricitysource\` rens, subcategoryseeddata scsd, \`dbo.electricity\` electra \ 
                       where   rende.facilities in (${facility})   \
                       and rende.year =${year}  and rende.months in (${month})  \
                       and  rende.facilities= f.ID and rende.RegionID  = electra.RegionID  \
-                      and  rende.SubCategorySeedID = scsd.id and rende.typeID = rens.id   \
+                      and  rende.SubCategorySeedID = scsd.id   \
                       group by DataPoint2, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },

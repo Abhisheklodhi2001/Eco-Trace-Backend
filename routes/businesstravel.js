@@ -43,7 +43,7 @@ router.get("/getprocessing_of_sold_productsCategory", auth, businesstravelContro
 router.get("/vehicleCategories_lease", auth, businesstravelController.vehicleCategories_lease);
 router.get("/vehicleSubCategories_lease", auth, businesstravelController.vehicleSubCategories_lease);
 router.get("/employeeCommunityCategory", auth, businesstravelController.employeeCommunityCategory);
-router.get("/employeeCommunitySubCategory/:category", auth, businesstravelController.employeeCommunitySubCategory);
+router.get("/employeeCommunitySubCategory/:category/:facility_id", auth, businesstravelController.employeeCommunitySubCategory);
 router.post("/getcurrencyByfacilities", auth, businesstravelController.getcurrencyByfacilities);
 
 module.exports = router;

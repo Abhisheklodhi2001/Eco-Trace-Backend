@@ -130,6 +130,7 @@ exports.stationaryCombustionEmission = async (req, res) => {
     stationaryCombustionData = {
       user_id: user_id,
       readingValue: readingValue,
+      readingValueByKL: unit == 'KL' ? readingValue * 1000 : readingValue,
       BlendType: blendType,
       BlendPercent: blendPercent,
       emission: 0,
@@ -198,6 +199,10 @@ exports.stationaryCombustionEmission = async (req, res) => {
       emissionFactor = emissionDetails[0]?.kgCO2e_tonnes
       emissionFactor1 = emissionDetails[0]?.scope3_kgCO2e_tonnes
     }
+    else if (unit.toLowerCase() === 'kl') {
+      emissionFactor = emissionDetails[0]?.kgCO2e_litre
+      emissionFactor1 = emissionDetails[0]?.scope3_kg_CO2e_litres
+    }
     if (stationaryCombustionData.calorificValue) {
       emissionFactor = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor)
       emissionFactor1 = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor1)
@@ -219,6 +224,9 @@ exports.stationaryCombustionEmission = async (req, res) => {
       }
       else if (unit.toLowerCase() === tonnesUnit) {
         multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_tonnes
+      }
+      else if (unit.toLowerCase() === 'kl') {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_litre
       }
       if (blendType === "Perc. Blend") {
         let percent = parseFloat(blendPercent / 100);
@@ -243,6 +251,9 @@ exports.stationaryCombustionEmission = async (req, res) => {
       }
       else if (unit.toLowerCase() === tonnesUnit) {
         multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_tonnes
+      }
+      else if (unit.toLowerCase() === 'kl') {
+        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_litre
       }
       if (blendType === "Perc. Blend") {
         let percent = parseFloat(blendPercent / 100);

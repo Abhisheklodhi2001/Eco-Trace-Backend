@@ -115,7 +115,7 @@ module.exports = {
     pageSize,
     offset
   ) => {
-    return db.query(`select f.waste_type as category, f.method as subcategory, f.total_waste as quantity, unit , f.emission, f.facility_id as facility, f.year, f.month, dbu.tenantName as user_name \
+    return db.query(`select f.product AS category, f.waste_type AS subcategory, f.method AS method, f.total_waste as quantity, unit , f.emission, f.facility_id as facility, f.year, f.month, dbu.tenantName as user_name \
                     from  waste_generated_emissions f, \`dbo.tenants\` dbu  where  dbu.id= f.user_id and  f.status  ='S'  and f.facility_id ='${facility}' and f.year ='${year}' and f.month in (${month}) ORDER BY f.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
   },
 

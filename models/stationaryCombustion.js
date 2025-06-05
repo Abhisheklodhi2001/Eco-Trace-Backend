@@ -19,10 +19,11 @@ module.exports = {
 
   insertCombustionEmission: async (data) => {
     return db.query(
-      "INSERT INTO   `stationarycombustionde` (user_id, ReadingValue, Unit, Status, Year, Month, GHGEmission, GHGEmissionFactor, BlendType, BlendPercent, CalorificValue, TypeName,TypeID, SubCategoriesID,CreatedBy,facility_id, Scope3GHGEmission, Scope3GHGEmissionFactor, FileName) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      "INSERT INTO   `stationarycombustionde` (user_id, ReadingValue, ReadingValueKL, Unit, Status, Year, Month, GHGEmission, GHGEmissionFactor, BlendType, BlendPercent, CalorificValue, TypeName,TypeID, SubCategoriesID,CreatedBy,facility_id, Scope3GHGEmission, Scope3GHGEmissionFactor, FileName) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       [
         data.user_id,
         data.readingValue,
+        data.readingValueByKL,
         data.Unit,
         "P",
         data.year,

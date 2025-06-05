@@ -4187,6 +4187,7 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
           start_year,
           months
         );
+        
         if (reportResult.length > 0) {
           for (elem of reportResult) {
             if (elem?.unit?.includes("KL")) {

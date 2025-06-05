@@ -545,13 +545,12 @@ exports.purchaseGoods = async (req, res) => {
           data.map(async (item) => {
             let emission = '';
             let EFVRes;
-
             if (item.vendorId == "" || item.vendorId == null || item.vendorId == undefined) {
               EFVRes = await fetchPurchaseGoodCountryData(item.product_category, countrydata[0].CountryId);
             } else if (item.vendorspecificEF == "" || item.vendorspecificEF == null || item.vendorspecificEF == undefined) {
               const EFVC = await fetchVendorCountryById(item.vendorId);
               if (EFVC.length > 0) {
-                EFVRes = await fetchPurchaseGoodCountryData(item.product_category, EFVC[0].country_id);
+                EFVRes = await fetchPurchaseGoodCountryData(item.product_category, countrydata[0].CountryId);
               }
             } else {
               EFVRes = await fetchPurchaseGoodCountryData(item.product_category, countrydata[0].CountryId);
@@ -1354,7 +1353,7 @@ exports.upStreamTransportation = async (req, res) => {
         downStreamData.emission_factor_unit = "";
       }
 
-      if (checkNUllUnD(EFV)) {        
+      if (checkNUllUnD(EFV)) {
         let totalEmission = parseFloat(noOfVehicles * mass * distancekm * EFV).toFixed(2);
         downStreamData.vehicleType = vehicle_type;
         downStreamData.subCategory = sub_category;

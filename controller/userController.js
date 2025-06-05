@@ -6291,6 +6291,8 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
             item.purchase_payload_id = addPurchaseGoodsPayloads.insertId;
             await insertPurchaseGoodsMatched(item);
           } else {
+            console.log(true);
+            
             delete item.month;
             delete item.typeofpurchase;
             delete item.vendorunit;
@@ -6339,7 +6341,7 @@ exports.getPurchaseGoodsByUserAndFacilityId = async (req, res) => {
       });
     }
 
-    const getPurchaseGoodsPayloads = getPurchaseGoodsPayloadsByUserAndFacilityId(userId, facilityID);
+    const getPurchaseGoodsPayloads = await getPurchaseGoodsPayloadsByUserAndFacilityId(userId, facilityID);    
     if (getPurchaseGoodsPayloads.length > 0) {
       return res.status(200).json({ error: false, message: "Purchase goods payloads fetched successfully.", success: true, data: getPurchaseGoodsPayloads });
     } else {

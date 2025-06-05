@@ -1657,23 +1657,18 @@ exports.AddSoldProductsCategory = async (req, res) => {
       let referigerant_per_usage
       let electricity_per_usage
       let fuelconsumedEF = 0;
+      let finalExpectedLifetimeProduct = 1;
+      let electricityUseData = 1;
       let finalproductEF = 0;
       let emission = 0;
 
       let countrydata = await country_check(facilities);
-      //console.log(countrydata[0].CountryId);
-      if (countrydata.length == 0) {
-        return res.json({
-          success: false,
-          message: "EF not Found for sold products category",
-          status: 400,
-        });
-      }
+      if (countrydata.length == 0) return res.json({ success: false, message: "EF not Found for sold products category", status: 400 });
+
       const chekefproduct = await soldproductsemission_factors(productcategory, countrydata[0].CountryId);
 
       if (chekefproduct.length > 0) {
-
-        let yearRange = chekefproduct[0]?.Fiscal_Year; // The string representing the year range
+        let yearRange = chekefproduct[0]?.Fiscal_Year;
         let [startYear, endYear] = yearRange.split('-').map(Number);
 
         if (no_of_Items_unit == '2') {
@@ -1707,106 +1702,63 @@ exports.AddSoldProductsCategory = async (req, res) => {
       }
 
       if (expectedlifetimeproduct) {
-        if (expectedlifetime_nooftimesused == '2' || expectedlifetime_nooftimesused == '4') {
-          expectedlifetime_per_times = parseFloat(expectedlifetimeproduct * 365);
-        } else if (expectedlifetime_nooftimesused == '3') {
-          expectedlifetime_per_times = parseFloat(expectedlifetimeproduct * 12);
-        } else {
-          expectedlifetime_per_times = parseFloat(expectedlifetimeproduct);
-        }
+        finalExpectedLifetimeProduct = expectedlifetimeproduct
       }
 
       if (electricity_usage) {
-        if (electricity_usage == '2' || electricity_usage == '4') {
-          electricity_per_usage = parseFloat(electricity_use * 365);
-        } else if (electricity_usage == '3') {
-          electricity_per_usage = parseFloat(electricity_use * 12);
+        const findElelctricityData = await getSelectedColumn("\`dbo.electricity\`", `where country_id = '${countrydata[0].CountryId}'`, "*");
+        if (findElelctricityData.length > 0) {
+          electricityUseData = electricity_use * findElelctricityData[0].kgCO2e_kwh;
         } else {
-          electricity_per_usage = parseFloat(electricity_use);
+          electricityUseData = electricity_use * 1;
         }
       }
 
       if (fuel_consumed_usage) {
-        if (fuel_consumed_usage == '2') {
-          fuel_consumed_per_usage = parseFloat(fuel_consumed * 1);
-        } else if (fuel_consumed_usage == '4') {
-          fuel_consumed_per_usage = parseFloat(fuel_consumed * 365);
-        } else if (fuel_consumed_usage == '3') {
-          fuel_consumed_per_usage = parseFloat(fuel_consumed * 12);
-        } else {
-          fuel_consumed_per_usage = parseFloat(fuel_consumed);
-        }
-        let where = ` where SubCategorySeedID = 1 and Item = '${fuel_type}' and country_id = '${countrydata[0].CountryId}'`;
+        let where = ` where Item = '${fuel_type}' and country_id = '${countrydata[0].CountryId}'`;
         const fuelconsumed = await getSelectedColumn("stationarycombustion", where, "*");
-
         if (fuelconsumed.length > 0) {
-
-          let yearRange = fuelconsumed[0]?.Fiscal_Year; // The string representing the year range
+          let yearRange = fuelconsumed[0]?.Fiscal_Year;
           let [startYear, endYear] = yearRange.split('-').map(Number);
-
           if (year >= startYear && year <= endYear) {
-            fuelconsumedEF = parseFloat(fuelconsumed[0]['kgCO2e_kg'] * fuel_consumed * expectedlifetimeproduct)
+            if (fuelconsumed[0].SubCategorySeedID == 1) {
+              fuelconsumedEF = parseFloat(fuelconsumed[0]['kgCO2e_litre'] * fuel_consumed)
+            } else {
+              fuelconsumedEF = parseFloat(fuelconsumed[0]['kgCO2e_kg'] * fuel_consumed)
+            }
           } else if (year == startYear) {
-            fuelconsumedEF = parseFloat(fuelconsumed[0]['kgCO2e_kg'] * fuel_consumed * expectedlifetimeproduct)
+            if (fuelconsumed[0].SubCategorySeedID == 1) {
+              fuelconsumedEF = parseFloat(fuelconsumed[0]['kgCO2e_litre'] * fuel_consumed)
+            } else {
+              fuelconsumedEF = parseFloat(fuelconsumed[0]['kgCO2e_kg'] * fuel_consumed)
+            }
           } else {
-            return res.json({
-              success: false,
-              message: "EF not Found for this year in fuel_type",
-              status: 400,
-            });
+            fuelconsumedEF = fuel_consumed * 1;
           }
-
         } else {
-          return res.json({
-            success: false,
-            message: "EF not Found for fuel_type",
-            status: 400,
-          });
+          fuelconsumedEF = fuel_consumed * 1;
         }
       }
 
       if (referigerant_usage) {
         let where = ` where Item = '${referigentused}' and country_id = '${countrydata[0].CountryId}'`;
         const refrigents = await getSelectedColumn("`dbo.refrigents`", where, "*");
-        if (referigerant_usage == '2') {
-          referigerant_per_usage = parseFloat(referigerantleakage * 1);
-        } else if (referigerant_usage == '4') {
-          referigerant_per_usage = parseFloat(referigerantleakage * 365);
-        } else if (referigerant_usage == '3') {
-          referigerant_per_usage = parseFloat(referigerantleakage * 12);
-        } else {
-          referigerant_per_usage = parseFloat(referigerantleakage);
-        }
-
         if (refrigents.length > 0) {
-
           let yearRange = refrigents[0]?.Fiscal_Year; // The string representing the year range
           let [startYear, endYear] = yearRange.split('-').map(Number);
-
           if (year >= startYear && year <= endYear) {
-            finalfrigentsEF = parseFloat(refrigents[0]['kgCO2e_kg'] * fuel_consumed * expectedlifetimeproduct)
+            finalfrigentsEF = parseFloat(refrigents[0]['kgCO2e_kg'] * referigerantleakage)
           } else if (year == startYear) {
-            finalfrigentsEF = parseFloat(refrigents[0]['kgCO2e_kg'] * fuel_consumed * expectedlifetimeproduct)
+            finalfrigentsEF = parseFloat(refrigents[0]['kgCO2e_kg'] * referigerantleakage)
           } else {
-            return res.json({
-              success: false,
-              message: "EF not Found for this year in refrigents",
-              status: 400,
-            });
+            finalfrigentsEF = referigerantleakage * 1;
           }
-
         } else {
-          return res.json({
-            success: false,
-            message: "EF not Found for refrigents",
-            status: 400,
-          });
+          finalfrigentsEF = referigerantleakage * 1;
         }
       }
 
-      if (finalproductEF) {
-        emission = parseFloat(fuelconsumedEF + finalfrigentsEF + finalproductEF);
-      }
+      if (finalproductEF) emission = parseFloat(finalproductEF * finalExpectedLifetimeProduct * (electricityUseData + fuelconsumedEF + finalfrigentsEF));
 
       let array = {
         type: type,
@@ -1819,12 +1771,12 @@ exports.AddSoldProductsCategory = async (req, res) => {
         expectedlifetime_nooftimesused: expectedlifetime_nooftimesused ? expectedlifetime_nooftimesused : "",
         electricity_use: electricity_use ? electricity_use : "",
         electricity_usage: electricity_usage ? electricity_usage : "",
-        electricity_per_usage: electricity_per_usage ? electricity_per_usage : "",
-        expectedlifetime_per_times: expectedlifetime_per_times ? expectedlifetime_per_times : "",
+        electricity_per_usage: electricityUseData ? electricityUseData : "",
+        expectedlifetime_per_times: finalExpectedLifetimeProduct ? finalExpectedLifetimeProduct : "",
         fuel_type: fuel_type ? fuel_type : "",
         fuel_consumed: fuel_consumed ? fuel_consumed : "",
         fuel_consumed_usage: fuel_consumed_usage ? fuel_consumed_usage : "",
-        fuel_consumed_per_usage: fuel_consumed_per_usage ? fuel_consumed_per_usage : "",
+        fuel_consumed_per_usage: fuelconsumedEF ? fuelconsumedEF : "",
         referigentused: referigentused ? referigentused : "",
         referigerantleakage: referigerantleakage ? referigerantleakage : "",
         referigerant_usage: referigerant_usage ? referigerant_usage : "",
@@ -1836,7 +1788,6 @@ exports.AddSoldProductsCategory = async (req, res) => {
         year: year,
         facilities: facilities
       }
-
 
       let months = JSON.parse(month);
       for (let monthdata of months) {
@@ -2877,7 +2828,6 @@ exports.Addprocessing_of_sold_productsCategory = async (req, res) => {
         });
       }
       if (valueofsoldintermediate) {
-
         if (processing_acitivity && intermediate_category) {
           where = ` where sector = '${processing_acitivity}' and country_id = '${countrydata[0].CountryId}'`;
           getSoldproduct = await getSelectedColumn("processing_of_sold_products_ef", where, "*");
@@ -2889,40 +2839,24 @@ exports.Addprocessing_of_sold_productsCategory = async (req, res) => {
         }
 
         if (getSoldproduct.length > 0) {
-
-
           let yearRange = getSoldproduct[0]?.Fiscal_Year; // The string representing the year range
           let [startYear, endYear] = yearRange.split('-').map(Number);
 
           if (year >= startYear && year <= endYear) {
-            if (unit == 'INR') {
-              unitef = getSoldproduct[0]['efkgco2_inr']
-            }
-            else if (unit == 'MYR') {
-              unitef = getSoldproduct[0]['efkgco2_myr']
-            }
-            else if (unit == 'kg') {
+            if (unit == 'kg') {
               unitef = getSoldproduct[0]['efkgco2_kg']
-            }
-            else if (unit == 'lites') {
+            } else if (unit == 'litres') {
               unitef = getSoldproduct[0]['efkgco2_litres']
             } else {
-              unitef = getSoldproduct[0]['efkgco2_tonnes']
+              unitef = getSoldproduct[0]['efkgco2_ccy']
             }
           } else if (year == startYear) {
-            if (unit == 'INR') {
-              unitef = getSoldproduct[0]['efkgco2_inr']
-            }
-            else if (unit == 'MYR') {
-              unitef = getSoldproduct[0]['efkgco2_myr']
-            }
-            else if (unit == 'kg') {
+            if (unit == 'kg') {
               unitef = getSoldproduct[0]['efkgco2_kg']
-            }
-            else if (unit == 'lites') {
+            } else if (unit == 'litres') {
               unitef = getSoldproduct[0]['efkgco2_litres']
             } else {
-              unitef = getSoldproduct[0]['efkgco2_tonnes']
+              unitef = getSoldproduct[0]['efkgco2_ccy']
             }
           } else {
             return res.json({
@@ -2942,49 +2876,34 @@ exports.Addprocessing_of_sold_productsCategory = async (req, res) => {
           });
         }
 
-        // if(unitef != 0){
-
-        // }else{
-        //   emission =  0;
-        // }
-
         if (calculation_method == 'Site Specific method') {
           emission = parseFloat(scope1emissions) + parseFloat(scope2emissions) * parseFloat(valueofsoldintermediate)
         } else {
           emission = parseFloat(unitef * valueofsoldintermediate);
         }
 
-        console.log(emission, "emissionemi23")
-
         if (other) {
-
-          if (unit == 'INR') {
-            efkgco2_inr = other_emission
-          } else if (unit == 'kg') {
+          if (unit == 'kg') {
             efkgco2_kg = other_emission
-          }
-          else if (unit == 'lites') {
+          } else if (unit == 'litres') {
             efkgco2_litres = other_emission
           } else {
-            efkgco2_tonnes = other_emission
+            efkgco2_ccy = other_emission
           }
 
           const insertprocessingef = await insertprocessing_of_sold_products_ef({
             'Industry': intermediate_category,
             "sector": processing_acitivity,
             "sub_sector": sub_activity,
-            efkgco2_inr: efkgco2_inr ? efkgco2_inr : "",
             efkgco2_kg: efkgco2_kg ? efkgco2_kg : "",
             efkgco2_litres: efkgco2_litres ? efkgco2_litres : "",
-            efkgco2_tonnes: efkgco2_tonnes ? efkgco2_tonnes : ""
+            efkgco2_ccy: efkgco2_ccy ? efkgco2_ccy : ""
           })
-
           emission = parseFloat(other_emission * valueofsoldintermediate)
         }
 
 
         console.log(emission, "emissionemissionemissionemissionemissionemission123")
-
         let category = {
           intermediate_category: intermediate_category ? intermediate_category : "",
           calculation_method: calculation_method ? calculation_method : "",
@@ -3003,7 +2922,6 @@ exports.Addprocessing_of_sold_productsCategory = async (req, res) => {
           batch: batch,
         }
 
-
         let months = JSON.parse(month);
         for (let monthdata of months) {
           category.month = monthdata;
@@ -3016,7 +2934,6 @@ exports.Addprocessing_of_sold_productsCategory = async (req, res) => {
       }
 
       if (allinsertedID.length > 0) {
-
         let where = ` where user_id =  '${user_id}' and facilities = '${facilities}'`;
         const water_supplytreatmentcategory1 = await getSelectedColumn("processing_of_sold_products_category", where, "*");
         return res.json({
@@ -3717,12 +3634,12 @@ exports.employeeCommunityCategory = async (req, res) => {
 exports.employeeCommunitySubCategory = async (req, res) => {
   try {
 
-    const { category } = req.params;
+    const { category, facility_id } = req.params;
+
     const schema = Joi.alternatives(
-
-
       Joi.object({
         category: [Joi.string().empty().required()],
+        facility_id: [Joi.string().empty().required()]
       })
     );
     const result = schema.validate(req.params);
@@ -3736,8 +3653,8 @@ exports.employeeCommunitySubCategory = async (req, res) => {
         success: false,
       });
     }
-
-    let where = ` where category_id = '${category}'`;
+    const country = await country_check(facility_id);
+    let where = ` where category_id = '${category}' AND country_id = '${country[0].CountryId}'`;
     const vehicletype = await getSelectedColumn("employee_community_typeoftransport", where, "subcategory,id");
     if (vehicletype.length > 0) {
       return res.json({

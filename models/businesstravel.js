@@ -87,10 +87,8 @@ module.exports = {
 
 
   soldproductsemission_factors: (async (productcategory, country_id) => {
-
-    return db.query('SELECT  * FROM sold_product_category_ef WHERE item = ? and country_id = ?', [productcategory, country_id]);
+    return db.query('SELECT  * FROM sold_product_category_ef WHERE id = ? and country_id = ?', [productcategory, country_id]);
   }),
-
 
   insertsoldproductsemission: async (product) => {
     return db.query("insert into sold_product_category  set ?", [product]);
