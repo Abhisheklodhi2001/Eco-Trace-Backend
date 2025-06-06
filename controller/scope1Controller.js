@@ -183,15 +183,27 @@ exports.GetUnits = async (req, res) => {
     }
 
     const user_id = req.user.user_id;
-
+    var data = [];
     let where = `WHERE seedsubcatID = '${id}'`;
     const units = await getSelectedColumn("`dbo.units`", where, "*");
-
     if (units.length > 0) {
+      units.forEach((val) => {
+        if (val.seedsubcatID == '1' && val.UnitName === 'Kwh') {
+          delete val.ID;
+          delete val.UnitName;
+          delete val.seedsubcatID;
+        } else {
+          data.push({
+            ID: val.ID,
+            UnitName: val.UnitName,
+            seedsubcatID: val.seedsubcatID
+          })
+        }
+      });
       return res.json({
         success: true,
         message: "Successfully fetched units",
-        categories: units,
+        categories: data,
         status: 200,
       });
     } else {

@@ -1661,6 +1661,7 @@ exports.AddSoldProductsCategory = async (req, res) => {
       let electricityUseData = 1;
       let finalproductEF = 0;
       let emission = 0;
+      let emission_factor_unit = "";
 
       let countrydata = await country_check(facilities);
       if (countrydata.length == 0) return res.json({ success: false, message: "EF not Found for sold products category", status: 400 });
@@ -1673,16 +1674,20 @@ exports.AddSoldProductsCategory = async (req, res) => {
 
         if (no_of_Items_unit == '2') {
           prductef = chekefproduct[0]['tonnes'];
+          emission_factor_unit = "tonnes";
         }
         if (no_of_Items_unit == '3') {
           prductef = chekefproduct[0]['kg'];
+          emission_factor_unit = "kg";
         }
         if (no_of_Items_unit == '4') {
           prductef = chekefproduct[0]['litres'];
+          emission_factor_unit = "litres";
         }
 
         if (no_of_Items_unit == '1') {
           prductef = 1;
+          emission_factor_unit = "No. of items";
         }
 
         if (year >= startYear && year <= endYear) {
@@ -1784,6 +1789,8 @@ exports.AddSoldProductsCategory = async (req, res) => {
         finalfrigentsEF: finalfrigentsEF ? finalfrigentsEF : 0,
         fuelconsumedEF: fuelconsumedEF ? fuelconsumedEF : 0,
         emission: emission ? emission : 0,
+        emission_factor_used: prductef ? prductef : "",
+        emission_factor_unit: 'kg CO2e/' + emission_factor_unit,
         user_id: user_id,
         year: year,
         facilities: facilities
@@ -2917,6 +2924,8 @@ exports.Addprocessing_of_sold_productsCategory = async (req, res) => {
           batch: batch ? batch : "",
           year: year ? year : "",
           emission: emission ? emission : 0,
+          emission_factor_used: unitef ? unitef : "",
+          emission_factor_unit: 'kg CO2e/' + unit,
           facilities: facilities ? facilities : "",
           user_id: user_id,
           batch: batch,

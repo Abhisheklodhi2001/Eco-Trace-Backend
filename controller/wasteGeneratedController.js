@@ -107,7 +107,6 @@ exports.wasteGeneratedEmission = async (req, res) => {
       waste_type,
       countrydata[0].CountryId
     );
-    console.log("total_waste =>", total_waste);
     
     if (emissionDetails.length > 0) {
       let yearRange = emissionDetails[0]?.Fiscal_Year; // The string representing the year range
@@ -115,6 +114,7 @@ exports.wasteGeneratedEmission = async (req, res) => {
 
       if (year >= startYear && year <= endYear) {
         const ef = emissionDetails[0].ef;
+        
         let totalEmission = Number(ef) * Number(total_waste);
         wasteGeneratedData.emission_factor_useed = ef;
         wasteGeneratedData.emission_factor_unit = 'kg CO2e/kg';

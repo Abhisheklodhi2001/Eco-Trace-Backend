@@ -19,9 +19,8 @@ module.exports = {
     return db.query(`select 'Scope1' as scope, 'Company Owned Vehicles' as category,cov.Item as DataPoint1,cov.ItemType  as DataPoint2, \
                      f.AssestName as facility,   sum(vd.GHGEmission) as Emission,  vd.year as Years, vd.months as Months   \
                      from  \`dbo.vehiclede\` vd, \`dbo.facilities\` f,  \`companyownedvehicles\`   cov   \
-                     where   vd.facilities in ('1') and   \
-                     vd.year =2024 and vd.months in ('Jan','Feb','Mar','Apr', 'May','Jun',                  \
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec') and vd.vehicleTypeID = cov.id and    \
+                     where   vd.facilities in (${facility}) and   \
+                     vd.year =${year} and vd.months in (${month}) and vd.vehicleTypeID = cov.id and    \
                      vd.facilities= f.ID  group by DataPoint2,  Years     \
                      ORDER BY FIELD(vd.MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',     \
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
@@ -152,15 +151,15 @@ module.exports = {
   getEmployeeCommutingReportMultiConsole: async (facility, start_year, end_year) => {
     //return db.query(`select * from employee_commuting_category where status  ='S'  and facilities in (${facility})and year ='${year}' and month in (${month}) ORDER BY created_at ASC`);
     return db.query(
-      `select 'Scope3' as scope, 'Employee Commuting' as category, ectt.type as DataPoint1, ecc.totalnoofcommutes as DataPoint2,   \
+      `select 'Scope3' as scope, 'Employee Commuting' as category, ectt.category as DataPoint1, ectt.type as DataPoint2,   \
                      sum(ecc.emission) as Emission,  ecc.year as Years, ecc.month as Months,  \
                      f.AssestName as facility from  employee_commuting_category ecc, \`dbo.facilities\`  f,  \
                      employee_community_typeoftransport ectt \
                      where   ecc.facilities in (${facility}) and  ecc.status ='S' and \
-                     ecc.year <=${start_year}  and  ecc.year <=${end_year}\
+                     ecc.year >=${start_year}  and  ecc.year <=${end_year}\
                      and  ecc.facilities= f.ID   \
-                     and ecc.typeoftransport = ectt.id  \
-                     group by DataPoint2 , Months, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',    \              
+                     and ecc.subtype = ectt.id  \
+                     group by DataPoint1 , DataPoint2, Months, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',    \              
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`
     );
   },
@@ -171,9 +170,9 @@ module.exports = {
     end_year
   ) => {
 
-    return db.query(`select 'Scope3' as scope, 'Employee Commuting' as data_point, typeofhomeoffice as category,year, month, sum(emission) as emission, facilities as facility  \
-                    from  homeoffice_category where status  ='S'  and facilities in (${facility}) and year >='${start_year}' and year <='${start_year}' GROUP BY facilities ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec') `);
+    return db.query(`select 'Scope3' as scope, 'Home Office' as category, hef.typeof_homeoffice as DataPoint1,hc.year, hc.month, sum(hc.emission) as Emission,  f.AssestName  as facility   \
+                     from  \`dbo.facilities\`  f ,homeoffice_category hc, homeoffice_emission_factors hef where hc.facilities= f.ID and hc.typeofhomeoffice = hef.id and hc.status  ='S'  and hc.facilities in (${facility}) and hc.year >=${start_year}  and hc.year <=${end_year}  \
+                     GROUP BY DataPoint1,facility ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun','Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
   getSoldProductReportMultiConsole: async (facility, year, month) => {
@@ -248,8 +247,8 @@ module.exports = {
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
-  getElecricityReportMultiConsole: async (facility, year, month) => {
-    return db.query(`select 'Scope' as scope, 'Renewable Electricity' as category, scsd.Item as DataPoint1, rens.SourceName as DataPoint2,  \
+  /*getElecricityReportMultiConsole: async (facility, year, month) => {
+    return db.query(`select 'Scope' as scope, 'Renewable Electricity' as DataPoint1, scsd.Item as category, rens.SourceName as DataPoint2,  \
                      sum(rende.GHGEmission) as Emission,  rende.year as Years, rende.months as Months,  \
                      f.AssestName as facility from  \`dbo.renewableelectricityde\`  rende, \`dbo.facilities\`  f,  \
                       \`dbo.renewableelectricitysource\` rens, subcategoryseeddata scsd \ 
@@ -258,6 +257,32 @@ module.exports = {
                       and  rende.facilities= f.ID  \
                       and  rende.SubCategorySeedID = scsd.id and rende.typeID = rens.id   \
                       group by DataPoint2, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
+  },*/
+
+  getElecricityReportMultiConsole: async (facility, year, month) => {
+    return db.query(`select 'Scope' as scope, scsd.Item as category, rende.typeID as DataPoint1, rens.SourceName as DataPoint2,  
+                     sum(rende.GHGEmission) as Emission,  rende.year as Years, rende.months as Months,  
+                     f.AssestName as facility from  \`dbo.renewableelectricityde\`  rende, \`dbo.facilities\`  f,  
+                      \`dbo.renewableelectricitysource\` rens, subcategoryseeddata scsd 
+                      where   rende.facilities in (${facility})   
+                      and rende.year =${year}  and rende.months in (${month}) and rende.status ='S' 
+                      and  rende.facilities= f.ID  
+                      and  rende.SubCategorySeedID = 1002 and  rende.SubCategorySeedID = scsd.id and rende.typeID = rens.id 
+                      group by category, DataPoint2, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
+  },
+
+    getElecricityLocationReportMultiConsole: async (facility, year, month) => {
+    return db.query(`select 'Scope' as scope, scsd.Item as category, rende.typeID as DataPoint1, "" as DataPoint2,rende.RegionID as region,
+                     sum(rende.GHGEmission) as Emission,  rende.year as Years, rende.months as Months,  
+                     f.AssestName as facility from  \`dbo.renewableelectricityde\`  rende, \`dbo.facilities\`  f,  
+                      subcategoryseeddata scsd 
+                      where   rende.facilities in (${facility})   
+                      and rende.year =${year}  and rende.months in (${month}) and rende.status ='S' 
+                      and  rende.facilities= f.ID  
+                      and  rende.SubCategorySeedID = 9 and  rende.SubCategorySeedID = scsd.id
+                      group by  region, DataPoint2, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 

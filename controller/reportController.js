@@ -123,7 +123,8 @@ const {
   getWaterDischargeConsole,
   getWaterWithdrawalConsole,
   getConpanyOwnedVehiclesMultiConsole,
-  getWaterDischargeOnlyConsole
+  getWaterDischargeOnlyConsole,
+  getElecricityLocationReportMultiConsole,
 } = require("../models/report_multi _consolidated");
 
 const {
@@ -151,6 +152,8 @@ const {
   getHeatandSteamReportMultiAudit,
   getWaterDischargeAudit,
   getWaterWithdrawalAudit,
+  getWaterSupplyAudit,
+  getWaterTreatmentAudit,
   getCompanyOwnedVehiclesMultiAudit,
 } = require("../models/report_multi _audit");
 
@@ -523,9 +526,13 @@ exports.reportStationaryCombustion = async (req, res) => {
           facility: elem.facility,
           year: elem.year,
           month: elem.month,
-          user_name: elem.user_name
+          user_name: elem.user_name,
         };
-        if (elem.BlendType != "" && elem.BlendType != undefined && elem.BlendType != null) {
+        if (
+          elem.BlendType != "" &&
+          elem.BlendType != undefined &&
+          elem.BlendType != null
+        ) {
           tempObj.blend_type = elem.BlendType;
           tempObj.blend_percentage = elem.BlendPercent;
         }
@@ -3126,7 +3133,7 @@ exports.reportFilterMultipleCategoryConsolidated = async (req, res) => {
         end_of_life_treatment: [Joi.number().required()],
         fire_extinguisher: [Joi.number().required()],
         business_travel: [Joi.number().required()],
-        company_owned_vehicles: [Joi.number().required()]
+        company_owned_vehicles: [Joi.number().required()],
       })
     );
     const result = schema.validate(req.body);
@@ -3920,7 +3927,36 @@ exports.reportFilterMultipleCategoryConsolidated = async (req, res) => {
         if (reportResult.length > 0) {
           // for(elem of reportResult)
           //     multiReport.push(elem);
+          reportResult.forEach((element) => {
+            if (element.DataPoint1 == 1) {
+              element.DataPoint1 = "Renewable Energy Cert (REC)";
+            } else if (element.DataPoint1 == 2) {
+              element.DataPoint1 = "Supplier Specific";
+            } else {
+              element.DataPoint1 = "";
+            }
+          });
           multiReport.push(...reportResult);
+        }
+        const reportResultL = await getElecricityLocationReportMultiConsole(
+          facility,
+          start_year,
+          months
+        );
+        if (reportResultL.length > 0) {
+          // for(elem of reportResult)
+          //     multiReport.push(elem);
+          reportResultL.forEach((element) => {
+            delete element.region;
+            if (element.DataPoint1 == 1) {
+              element.DataPoint1 = "Renewable Energy Cert (REC)";
+            } else if (element.DataPoint1 == 2) {
+              element.DataPoint1 = "Supplier Specific";
+            } else {
+              element.DataPoint1 = "";
+            }
+          });
+          multiReport.push(...reportResultL);
         }
       } else {
         for (var year = Number(start_year); year <= Number(end_year); year++) {
@@ -3940,8 +3976,36 @@ exports.reportFilterMultipleCategoryConsolidated = async (req, res) => {
           if (reportResult.length > 0) {
             // for(elem of reportResult)
             //     multiReport.push(elem);
-
+            reportResult.forEach((element) => {
+              if (element.DataPoint1 == 1) {
+                element.DataPoint1 = "Renewable Energy Cert (REC)";
+              } else if (element.DataPoint1 == 2) {
+                element.DataPoint1 = "Supplier Specific";
+              } else {
+                element.DataPoint1 = "";
+              }
+            });
             multiReport.push(...reportResult);
+          }
+          const reportResultL = await getElecricityLocationReportMultiConsole(
+            facility,
+            start_year,
+            months
+          );
+          if (reportResultL.length > 0) {
+            // for(elem of reportResult)
+            //     multiReport.push(elem);
+            reportResultL.forEach((element) => {
+              delete element.region;
+              if (element.DataPoint1 == 1) {
+                element.DataPoint1 = "Renewable Energy Cert (REC)";
+              } else if (element.DataPoint1 == 2) {
+                element.DataPoint1 = "Supplier Specific";
+              } else {
+                element.DataPoint1 = "";
+              }
+            });
+            multiReport.push(...reportResultL);
           }
         }
       }
@@ -4033,6 +4097,7 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
       refrigerant,
       heat_steam,
       renewable_electricity,
+      water_supply_treatment,
       end_of_life_treatment,
       fire_extinguisher,
       company_owned_vehicles,
@@ -4065,7 +4130,7 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
         refrigerant: [Joi.number().required()],
         heat_steam: [Joi.number().required()],
         renewable_electricity: [Joi.number().required()],
-        //       water_supply_treatment: [Joi.number().required()],
+        water_supply_treatment: [Joi.number().required()],
         end_of_life_treatment: [Joi.number().required()],
         fire_extinguisher: [Joi.number().required()],
         company_owned_vehicles: [Joi.number().required()],
@@ -4108,6 +4173,7 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
     var fireExtinguisher = Number(fire_extinguisher);
     var companyOwnedVehicles = Number(company_owned_vehicles);
     var differenceInYear = Number(end_year) - Number(start_year);
+    var waterSupplyTreatment = Number(water_supply_treatment);
 
     if (purchaseGoods) {
       if (differenceInYear == 0) {
@@ -4122,26 +4188,23 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             if (elem?.unit?.includes("litre")) {
               delete elem["EFkgC02e_ccy"];
               delete elem["EFkgC02e_tonnes"];
-              elem["emission_factor"] = elem["emission_factor_used"];
-              elem["emission_factor_name"] = "EFkgC02e_litres";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["EFkgC02e_litres"];
-              delete elem["emission_factor_used"];
             }
             else if (elem?.unit?.includes("tonne")) {
               delete elem["EFkgC02e_ccy"];
               delete elem["EFkgC02e_litres"];
-              elem["emission_factor"] = elem["emission_factor_used"];
-              elem["emission_factor_name"] = "EFkgC02e_tonnes";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["EFkgC02e_tonnes"];
-              delete elem["emission_factor_used"];
             }
             else {
               delete elem["EFkgC02e_tonnes"];
               delete elem["EFkgC02e_litres"];
-              elem["emission_factor"] = elem["emission_factor_used"];
-              elem["emission_factor_name"] = "EFkgC02e_ccy";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["EFkgC02e_ccy"];
-              delete elem["emission_factor_used"];
             }
             multiReport.push(elem);
 
@@ -4167,26 +4230,23 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
               if (elem?.unit?.includes("litre")) {
                 delete elem["EFkgC02e_ccy"];
                 delete elem["EFkgC02e_tonnes"];
-                elem["emission_factor"] = elem["emission_factor_used"];
-                elem["emission_factor_name"] = "EFkgC02e_litres";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["EFkgC02e_litres"];
-                delete elem["emission_factor_used"];
               }
               else if (elem?.unit?.includes("tonne")) {
                 delete elem["EFkgC02e_ccy"];
                 delete elem["EFkgC02e_litres"];
-                elem["emission_factor"] = elem["emission_factor_used"];
-                elem["emission_factor_name"] = "EFkgC02e_tonnes";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["EFkgC02e_tonnes"];
-                delete elem["emission_factor_used"];
               }
               else {
                 delete elem["EFkgC02e_tonnes"];
                 delete elem["EFkgC02e_litres"];
-                elem["emission_factor"] = elem["emission_factor_used"];
-                elem["emission_factor_name"] = "EFkgC02e_ccy";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["EFkgC02e_ccy"];
-                delete elem["emission_factor_used"];
               }
               multiReport.push(elem);
             }
@@ -4207,22 +4267,22 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             if (elem?.unit?.includes("litre")) {
               delete elem["kgCO2e_km"];
               delete elem["kgCO2e_kg"];
-              elem["emission_factor"] = elem["kgCO2e_litre"];
-              elem["emission_factor_name"] = "kgCO2e_litre";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["kgCO2e_litre"];
             }
             else if (elem?.unit?.includes("kg")) {
               delete elem["kgCO2e_km"];
               delete elem["kgCO2e_litre"];
-              elem["emission_factor"] = elem["kgCO2e_kg"];
-              elem["emission_factor_name"] = "kgCO2e_kg";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["kgCO2e_kg"];
             }
             else {
               delete elem["kgCO2e_kg"];
               delete elem["kgCO2e_litre"];
-              elem["emission_factor"] = elem["kgCO2e_km"];
-              elem["emission_factor_name"] = "kgCO2e_km";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["kgCO2e_km"];
             }
 
@@ -4249,22 +4309,22 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
               if (elem?.unit?.includes("litre")) {
                 delete elem["kgCO2e_km"];
                 delete elem["kgCO2e_kg"];
-                elem["emission_factor"] = elem["kgCO2e_litre"];
-                elem["emission_factor_name"] = "kgCO2e_litre";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["kgCO2e_litre"];
               }
               else if (elem?.unit?.includes("_kg")) {
                 delete elem["kgCO2e_km"];
                 delete elem["kgCO2e_litre"];
-                elem["emission_factor"] = elem["kgCO2e_kg"];
-                elem["emission_factor_name"] = "kgCO2e_kg";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["kgCO2e_kg"];
               }
               else {
                 delete elem["kgCO2e_kg"];
                 delete elem["kgCO2e_litre"];
-                elem["emission_factor"] = elem["kgCO2e_km"];
-                elem["emission_factor_name"] = "kgCO2e_km";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["kgCO2e_km"];
               }
               multiReport.push(elem);
@@ -4283,7 +4343,35 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
           months
         );
         if (reportResult.length > 0) {
-          for (elem of reportResult) multiReport.push(elem);
+          for (elem of reportResult) {
+            const ef1 = elem.emisison_factor1;
+            const ef2 = elem.emission_factor2;
+            const efn1 = elem.emission_factor_name1;
+            const efn2 = elem.emission_factor_name2;
+
+            // Combine emission factors
+            if (ef1 != null && ef2 != null) {
+              elem.emission_factor = `${ef1},${ef2}`;
+            } else if (ef1 != null) {
+              elem.emission_factor = ef1;
+            } else if (ef2 != null) {
+              elem.emission_factor = ef2;
+            } else {
+              elem.emission_factor = '';
+            }
+
+            // Combine emission factor names
+            if (efn1 != null && efn2 != null) {
+              elem.emission_factor_name = `${efn1},${efn2}`;
+            } else if (efn1 != null) {
+              elem.emission_factor_name = efn1;
+            } else if (efn2 != null) {
+              elem.emission_factor_name = efn2;
+            } else {
+              elem.emission_factor_name = '';
+            }
+            multiReport.push(elem);
+          }
         }
       } else {
         for (var year = Number(start_year); year <= Number(end_year); year++) {
@@ -4301,7 +4389,35 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             months
           );
           if (reportResult.length > 0) {
-            for (elem of reportResult) multiReport.push(elem);
+            for (elem of reportResult) {
+              const ef1 = elem.emisison_factor1;
+              const ef2 = elem.emission_factor2;
+              const efn1 = elem.emission_factor_name1;
+              const efn2 = elem.emission_factor_name2;
+
+              // Combine emission factors
+              if (ef1 != null && ef2 != null) {
+                elem.emission_factor = `${ef1},${ef2}`;
+              } else if (ef1 != null) {
+                elem.emission_factor = ef1;
+              } else if (ef2 != null) {
+                elem.emission_factor = ef2;
+              } else {
+                elem.emission_factor = '';
+              }
+
+              // Combine emission factor names
+              if (efn1 != null && efn2 != null) {
+                elem.emission_factor_name = `${efn1},${efn2}`;
+              } else if (efn1 != null) {
+                elem.emission_factor_name = efn1;
+              } else if (efn2 != null) {
+                elem.emission_factor_name = efn2;
+              } else {
+                elem.emission_factor_name = '';
+              }
+              multiReport.push(elem);
+            }
           }
         }
       }
@@ -4315,7 +4431,36 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
           months
         );
         if (reportResult.length > 0) {
-          for (elem of reportResult) multiReport.push(elem);
+          for (elem of reportResult) {
+            const ef1 = elem.emisison_factor1;
+            const ef2 = elem.emission_factor2;
+            const efn1 = elem.emission_factor_name1;
+            const efn2 = elem.emission_factor_name2;
+
+            // Combine emission factors
+            if (ef1 != null && ef2 != null) {
+              elem.emission_factor = `${ef1},${ef2}`;
+            } else if (ef1 != null) {
+              elem.emission_factor = ef1;
+            } else if (ef2 != null) {
+              elem.emission_factor = ef2;
+            } else {
+              elem.emission_factor = '';
+            }
+
+            // Combine emission factor names
+            if (efn1 != null && efn2 != null) {
+              elem.emission_factor_name = `${efn1},${efn2}`;
+            } else if (efn1 != null) {
+              elem.emission_factor_name = efn1;
+            } else if (efn2 != null) {
+              elem.emission_factor_name = efn2;
+            } else {
+              elem.emission_factor_name = '';
+            }
+
+            multiReport.push(elem);
+          }
         }
       } else {
         for (var year = Number(start_year); year <= Number(end_year); year++) {
@@ -4333,7 +4478,36 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             months
           );
           if (reportResult.length > 0) {
-            for (elem of reportResult) multiReport.push(elem);
+            for (elem of reportResult) {
+              const ef1 = elem.emisison_factor1;
+              const ef2 = elem.emission_factor2;
+              const efn1 = elem.emission_factor_name1;
+              const efn2 = elem.emission_factor_name2;
+
+              // Combine emission factors
+              if (ef1 != null && ef2 != null) {
+                elem.emission_factor = `${ef1},${ef2}`;
+              } else if (ef1 != null) {
+                elem.emission_factor = ef1;
+              } else if (ef2 != null) {
+                elem.emission_factor = ef2;
+              } else {
+                elem.emission_factor = '';
+              }
+
+              // Combine emission factor names
+              if (efn1 != null && efn2 != null) {
+                elem.emission_factor_name = `${efn1},${efn2}`;
+              } else if (efn1 != null) {
+                elem.emission_factor_name = efn1;
+              } else if (efn2 != null) {
+                elem.emission_factor_name = efn2;
+              } else {
+                elem.emission_factor_name = '';
+              }
+
+              multiReport.push(elem);
+            }
           }
         }
       }
@@ -4417,24 +4591,24 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
               delete elem["kgCO2e_kwh"];
               delete elem["kgCO2e_tonnes"];
               delete elem["kgCO2e_kg"];
-              elem["emission_factor"] = elem["kgCO2e_litre"];
-              elem["emission_factor_name"] = "kgCO2e_litre";
+              elem["emission_factor"] = elem["emission_factor_used"];
+              elem["emission_factor_name"] = "kgCO2e/" + elem["emission_factor_unit"];
               delete elem["kgCO2e_litre"];
             }
             else if (elem?.unit?.includes("kwh")) {
               delete elem["kgCO2e_litre"];
               delete elem["kgCO2e_tonnes"];
               delete elem["kgCO2e_kg"];
-              elem["emission_factor"] = elem["kgCO2e_kwh"];
-              elem["emission_factor_name"] = "kgCO2e_kwh";
+              elem["emission_factor"] = elem["emission_factor_used"];
+              elem["emission_factor_name"] = "kgCO2e/" + elem["emission_factor_unit"];
               delete elem["kgCO2e_kwh"];
             }
             else if (elem?.unit?.includes("kg")) {
               delete elem["kgCO2e_kwh"];
               delete elem["kgCO2e_litre"];
               delete elem["kgCO2e_tonnes"];
-              elem["emission_factor"] = elem["kgCO2e_kg"];
-              elem["emission_factor_name"] = "kgCO2e_kg";
+              elem["emission_factor"] = elem["emission_factor_used"];
+              elem["emission_factor_name"] = "kgCO2e/" + elem["emission_factor_unit"];
               delete elem["kgCO2e_kg"];
 
             }
@@ -4442,8 +4616,8 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
               delete elem["kgCO2e_kwh"];
               delete elem["kgCO2e_litre"];
               delete elem["kgCO2e_kg"];
-              elem["emission_factor"] = elem["kgCO2e_tonnes"];
-              elem["emission_factor_name"] = "kgCO2e_tonnes";
+              elem["emission_factor"] = elem["emission_factor_used"];
+              elem["emission_factor_name"] = "kgCO2e/" + elem["emission_factor_unit"];
               delete elem["kgCO2e_tonnes"];
             }
             multiReport.push(elem);
@@ -4470,24 +4644,24 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
                 delete elem["kgCO2e_kwh"];
                 delete elem["kgCO2e_tonnes"];
                 delete elem["kgCO2e_kg"];
-                elem["emission_factor"] = elem["kgCO2e_litre"];
-                elem["emission_factor_name"] = "kgCO2e_litre";
+                elem["emission_factor"] = elem["emission_factor_used"];
+                elem["emission_factor_name"] = "kgCO2e/" + elem["emission_factor_unit"];
                 delete elem["kgCO2e_litre"];
               }
               else if (elem?.unit?.includes("kwh")) {
                 delete elem["kgCO2e_litre"];
                 delete elem["kgCO2e_tonnes"];
                 delete elem["kgCO2e_kg"];
-                elem["emission_factor"] = elem["kgCO2e_kwh"];
-                elem["emission_factor_name"] = "kgCO2e_kwh";
+                elem["emission_factor"] = elem["emission_factor_used"];
+                elem["emission_factor_name"] = "kgCO2e/" + elem["emission_factor_unit"];
                 delete elem["kgCO2e_kwh"];
               }
               else if (elem?.unit?.includes("kg")) {
                 delete elem["kgCO2e_kwh"];
                 delete elem["kgCO2e_litre"];
                 delete elem["kgCO2e_tonnes"];
-                elem["emission_factor"] = elem["kgCO2e_kg"];
-                elem["emission_factor_name"] = "kgCO2e_kg";
+                elem["emission_factor"] = elem["emission_factor_used"];
+                elem["emission_factor_name"] = "kgCO2e/" + elem["emission_factor_unit"];
                 delete elem["kgCO2e_kg"];
 
               }
@@ -4495,8 +4669,8 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
                 delete elem["kgCO2e_kwh"];
                 delete elem["kgCO2e_litre"];
                 delete elem["kgCO2e_kg"];
-                elem["emission_factor"] = elem["kgCO2e_tonnes"];
-                elem["emission_factor_name"] = "kgCO2e_tonnes";
+                elem["emission_factor"] = elem["emission_factor_used"];
+                elem["emission_factor_name"] = "kgCO2e/" + elem["emission_factor_unit"];
                 delete elem["kgCO2e_tonnes"];
               }
               multiReport.push(elem);
@@ -4514,7 +4688,35 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
           months
         );
         if (reportResult.length > 0) {
-          for (elem of reportResult) multiReport.push(elem);
+          for (elem of reportResult) {
+            const ef1 = elem.emission_factor1;
+            const ef2 = elem.emission_factor2;
+            const efn1 = elem.emission_factor_name1;
+            const efn2 = elem.emission_factor_name2;
+
+            // Combine emission factors
+            if (ef1 != null && ef2 != null) {
+              elem.emission_factor = `${ef1},${ef2}`;
+            } else if (ef1 != null) {
+              elem.emission_factor = ef1;
+            } else if (ef2 != null) {
+              elem.emission_factor = ef2;
+            } else {
+              elem.emission_factor = '';
+            }
+
+            // Combine emission factor names
+            if (efn1 != null && efn2 != null) {
+              elem.emission_factor_name = `${efn1},${efn2}`;
+            } else if (efn1 != null) {
+              elem.emission_factor_name = efn1;
+            } else if (efn2 != null) {
+              elem.emission_factor_name = efn2;
+            } else {
+              elem.emission_factor_name = '';
+            }
+            multiReport.push(elem);
+          }
         }
       } else {
         for (var year = Number(start_year); year <= Number(end_year); year++) {
@@ -4532,7 +4734,35 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             months
           );
           if (reportResult.length > 0) {
-            for (elem of reportResult) multiReport.push(elem);
+            for (elem of reportResult) {
+              const ef1 = elem.emisison_factor1;
+              const ef2 = elem.emission_factor2;
+              const efn1 = elem.emission_factor_name1;
+              const efn2 = elem.emission_factor_name2;
+
+              // Combine emission factors
+              if (ef1 != null && ef2 != null) {
+                elem.emission_factor = `${ef1},${ef2}`;
+              } else if (ef1 != null) {
+                elem.emission_factor = ef1;
+              } else if (ef2 != null) {
+                elem.emission_factor = ef2;
+              } else {
+                elem.emission_factor = '';
+              }
+
+              // Combine emission factor names
+              if (efn1 != null && efn2 != null) {
+                elem.emission_factor_name = `${efn1},${efn2}`;
+              } else if (efn1 != null) {
+                elem.emission_factor_name = efn1;
+              } else if (efn2 != null) {
+                elem.emission_factor_name = efn2;
+              } else {
+                elem.emission_factor_name = '';
+              }
+              multiReport.push(elem);
+            }
           }
         }
       }
@@ -4582,22 +4812,22 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             if (elem?.unit?.includes("litre")) {
               delete elem["kg"];
               delete elem["tonnes"];
-              elem["emission_factor"] = elem["litres"];
-              elem["emission_factor_name"] = elem["emission_factor_name"];
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["litres"];
             }
             else if (elem?.unit?.includes("tonnes")) {
               delete elem["litres"];
               delete elem["kg"];
-              elem["emission_factor"] = elem["tonnes"];
-              elem["emission_factor_name"] = elem["emission_factor_name"];
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["tonnes"];
             }
             else {
               delete elem["tonnes"];
               delete elem["litres"];
-              elem["emission_factor"] = elem["kg"];
-              elem["emission_factor_name"] = elem["emission_factor_name"];
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["kg"];
             }
             multiReport.push(elem);
@@ -4623,22 +4853,22 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
               if (elem?.unit?.includes("litre")) {
                 delete elem["kg"];
                 delete elem["tonnes"];
-                elem["emission_factor"] = elem["litres"];
-                elem["emission_factor_name"] = elem["emission_factor_name"];
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["litres"];
               }
               else if (elem?.unit?.includes("tonnes")) {
                 delete elem["litres"];
                 delete elem["kg"];
-                elem["emission_factor"] = elem["tonnes"];
-                elem["emission_factor_name"] = elem["emission_factor_name"];
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["tonnes"];
               }
               else {
                 delete elem["tonnes"];
                 delete elem["litres"];
-                elem["emission_factor"] = elem["kg"];
-                elem["emission_factor_name"] = elem["emission_factor_name"];
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["kg"];
               }
               multiReport.push(elem);
@@ -4910,22 +5140,22 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             if (elem?.unit?.includes("litre")) {
               delete elem["kg"];
               delete elem["tonnes"];
-              elem["emission_factor"] = elem["litres"];
-              elem["emission_factor_name"] = "Kilolitres";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["litres"];
             }
             else if (elem?.unit?.includes("tonnes")) {
               delete elem["litres"];
               delete elem["kg"];
-              elem["emission_factor"] = elem["tonnes"];
-              elem["emission_factor_name"] = "Kilotonnes";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["tonnes"];
             }
             else {
               delete elem["tonnes"];
               delete elem["litres"];
-              elem["emission_factor"] = elem["kg"];
-              elem["emission_factor_name"] = "Kkg";
+              elem["emission_factor"];
+              elem["emission_factor_name"];
               delete elem["kg"];
             }
             multiReport.push(elem);
@@ -4951,22 +5181,22 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
               if (elem?.unit?.includes("litre")) {
                 delete elem["kg"];
                 delete elem["tonnes"];
-                elem["emission_factor"] = elem["litres"];
-                elem["emission_factor_name"] = "Kilolitres";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["litres"];
               }
               else if (elem?.unit?.includes("tonnes")) {
                 delete elem["litres"];
                 delete elem["kg"];
-                elem["emission_factor"] = elem["tonnes"];
-                elem["emission_factor_name"] = "Kilotonnes";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["tonnes"];
               }
               else {
                 delete elem["tonnes"];
                 delete elem["litres"];
-                elem["emission_factor"] = elem["kg"];
-                elem["emission_factor_name"] = "Kkg";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["kg"];
               }
               multiReport.push(elem);
@@ -4988,22 +5218,22 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             if (elem?.unit?.includes("litre")) {
               delete elem["efkgco2_tonnes"];
               delete elem["efkgco2_kg"];
-              elem["emission_factor"] = elem["efkgco2_litres"];
-              elem["emission_factor_name"] = "efkgco2_litres";
+              elem["emission_factor"]
+              elem["emission_factor_name"]
               delete elem["efkgco2_litres"];
             }
             else if (elem?.unit?.includes("tonne")) {
               delete elem["efkgco2_litres"];
               delete elem["efkgco2_kg"];
-              elem["emission_factor"] = elem["efkgco2_tonnes"];
-              elem["emission_factor_name"] = "efkgco2_tonnes";
+              elem["emission_factor"]
+              elem["emission_factor_name"]
               delete elem["efkgco2_tonnes"];
             }
             else {
               delete elem["efkgco2_tonnes"];
               delete elem["efkgco2_litres"];
-              elem["emission_factor"] = elem["efkgco2_kg"];
-              elem["emission_factor_name"] = "efkgco2_kg";
+              elem["emission_factor"]
+              elem["emission_factor_name"]
               delete elem["efkgco2_kg"];
             }
             multiReport.push(elem);
@@ -5029,22 +5259,22 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
               if (elem?.unit?.includes("litre")) {
                 delete elem["efkgco2_tonnes"];
                 delete elem["efkgco2_kg"];
-                elem["emission_factor"] = elem["efkgco2_litres"];
-                elem["emission_factor_name"] = "efkgco2_litres";
+                elem["emission_factor"]
+                elem["emission_factor_name"]
                 delete elem["efkgco2_litres"];
               }
               else if (elem?.unit?.includes("tonne")) {
                 delete elem["efkgco2_litres"];
                 delete elem["efkgco2_kg"];
-                elem["emission_factor"] = elem["efkgco2_tonnes"];
-                elem["emission_factor_name"] = "efkgco2_tonnes";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["efkgco2_tonnes"];
               }
               else {
                 delete elem["efkgco2_tonnes"];
                 delete elem["efkgco2_litres"];
-                elem["emission_factor"] = elem["efkgco2_kg"];
-                elem["emission_factor_name"] = "efkgco2_kg";
+                elem["emission_factor"];
+                elem["emission_factor_name"];
                 delete elem["efkgco2_kg"];
               }
               multiReport.push(elem);
@@ -5126,8 +5356,16 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
           months
         );
         if (reportResult.length > 0) {
-          // for(elem of reportResult)
-          //     multiReport.push(elem);
+          reportResult.forEach(element => {
+            if (element.DataPoint1 == 1) {
+              element.DataPoint1 = 'Renewable Energy Cert (REC)'
+
+            } else if (element.DataPoint1 == 2) {
+              element.DataPoint1 = 'Supplier Specific'
+            } else {
+              element.DataPoint1 = ''
+            }
+          });
           multiReport.push(...reportResult);
         }
       } else {
@@ -5146,8 +5384,16 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
             months
           );
           if (reportResult.length > 0) {
-            // for(elem of reportResult)
-            //     multiReport.push(elem);
+            reportResult.forEach(element => {
+              if (element.DataPoint1 == 1) {
+                element.DataPoint1 = 'Renewable Energy Cert (REC)'
+
+              } else if (element.DataPoint1 == 2) {
+                element.DataPoint1 = 'Supplier Specific'
+              } else {
+                element.DataPoint1 = ''
+              }
+            });
 
             multiReport.push(...reportResult);
           }
@@ -5186,7 +5432,54 @@ exports.reportFilterMultipleCategoryAudit = async (req, res) => {
         }
       }
     }
-
+    if (waterSupplyTreatment) {
+      if (differenceInYear == 0) {
+        var months = getMonths(start_month, end_month);
+        const reportResult = await getWaterSupplyAudit(
+          facility,
+          start_year,
+          months
+        );
+        if (reportResult.length > 0) {
+          multiReport.push(...reportResult);
+        }
+        const reportResult1 = await getWaterTreatmentAudit(
+          facility,
+          start_year,
+          months
+        );
+        if (reportResult1.length > 0) {
+          multiReport.push(...reportResult1);
+        }
+      } else {
+        for (var year = Number(start_year); year <= Number(end_year); year++) {
+          var months = "";
+          if (year === Number(start_year)) {
+            months = getMonths(start_month, "Dec");
+          } else if (year === Number(end_year)) {
+            months = getMonths("Jan", end_month);
+          } else {
+            months = getMonths("Jan", "Dec");
+          }
+          const reportResult = await getWaterSupplyNew(
+            facility,
+            year,
+            months
+          );
+          if (reportResult.length > 0) {
+            multiReport.push(...reportResult);
+          }
+          const reportResult1 = await getWaterTreatmentNew(
+            facility,
+            year,
+            months
+          );
+          if (reportResult1.length > 0) {
+            multiReport.push(...reportResult1);
+          }
+        }
+      }
+    }
     if (multiReport.length > 0) {
       return res.json({
         success: true,
@@ -5236,7 +5529,11 @@ exports.waterReport = async (req, res) => {
       var months = getMonths(start_month, end_month);
       waterWithdrawal = await getWaterWithdrawal(facility, start_year, months);
       waterDischarge = await getWaterDischarge(facility, start_year, months);
-      waterDischargeOnly = await getWaterDischargeOnly(facility, start_year, months);
+      waterDischargeOnly = await getWaterDischargeOnly(
+        facility,
+        start_year,
+        months
+      );
     } else {
       for (var year = Number(start_year); year <= Number(end_year); year++) {
         var months = "";
@@ -5247,11 +5544,7 @@ exports.waterReport = async (req, res) => {
         } else {
           months = getMonths("Jan", "Dec");
         }
-        waterWithdrawal = await getWaterWithdrawal(
-          facility,
-          year,
-          months
-        );
+        waterWithdrawal = await getWaterWithdrawal(facility, year, months);
         waterDischarge = await getWaterDischarge(facility, year, months);
         waterDischargeOnly = await getWaterDischargeOnly(
           facility,
@@ -5293,7 +5586,6 @@ exports.waterReportConsolidated = async (req, res) => {
       })
     );
 
-
     var differenceInYear = Number(end_year) - Number(start_year);
     var waterWithdrawal = [];
     var waterDischarge = [];
@@ -5316,7 +5608,6 @@ exports.waterReportConsolidated = async (req, res) => {
         start_year,
         months
       );
-
     } else {
       for (var year = Number(start_year); year <= Number(end_year); year++) {
         var months = "";
@@ -5332,11 +5623,7 @@ exports.waterReportConsolidated = async (req, res) => {
           year,
           months
         );
-        waterDischarge = await getWaterDischargeConsole(
-          facility,
-          year,
-          months
-        );
+        waterDischarge = await getWaterDischargeConsole(facility, year, months);
         waterDischargeOnly = await getWaterDischargeOnlyConsole(
           facility,
           year,
@@ -5413,7 +5700,6 @@ exports.vendorReport = async (req, res) => {
 
 exports.vendorDashboardReport = async (req, res) => {
   try {
-
     const { tenant_id, facility, year } = req.body;
 
     const schema = Joi.alternatives(
@@ -5423,7 +5709,6 @@ exports.vendorDashboardReport = async (req, res) => {
         year: [Joi.string().empty().required()],
       })
     );
-
 
     var vendorCount = 0;
     var vendorEmission = 0;
@@ -5495,8 +5780,8 @@ exports.getEmisionByLocation = async (req, res) => {
 
     const getDetails = await getEmissionByLoc(facilities, year);
     var renewable = [];
-    var series = []
-    var totalEmssion = 0
+    var series = [];
+    var totalEmssion = 0;
     for (ele of getDetails) {
       renewable.push(Number(ele.emission));
       series.push(ele.name);
@@ -5509,7 +5794,7 @@ exports.getEmisionByLocation = async (req, res) => {
         message: "Succesfully fetched data",
         renewable: renewable,
         series: series,
-        totalEmssion: totalEmssion
+        totalEmssion: totalEmssion,
       });
     } else {
       return res.status(400).json({
@@ -5534,7 +5819,6 @@ const handleServerError = (res, error) => {
 
 exports.getVendorProductDashboard = async (req, res) => {
   try {
-
     const { facilities, year } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
@@ -5557,8 +5841,6 @@ exports.getVendorProductDashboard = async (req, res) => {
     var totalEmissions = 0;
     var emissions = await getProductGraphVendors(facilities, year);
     if (emissions.length > 0) {
-
-
       emissions.some((elem) => {
         totalEmissions += Number(elem.emission);
       });
@@ -5566,9 +5848,9 @@ exports.getVendorProductDashboard = async (req, res) => {
       totalEmissions = totalEmissions.toFixed(2);
 
       emissions.some((elem) => {
-        elem.percentage = ((Number(elem.emission) / totalEmissions) * 100);
+        elem.percentage = (Number(elem.emission) / totalEmissions) * 100;
         elem.percentage = elem.percentage.toFixed(2);
-      })
+      });
 
       return res.json({
         success: true,
@@ -5584,7 +5866,6 @@ exports.getVendorProductDashboard = async (req, res) => {
         status: 400,
       });
     }
-
   } catch (err) {
     console.log(err);
     return res.json({

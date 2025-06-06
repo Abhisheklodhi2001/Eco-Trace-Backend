@@ -27,24 +27,24 @@ module.exports = {
   },
 
   getDownStreamVehicleReportMultiNew: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Downstream Vehicles' as category, vehicle_type as DataPoint1, sub_category as DataPoint2,  \
+    return db.query(`select 'Scope3' as scope, 'Downstream Vehicles' as category, vehicletypes.vehicle_type AS DataPoint1, sub_category as DataPoint2,  \
                      sum(dvse.emission) as Emission,  dvse.year as Years, dvse.month as Months,  \
-                     f.AssestName as facility from  downstream_vehicle_storage_emissions dvse, \`dbo.facilities\`  f  \
+                     f.AssestName as facility from  downstream_vehicle_storage_emissions dvse, \`dbo.facilities\`  f , vehicletypes \
                      where   dvse.facility_id in (${facility}) and  \
                      dvse.year =${year} and dvse.month in (${month}) and dvse.status = 'S' \
-                     and dvse.facility_id= f.ID \
+                     and dvse.facility_id= f.ID AND vehicletypes.id = dvse.vehicle_type \
                     group by DataPoint1, DataPoint2, Months, Years 
                     ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
   getUpStreamVehicleReportMultiNew: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Upstream Vehicles' as category, vehicle_type as DataPoint1, sub_category as DataPoint2,  \
+    return db.query(`select 'Scope3' as scope, 'Upstream Vehicles' as category, vehicletypes.vehicle_type AS DataPoint1, sub_category as DataPoint2,  \
                      sum(uvse.emission) as Emission,  uvse.year as Years, uvse.month as Months,  \
-                     f.AssestName as facility from  upstream_vehicle_storage_emissions uvse, \`dbo.facilities\`  f  \
+                     f.AssestName as facility from  upstream_vehicle_storage_emissions uvse, \`dbo.facilities\`  f , vehicletypes  \
                      where   uvse.facility_id in (${facility}) and  \
                      uvse.year =${year} and uvse.month in (${month})  and uvse.status = 'S' \
-                     and uvse.facility_id= f.ID \
+                     and uvse.facility_id= f.ID AND vehicletypes.id = uvse.vehicle_type \
                     group by DataPoint1, DataPoint2, Months, Years
                     ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
@@ -92,7 +92,7 @@ module.exports = {
   },
 
   getDownstreamLeaseEmissionReportMultiNew: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Upstream Lease Emissions' as category, category as DataPoint1, sub_category as DataPoint2,   \
+    return db.query(`select 'Scope3' as scope, 'Downstream Lease Emissions' as category, category as DataPoint1, sub_category as DataPoint2,   \
                      sum(ule.emission) as Emission,  ule.year as Years, ule.month as Months,  \
                      f.AssestName as facility from  downstreamLease_emission ule, \`dbo.facilities\`  f   \
                      where   ule.facility_id in (${facility}) and   \
@@ -155,14 +155,14 @@ module.exports = {
       `select 'Scope3' as scope, 'Employee Commuting' as category, ectt.type as DataPoint1, ecc.totalnoofcommutes as DataPoint2,  \
                      sum(ecc.emission) as Emission, ecc.year as Years, ecc.month as Months, f.AssestName as facility  \
                      from employee_commuting_category ecc, \`dbo.facilities\` f,   employee_community_typeoftransport ectt  \
-                     where ecc.facilities in (${facility}) and ecc.year =${year} and ecc.status ='S' and ecc.facilities= f.ID   and ecc.typeoftransport = ectt.id  \
+                     where ecc.facilities in (${facility}) and ecc.year =${year} and ecc.status ='S' and ecc.facilities= f.ID AND ecc.subtype = ectt.id \
                      group by DataPoint1, DataPoint2 ,Months, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun', 'Jul','Aug','Sep','Oct','Nov', 'Dec')`
     );
   },
 
   getHomeOfficeReportMultiNew: async (facility, start_year, end_year) => {
-    return db.query(`select 'Scope3' as scope, 'Home Office' as data_point, typeofhomeoffice as category,year, month, sum(emission) as emission, facilities as facility  \
-                    from  homeoffice_category where status  ='S'  and facilities in (${facility}) and year >='${start_year}' and year <= '${end_year}' GROUP BY facilities 
+    return db.query(`select 'Scope3' as scope, 'Home Office' AS category, homeoffice_emission_factors.typeof_homeoffice AS DataPoint1, "" AS DataPoint2, year, month, sum(emission) as Emission, facilities as facility  \
+                    from  homeoffice_category, homeoffice_emission_factors  where status  ='S'  and facilities in (${facility}) and year >='${start_year}' and year <= '${end_year}' AND homeoffice_emission_factors.id = homeoffice_category.typeofhomeoffice GROUP BY facilities, DataPoint1 
                     ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },

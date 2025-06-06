@@ -1120,13 +1120,16 @@ exports.GetpendingDataEnteries = async (req, res) => {
               where,
               "*"
             );
-            item.TypeName = heatandsteam[0]["Item"]
-              ? heatandsteam[0]["Item"]
-              : "";
+            if (heatandsteam.length > 0) {
+              item.TypeName = heatandsteam[0]["Item"]
+                ? heatandsteam[0]["Item"]
+                : "";
 
-            if (unit.toLowerCase() === "kwh") {
-              emissionFactor = heatandsteam[0]["kgCO2e_kwh"];
+              if (unit.toLowerCase() === "kwh") {
+                emissionFactor = heatandsteam[0]["kgCO2e_kwh"];
+              }
             }
+
           }
 
           if (categoryID == "8") {
@@ -6292,7 +6295,7 @@ exports.addPurchaseGoodsMatchUnmatch = async (req, res) => {
             await insertPurchaseGoodsMatched(item);
           } else {
             console.log(true);
-            
+
             delete item.month;
             delete item.typeofpurchase;
             delete item.vendorunit;
@@ -6341,7 +6344,7 @@ exports.getPurchaseGoodsByUserAndFacilityId = async (req, res) => {
       });
     }
 
-    const getPurchaseGoodsPayloads = await getPurchaseGoodsPayloadsByUserAndFacilityId(userId, facilityID);    
+    const getPurchaseGoodsPayloads = await getPurchaseGoodsPayloadsByUserAndFacilityId(userId, facilityID);
     if (getPurchaseGoodsPayloads.length > 0) {
       return res.status(200).json({ error: false, message: "Purchase goods payloads fetched successfully.", success: true, data: getPurchaseGoodsPayloads });
     } else {

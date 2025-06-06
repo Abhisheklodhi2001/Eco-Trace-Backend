@@ -1137,7 +1137,7 @@ exports.downStreamTransportation = async (req, res) => {
       downStreamData.emission_factor_unit = '';
 
       if (mass_unit == 'tonnes' && mass_of_products) {
-        mass = parseFloat(mass_of_products / 1000);
+        mass = parseFloat(mass_of_products);
         downStreamData.emission_factor_unit = "";
       } else {
         mass = mass_of_products;
@@ -1168,7 +1168,7 @@ exports.downStreamTransportation = async (req, res) => {
         downStreamData.areaOccupied = 0;
         downStreamData.averageNoOfDays = 0;
         downStreamData.facility_id = facility_id;
-        downStreamData.mass_unit = mass_unit;
+        downStreamData.unit_of_mass = mass_unit;
         downStreamData.distance_unit = distance_unit;
 
       }
@@ -1339,7 +1339,7 @@ exports.upStreamTransportation = async (req, res) => {
       downStreamData.emission_factor_unit = '';
 
       if (mass_unit == 'tonnes' && mass_of_products) {
-        mass = parseFloat(mass_of_products * 1000);
+        mass = parseFloat(mass_of_products);
         downStreamData.emission_factor_unit = "";
       } else {
         mass = mass_of_products;
@@ -1369,7 +1369,7 @@ exports.upStreamTransportation = async (req, res) => {
         downStreamData.areaOccupied = 0;
         downStreamData.averageNoOfDays = 0;
         downStreamData.facility_id = facility_id;
-        downStreamData.mass_unit = mass_unit;
+        downStreamData.unit_of_mass = mass_unit;
         downStreamData.distance_unit = distance_unit;
 
       }
@@ -1554,7 +1554,9 @@ exports.vehicleSubCategories = async (req, res) => {
 exports.franchiseSubCategories = async (req, res) => {
   try {
     const category = req.query.category;
-    let where = `where categories = '${category}'`;
+    const facility_id = req.query.facility_id;
+    let countrydata = await country_check(facility_id);
+    let where = `where categories = '${category}' AND country_id = '${countrydata[0].CountryId}'`;
     const vehicleDetails = await getData(
       "franchise_categories_subcategories",
       where

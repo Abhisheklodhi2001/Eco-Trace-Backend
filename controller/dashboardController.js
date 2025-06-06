@@ -285,7 +285,7 @@ exports.dashboardScope = async (req, res) => {
             )
           );
         }
-        
+
         categorydata7 = await purchaseGoodsDetails(
           facilitiesdata,
           year,
@@ -402,25 +402,17 @@ exports.dashboardScope = async (req, res) => {
           await Promise.all(
             array3.map(async (item) => {
               const emission = parseFloat(item.emission) || 0;
-
-              if (
-                item.category === "Employee Commuting" ||
-                item.category === "Home Office"
-              ) {
+              if (item.category === "Employee Commuting" || item.category === "Home Office") {
                 const portion = emission / 12;
 
                 for (const key of Object.keys(monthlyData2)) {
                   monthlyData2[key] += portion;
                 }
-              } else {
-                const monthIndex = parseInt(item.month_number);
-                const monthKey = finalyear[monthIndex];
-
-                if (monthKey && monthlyData2.hasOwnProperty(monthKey)) {
-                  monthlyData2[monthKey] += emission;
+              } else {  
+                if (item.month_number && monthlyData1.hasOwnProperty(item.month_number)) {
+                  monthlyData2[item.month_number] += emission;
                 }
               }
-
               sum2 += emission;
             })
           );
@@ -2448,7 +2440,7 @@ exports.dashboardWastetop5 = async (req, res) => {
           facilitiesdata,
           year
         );
-        
+
         let item1 = [];
         if (categorydata15) {
           await Promise.all(
@@ -2950,7 +2942,7 @@ exports.dashboardWasteUpDownwiseEmssion = async (req, res) => {
           success: true,
           message: "Succesfully fetched category",
           series: ["Upstream", "Downstream"],
-          upstream_downstream: [sumDownstream,sumUpstream],
+          upstream_downstream: [sumDownstream, sumUpstream],
           status: 200,
         });
       }

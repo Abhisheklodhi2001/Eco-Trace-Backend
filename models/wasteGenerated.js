@@ -3,13 +3,16 @@ const config = require("../config");
 const baseurl = config.base_url;
 
 module.exports = {
-  fetchWasteEmission: async (column, id, waste_type, country_id) => {
+  fetchWasteEmission: async (column, id, waste_type, country_id) => {    
     return db.query(`select ${column} AS ef, Fiscal_Year from endoflife_waste_type_subcategory where  waste_type = ? and type = ? and country_id = ?`, [id, waste_type, country_id]);
   },
+
   insertWasteGeneratedEmission: async (data) => {
+    console.log(data);
+    
     return db.query(
       "INSERT INTO   `waste_generated_emissions` (user_id, waste_type_id, waste_type, method, total_waste, unit, emission, emission_factor_used, emission_factor_unit, status, month,year, facility_id,waste_loop,product) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-      [ 
+      [
         data.user_id,
         data.waste_type_id,
         data.waste_type,
@@ -17,7 +20,7 @@ module.exports = {
         data.total_waste,
         data.unit,
         data.emission,
-        data.emission_factor_used,
+        data.emission_factor_useed,
         data.emission_factor_unit,
         "P",
         data.month,

@@ -79,16 +79,18 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
 
     let distancekm = 0;
     let areaoccp = 0;
-    if (distance_unit == 'miles' && distance_travelled) {
-      distancekm = parseFloat(distance_travelled * 1.60934)
-    } else {
-      distancekm = distance_travelled
-    }
+    if (is_vehicle == 1) {
+      if (distance_unit == 'miles' && distance_travelled) {
+        distancekm = parseFloat(distance_travelled * 1.60934)
+      } else {
+        distancekm = distance_travelled
+      }
 
-    if (unit == 'm2' && franchise_space) {
-      areaoccp = parseFloat(franchise_space * 10.7639)
-    } else {
-      areaoccp = franchise_space
+      if (unit == 'm2' && franchise_space) {
+        areaoccp = parseFloat(franchise_space * 10.7639)
+      } else {
+        areaoccp = franchise_space
+      }
     }
 
     let countrydata = await country_check(facility_id);
@@ -352,7 +354,7 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
         is_vehicle: [Joi.number().required().empty()],
         unit: [Joi.string().optional().empty()],
         facility_id: [Joi.number().required().empty()],
-        distance_unit: [Joi.string().required().empty()],
+        distance_unit: [Joi.string().optional().empty()],
       })
     );
     const result = schema.validate(req.body);
@@ -374,16 +376,18 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
 
     let distancekm = 0;
     let areaoccp = 0;
-    if (distance_unit == 'miles' && distance_travelled) {
-      distancekm = parseFloat(distance_travelled * 1.60934)
-    } else {
-      distancekm = distance_travelled
-    }
+    if (is_vehicle == 1) {
+      if (distance_unit == 'miles' && distance_travelled) {
+        distancekm = parseFloat(distance_travelled * 1.60934)
+      } else {
+        distancekm = distance_travelled
+      }
 
-    if (unit == 'm2' && franchise_space) {
-      areaoccp = parseFloat(franchise_space * 10.7639)
-    } else {
-      areaoccp = franchise_space
+      if (unit == 'm2' && franchise_space) {
+        areaoccp = parseFloat(franchise_space * 10.7639)
+      } else {
+        areaoccp = franchise_space
+      }
     }
 
     let countrydata = await country_check(facility_id);
@@ -551,7 +555,7 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
         resultInserted.push(tempInserted.insertId);
       }
     }
-    
+
     if (resultInserted.length > 0) {
       return res.json({
         success: true,
