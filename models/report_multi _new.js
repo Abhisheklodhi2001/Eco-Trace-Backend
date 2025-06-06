@@ -88,15 +88,7 @@ module.exports = {
   },
 
   getUpstreamLeaseEmissionReportMultiNew: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Upstream Lease Emissions' as category, category as DataPoint1, sub_category as DataPoint2,   \
-                     sum(ule.emission) as Emission,  ule.year as Years, ule.month as Months,  \
-                     f.AssestName as facility from  upstreamLease_emission ule, \`dbo.facilities\`  f   \
-                     where   ule.facility_id in (${facility}) and   \
-                     ule.year =${year}  and ule.month in (${month}) and  ule.status = 'S' and \
-                     ule.facility_id= f.ID  \
-                     group by  DataPoint1, DataPoint2, Months, Years 
-                     ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
+    return db.query(`SELECT "Scope3" AS scope, "Upstream Lease Emissions" AS category, CASE WHEN no_of_vehicles = "0" THEN category ELSE vehicle_type END AS DataPoint1, CASE WHEN no_of_vehicles = "0" THEN sub_category ELSE vehicle_subtype END AS DataPoint2, SUM(CASE WHEN no_of_vehicles = "0" THEN emission - vehicle_emission ELSE vehicle_emission END) AS Emission, ule.year AS Years, ule.month AS Months, f.AssestName AS facility FROM upstreamLease_emission ule, \`dbo.facilities\` f WHERE ule.facility_id IN(${facility}) AND ule.year = ${year} AND ule.month IN(${month}) AND ule.status = "S" AND ule.facility_id = f.ID GROUP BY DataPoint1, DataPoint2, Months, Years ORDER BY FIELD( MONTH, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec' );`);
   },
 
   getDownstreamLeaseEmissionReportMultiNew: async (facility, year, month) => {
@@ -169,7 +161,7 @@ module.exports = {
   },
 
   getHomeOfficeReportMultiNew: async (facility, start_year, end_year) => {
-    return db.query(`select 'Scope3' as scope, 'Employee Commuting' as data_point, typeofhomeoffice as category,year, month, sum(emission) as emission, facilities as facility  \
+    return db.query(`select 'Scope3' as scope, 'Home Office' as data_point, typeofhomeoffice as category,year, month, sum(emission) as emission, facilities as facility  \
                     from  homeoffice_category where status  ='S'  and facilities in (${facility}) and year >='${start_year}' and year <= '${end_year}' GROUP BY facilities 
                     ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
@@ -250,15 +242,14 @@ module.exports = {
   },
 
   getElecricityReportMultiNew: async (facility, year, month) => {
-    return db.query(`select 'Scope' as scope, 'Renewable Electricity' as category, scsd.Item as DataPoint1, rens.SourceName as DataPoint2,  \
+    return db.query(`select 'Scope' as scope,  scsd.Item as category, rende.typeID as DataPoint1, rende.SourceName as DataPoint2,  \
                      sum(rende.GHGEmission) as Emission,  rende.year as Years, rende.months as Months,  \
-                     f.AssestName as facility from  \`dbo.renewableelectricityde\`  rende, \`dbo.facilities\`  f,  \
-                      \`dbo.renewableelectricitysource\` rens, subcategoryseeddata scsd \ 
+                     f.AssestName as facility from  \`dbo.renewableelectricityde\`  rende, \`dbo.facilities\`  f, subcategoryseeddata scsd \
                       where   rende.facilities in (${facility})   \
                       and rende.year =${year}  and rende.months in (${month})  and rende.status ='S' \
                       and  rende.facilities= f.ID  \
-                      and  rende.SubCategorySeedID = scsd.id and rende.typeID = rens.id   \
-                      group by DataPoint1, DataPoint2, Months, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
+                      and  rende.SubCategorySeedID = scsd.id   \
+                      group by category, DataPoint1, Months, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
@@ -272,6 +263,26 @@ module.exports = {
                      and  hnsde.facilities= f.ID   \
                      and  hnsde.SubCategorySeedID = scsd.id and hnsde.typeID = hns.id  \
                      group by DataPoint1, Months, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
+  },
+
+  getWaterSupplyNew: async (facility, year, month) => {
+    return db.query(`select 'Scope3' as scope, 'Water Supply and Treatment' as category, 'Water Supply' as DataPoint1, '-' as DataPoint2, SUM(hnsde.withdrawn_emission) AS Emission, hnsde.year as Years, hnsde.month as Months,    \
+                     f.AssestName as facility from  water_supply_treatment_category  hnsde, \`dbo.facilities\`  f   \
+                     WHERE hnsde.facilities in (${facility})   \
+                     and hnsde.year =${year} and hnsde.month in (${month}) and hnsde.status ='S'  \
+                     and  hnsde.facilities= f.ID   \
+                     group by withdrawn_emission, Months, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
+  },
+
+  getWaterTreatmentNew: async (facility, year, month) => {
+    return db.query(`select 'Scope3' as scope, 'Water Supply and Treatment' as category, 'Water Treatment' as DataPoint1, '-' as DataPoint2, SUM(hnsde.treatment_emission) AS Emission, hnsde.year as Years, hnsde.month as Months,    \
+                     f.AssestName as facility from  water_supply_treatment_category  hnsde, \`dbo.facilities\`  f   \
+                     WHERE hnsde.facilities in (${facility})   \
+                     and hnsde.year =${year} and hnsde.month in (${month}) and hnsde.status ='S'  \
+                     and  hnsde.facilities= f.ID   \
+                     group by treatment_emission, Months, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 

@@ -1339,7 +1339,7 @@ exports.upStreamTransportation = async (req, res) => {
       downStreamData.emission_factor_unit = '';
 
       if (mass_unit == 'tonnes' && mass_of_products) {
-        mass = parseFloat(mass_of_products / 1000);
+        mass = parseFloat(mass_of_products * 1000);
         downStreamData.emission_factor_unit = "";
       } else {
         mass = mass_of_products;

@@ -546,7 +546,7 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
 
     if (downLeaseData) {
       for (let month of monthsArr) {
-        vehicleData.month = month;
+        downLeaseData.month = month;
         var tempInserted = await insertdownLeaseEmission(downLeaseData);
         resultInserted.push(tempInserted.insertId);
       }

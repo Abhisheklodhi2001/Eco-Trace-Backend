@@ -145,7 +145,7 @@ module.exports = {
     },
 
     downstream_vehicle_storage_emissions: async (facilities, year) => {
-        return db.query("SELECT COALESCE( 'upstream_vehicle_storage_emissions', '' ) AS tablename, A.*, COALESCE('', '') AS subcatName, COALESCE('', '') AS subcategoryID, vehicletypes.vehicle_type AS vehicle_type_name FROM upstream_vehicle_storage_emissions A LEFT JOIN vehicletypes ON vehicletypes.id = A.vehicle_type WHERE A.facility_id = ? AND YEAR = ? ORDER BY A.id DESC;", [facilities, year]);
+        return db.query("SELECT COALESCE( 'downstream_vehicle_storage_emissions', '' ) AS tablename, A.*, COALESCE('', '') AS subcatName, COALESCE('', '') AS subcategoryID, vehicletypes.vehicle_type AS vehicle_type_name FROM downstream_vehicle_storage_emissions A LEFT JOIN vehicletypes ON vehicletypes.id = A.vehicle_type WHERE A.facility_id = ? AND YEAR = ? ORDER BY A.id DESC;", [facilities, year]);
     },
 
     updateAllData: async (tablename, id, status) => {

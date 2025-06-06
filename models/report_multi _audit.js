@@ -5,7 +5,7 @@ const baseurl = config.base_url;
 module.exports = {
   getPurchaseGoodsReportMultiAudit: async (facility, year, month) => {
     return db.query(`select 'Scope3' as scope, 'Purchase Goods' as category, top.typesofpurchasename as DataPoint1, pgcef.product as DataPoint2, \
-                     sum(pgc.emission) as Emission,  pgc.year as Years, pgc.month as Months, pgc.unit, pgcef.EFkgC02e_kg, pgcef.EFkgC02e_ccy, pgcef.EFkgC02e_tonnes, pgcef.EFkgC02e_litres, pgcef.reference, \
+                     sum(pgc.emission) as Emission, SUM(pgc.emission_factor_used) AS emission_factor_used,  pgc.year as Years, pgc.month as Months, pgc.unit, pgcef.EFkgC02e_kg, pgcef.EFkgC02e_ccy, pgcef.EFkgC02e_tonnes, pgcef.EFkgC02e_litres, pgcef.reference, \
                      f.AssestName as facility from  purchase_goods_categories pgc, \`dbo.facilities\` f, \`dbo.typesofpurchase\`   top, \
                      purchase_goods_categories_ef pgcef where   pgc.facilities in (${facility}) and \
                      pgc.year =${year} and pgc.month in (${month}) and pgc.status ='S' and \
@@ -27,7 +27,7 @@ module.exports = {
   },
 
   getDownStreamVehicleReportMultiAudit: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Downstream Vehicles' as category, vs.vehicle_type as DataPoint1, dvse.sub_category as DataPoint2, vs.emission_factor as emisison_factor, 'kgCO2e_kg' as emission_factor_name,  \
+    return db.query(`select 'Scope3' as scope, 'Downstream Vehicles' as category, vs.vehicle_type as DataPoint1, dvse.sub_category as DataPoint2, SUM(dvse.emission_factor_value) as emisison_factor, dvse.emission_factor_value_unit as emission_factor_name,  \
                      sum(dvse.emission) as Emission,  dvse.year as Years, dvse.month as Months, vs.reference,  \
                      f.AssestName as facility from  downstream_vehicle_storage_emissions dvse, \`dbo.facilities\`  f, vehicle_subcategory vs \
                      where   dvse.facility_id in (${facility}) and  \
@@ -38,7 +38,7 @@ module.exports = {
   },
 
   getUpStreamVehicleReportMultiAudit: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Upstream Vehicles' as category, vs.vehicle_type as DataPoint1, uvse.sub_category as DataPoint2,  vs.emission_factor as emisison_factor, 'kgCO2e_kg' as emission_factor_name, \
+    return db.query(`select 'Scope3' as scope, 'Upstream Vehicles' as category, vs.vehicle_type as DataPoint1, uvse.sub_category as DataPoint2, uvse.emission_factor_value as emisison_factor, uvse.emission_factor_value_unit AS emission_factor_name, \
                      sum(uvse.emission) as Emission,  uvse.year as Years, uvse.month as Months, vs.reference, \
                      f.AssestName as facility from  upstream_vehicle_storage_emissions uvse, \`dbo.facilities\`  f, vehicle_subcategory vs  \
                      where   uvse.facility_id in (${facility}) and  \
@@ -85,18 +85,18 @@ module.exports = {
 
 
   getUpstreamLeaseEmissionReportMultiAudit: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Upstream Lease Emissions' as category, category as DataPoint1, sub_category as DataPoint2, fcs.ef as emission_factor, 'sq ft' as emission_factor_name, \
+    return db.query(`select 'Scope3' as scope, 'Upstream Lease Emissions' as category, category as DataPoint1, sub_category as DataPoint2, ule.emission_factor_lease as emission_factor, ule.emission_factor_lease_unit as emission_factor_name, \
                      sum(ule.emission) as Emission,  ule.year as Years, ule.month as Months, fcs.reference, \
                      f.AssestName as facility from  upstreamLease_emission ule, \`dbo.facilities\`  f, franchise_categories_subcategories fcs  \
                      where   ule.facility_id in (${facility}) and   \
                      ule.year =${year}  and ule.month in (${month}) and  ule.status='S' and \
                      ule.facility_id= f.ID and ule.sub_category = fcs.sub_categories  \
                      group by DataPoint2, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`); 
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
   getDownstreamLeaseEmissionReportMultiAudit: async (facility, year, month) => {
-    return db.query(`select 'Scope3' as scope, 'Downstream Lease Emissions' as category, category as DataPoint1, sub_category as DataPoint2,   fcs.ef as emission_factor,'sq ft' as emission_factor_name,  \
+    return db.query(`select 'Scope3' as scope, 'Downstream Lease Emissions' as category, category as DataPoint1, sub_category as DataPoint2,   ule.emission_factor_lease as emission_factor,ule.emission_factor_lease_unit as emission_factor_name,  \
                      sum(ule.emission) as Emission,  ule.year as Years, ule.month as Months, fcs.reference, \
                      f.AssestName as facility from  downstreamLease_emission ule, \`dbo.facilities\`  f , franchise_categories_subcategories fcs \
                      where   ule.facility_id in (${facility}) and   \
@@ -108,18 +108,18 @@ module.exports = {
 
   getWasteGeneratedEmissionReportMultiAudit: async (facility, year, month) => {
     return db.query(`select 'Scope3' as scope, 'Waste Generated' as category, ewts.waste_type as DataPoint1, method as DataPoint2,  \
-                     sum(wge.emission) as Emission,  wge.year as Years, wge.month as Months, ewts.reference,  \
+                     sum(wge.emission) as Emission, wge.emission_factor_unit as emission_factor_name,  wge.year as Years, wge.month as Months, ewts.reference,  \
                     f.AssestName as facility from  waste_generated_emissions wge, \`dbo.facilities\`  f, endoflife_waste_type_subcategory ewts \
                     where   wge.facility_id in (${facility}) and  \
                     wge.year =${year} and wge.month in (${month}) and  wge.status ='S' and \
                     wge.facility_id= f.ID  and wge.waste_type = ewts.type\
                     group by DataPoint2, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`); 
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
   getFlightTravelReportMultiAudit: async (facility, year, month) => {
     return db.query(`select 'Scope3' as scope, 'Flight Travel' as category, ft.flight_Type as DataPoint1, ft.flight_Class as DataPoint2,  'kgCO2e_kg' as emission_factor_name, \
-                     sum(ft.emission) as Emission,  ft.year as Years, ft.month as Months, \
+                     sum(ft.emission) as Emission, ft.emission_factor AS emission_factor,  ft.year as Years, ft.month as Months, \
                      f.AssestName as facility from  flight_travel ft, \`dbo.facilities\`  f  \
                      where   ft.facilities in (${facility}) and  \
                      ft.year =${year} and ft.month in (${month}) and  ft.status='S' and \
@@ -132,14 +132,14 @@ module.exports = {
                      sum(omot.emission) as Emission,  omot.year as Years, omot.month as Months, omotef.reference, \
                      f.AssestName as facility from  other_modes_of_transport omot, \`dbo.facilities\`  f, other_modes_of_transport_ef omotef\
                      where   omot.facilities in (${facility}) and  omot.status ='S' and \ 
-                     omot.year =${year} and omot.month in (${month}) and ((omot.mode_of_trasport = omotef.type_name and omot.fuel_type= omotef.fuel_type) or (omot.mode_of_trasport = omotef.type_name and omot.fuel_type= omotef.mode_type))\
+                     omot.year =${year} and omot.month in (${month}) and ((omot.mode_of_trasport = omotef.type_name) or (omot.mode_of_trasport = omotef.type_name and omot.fuel_type= omotef.mode_type))\
                      and omot.facilities= f.ID  \
                      group by DataPoint2, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
   getHotelStayReportMultiAudit: async (facility, year, month) => {
     return db.query(`select 'Scope3' as scope, 'Hotel Stay' as category, hs.country_of_stay as DataPoint1, hs.type_of_hotel as DataPoint2, hb.star_2, hb.star_3, hb.star_4, hb.star_5, hb.star_green, \
-                     sum(hs.emission) as Emission,  hs.year as Years, hs.month as Months, hb.reference,  \
+                     sum(hs.emission) as Emission, hs.emission_factor_unit AS emission_factor_name, hs.year as Years, hs.month as Months, hb.reference,  \
                      f.AssestName as facility from  hotel_stay hs, \`dbo.facilities\`  f, hotel_booking hb \
                      where   hs.facilities in (${facility}) and  \
                      hs.year =${year} and hs.month in (${month}) and  hs.status ='S' and \
@@ -151,7 +151,7 @@ module.exports = {
   getEmployeeCommutingReportMultiAudit: async (facility, start_year, end_year) => {
     //return db.query(`select * from employee_commuting_category where status  ='S'  and facilities in (${facility})and year ='${year}' and month in (${month}) ORDER BY created_at ASC`);
     return db.query(
-                    `select 'Scope3' as scope, 'Employee Commuting' as category, ectt.type as DataPoint1, ecc.totalnoofcommutes as DataPoint2, ectt.efskgCO2e as emission_factor, ectt.unit, 'efskgCO2e' as emission_factor_name, \
+      `select 'Scope3' as scope, 'Employee Commuting' as category, ectt.type as DataPoint1, ecc.totalnoofcommutes as DataPoint2, ecc.EFs as emission_factor, ectt.unit, ecc.unit as emission_factor_name, \
                      sum(ecc.emission) as Emission,  ecc.year as Years, ecc.month as Months, ectt.reference,  \
                      f.AssestName as facility from  employee_commuting_category ecc, \`dbo.facilities\`  f,  \
                      employee_community_typeoftransport ectt \
@@ -169,10 +169,13 @@ module.exports = {
     start_year,
     end_year
   ) => {
-    
-    return db.query(`select hef.typeof_homeoffice as category,hoc.year AS Years, hoc.month AS Months, sum(hoc.emission) as Emission, f.AssestName as facility, hef.EFkgco2 as emission_factor, hef.reference  \
+
+    return db.query(`select hef.typeof_homeoffice as category,hoc.year AS Years, hoc.month AS Months, hoc.emission_factor, hoc.emission_factor_unit AS emission_factor_name, sum(hoc.emission) as Emission, f.AssestName as facility, hef.reference  \
                     from  homeoffice_category hoc, homeoffice_emission_factors hef, \`dbo.facilities\`  f  where  hoc.facilities in (${facility}) and hoc.year >='${start_year}' and  hoc.year <='${end_year}'  \
-                     and hoc.typeofhomeoffice =  hef.id  and hoc.status ='S' and \
+                     and hoc.typeofhomeoffi
+                     
+                     
+                     ce =  hef.id  and hoc.status ='S' and \
                     hoc.facilities= f.ID  ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',  \
                     'Jul','Aug','Sep','Oct','Nov', 'Dec') `);
   },
@@ -206,7 +209,7 @@ module.exports = {
                      elc.facilities= f.ID   \
                      and elc.waste_type = ewt.id    \
                      group by DataPoint2, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`); 
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
 
@@ -249,7 +252,7 @@ module.exports = {
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
-  getElecricityReportMultiAudit : async (facility, year, month) => {
+  getElecricityReportMultiAudit: async (facility, year, month) => {
     return db.query(`select 'Scope' as scope, 'Renewable Electricity' as category, scsd.Item as DataPoint1, rende.SourceName as DataPoint2, electra.Unit, electra.kgCO2e_kwh as emission_factor, 'kgCO2e_kg' as emission_factor_name,\
                      sum(rende.GHGEmission) as Emission,  rende.year as Years, rende.months as Months, electra.reference, \
                      f.AssestName as facility from  \`dbo.renewableelectricityde\`  rende, \`dbo.facilities\`  f,  \
@@ -284,7 +287,7 @@ module.exports = {
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
-  getWaterWithdrawalAudit : async (facility, year, month) => {
+  getWaterWithdrawalAudit: async (facility, year, month) => {
     return db.query(`SELECT sum(wwbs.totalwaterwithdrawl) as totalwaterwithdrawl, wwbs.water_supply_treatment_id,   wwbs.month, wwbs.year, f.AssestName, wwbs.water_withdrawl, wstg.water_supply
                      FROM \`water_withdrawl_by_source\` wwbs, \`dbo.facilities\`  f, water_supply_treatment_category wstg 
                      WHERE wwbs.month in (${month}) and wwbs.year=${year} and wstg.facilities = f.ID and wstg.id = wwbs.water_supply_treatment_id and wstg.facilities in (${facility})
@@ -303,7 +306,7 @@ module.exports = {
                      and  vde.facilities= f.ID  \
                      and  vs.vehicle_category_id = vt.id and vde.vehicleTypeID = vs.id   \
                      group by DataPoint2, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`); 
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
 

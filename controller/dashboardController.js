@@ -285,6 +285,7 @@ exports.dashboardScope = async (req, res) => {
             )
           );
         }
+        
         categorydata7 = await purchaseGoodsDetails(
           facilitiesdata,
           year,

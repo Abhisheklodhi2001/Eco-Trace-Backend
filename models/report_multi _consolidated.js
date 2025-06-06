@@ -93,7 +93,7 @@ module.exports = {
                      ule.year =${year}  and ule.month in (${month}) and  ule.status='S' and \
                      ule.facility_id= f.ID  \
                      group by DataPoint2, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`); 
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
   getDownstreamLeaseEmissionReportMultiConsole: async (facility, year, month) => {
@@ -115,7 +115,7 @@ module.exports = {
                     wge.year =${year} and wge.month in (${month}) and  wge.status ='S' and \
                     wge.facility_id= f.ID   \
                     group by DataPoint2, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`); 
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
   getFlightTravelReportMultiConsole: async (facility, year, month) => {
@@ -152,7 +152,7 @@ module.exports = {
   getEmployeeCommutingReportMultiConsole: async (facility, start_year, end_year) => {
     //return db.query(`select * from employee_commuting_category where status  ='S'  and facilities in (${facility})and year ='${year}' and month in (${month}) ORDER BY created_at ASC`);
     return db.query(
-                    `select 'Scope3' as scope, 'Employee Commuting' as category, ectt.type as DataPoint1, ecc.totalnoofcommutes as DataPoint2,   \
+      `select 'Scope3' as scope, 'Employee Commuting' as category, ectt.type as DataPoint1, ecc.totalnoofcommutes as DataPoint2,   \
                      sum(ecc.emission) as Emission,  ecc.year as Years, ecc.month as Months,  \
                      f.AssestName as facility from  employee_commuting_category ecc, \`dbo.facilities\`  f,  \
                      employee_community_typeoftransport ectt \
@@ -170,7 +170,7 @@ module.exports = {
     start_year,
     end_year
   ) => {
-    
+
     return db.query(`select 'Scope3' as scope, 'Employee Commuting' as data_point, typeofhomeoffice as category,year, month, sum(emission) as emission, facilities as facility  \
                     from  homeoffice_category where status  ='S'  and facilities in (${facility}) and year >='${start_year}' and year <='${start_year}' GROUP BY facilities ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
                     'Jul','Aug','Sep','Oct','Nov', 'Dec') `);
@@ -205,7 +205,7 @@ module.exports = {
                      elc.facilities= f.ID   \
                      and elc.waste_type = ewt.id    \
                      group by DataPoint2, Years ORDER BY FIELD(MONTH,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`); 
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
 
@@ -248,7 +248,7 @@ module.exports = {
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
-  getElecricityReportMultiConsole : async (facility, year, month) => {
+  getElecricityReportMultiConsole: async (facility, year, month) => {
     return db.query(`select 'Scope' as scope, 'Renewable Electricity' as category, scsd.Item as DataPoint1, rens.SourceName as DataPoint2,  \
                      sum(rende.GHGEmission) as Emission,  rende.year as Years, rende.months as Months,  \
                      f.AssestName as facility from  \`dbo.renewableelectricityde\`  rende, \`dbo.facilities\`  f,  \
@@ -274,6 +274,25 @@ module.exports = {
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
+  getWaterSupplyConsole: async (facility, year, month) => {
+    return db.query(`select 'Scope3' as scope, 'Water Supply and Treatment' as category, 'Water Supply' as DataPoint1, '-' as DataPoint2, SUM(hnsde.withdrawn_emission) AS Emission, hnsde.year as Years, hnsde.month as Months,    \
+                     f.AssestName as facility from  water_supply_treatment_category  hnsde, \`dbo.facilities\`  f   \
+                     WHERE hnsde.facilities in (${facility})   \
+                     and hnsde.year =${year} and hnsde.month in (${month}) and hnsde.status ='S'  \
+                     and  hnsde.facilities= f.ID   \
+                     group by withdrawn_emission ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
+  },
+  getWaterTreatmentConsole: async (facility, year, month) => {
+    return db.query(`select 'Scope3' as scope, 'Water Supply and Treatment' as category, 'Water Treatment' as DataPoint1, '-' as DataPoint2, SUM(hnsde.treatment_emission) AS Emission, hnsde.year as Years, hnsde.month as Months,    \
+                     f.AssestName as facility from  water_supply_treatment_category  hnsde, \`dbo.facilities\`  f   \
+                     WHERE hnsde.facilities in (${facility})   \
+                     and hnsde.year =${year} and hnsde.month in (${month}) and hnsde.status ='S'  \
+                     and  hnsde.facilities= f.ID   \
+                     group by treatment_emission ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
+  },
+
   getWaterDischargeConsole: async (facility, year, month) => {
     return db.query(`SELECT sum(wdd.withthtreatment) as treatper, wdd.water_supply_treatment_id, wdd.water_discharge, wdd.leveloftreatment, wdd.month, wdd.year, f.AssestName, wstg.water_supply, wstg.water_treatment, ((sum(wdd.withthtreatment)* 100)/wstg.water_treatment) as water_treated
                      FROM \`water_discharge_by_destination\` wdd, \`dbo.facilities\`  f, water_supply_treatment_category wstg
@@ -292,7 +311,7 @@ module.exports = {
                     'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
-  getWaterWithdrawalConsole : async (facility, year, month) => {
+  getWaterWithdrawalConsole: async (facility, year, month) => {
     return db.query(`SELECT sum(wwbs.totalwaterwithdrawl) as totalwaterwithdrawl, wwbs.water_supply_treatment_id,   wwbs.month, wwbs.year, f.AssestName, wwbs.water_withdrawl, wstg.water_supply
                      FROM \`water_withdrawl_by_source\` wwbs, \`dbo.facilities\`  f, water_supply_treatment_category wstg 
                      WHERE wwbs.month in (${month}) and wwbs.year=${year} and wstg.facilities = f.ID and wstg.id = wwbs.water_supply_treatment_id and wstg.facilities in (${facility})
@@ -311,7 +330,7 @@ module.exports = {
                      and  vde.facilities= f.ID  \
                      and  vs.vehicle_category_id = vt.id and vde.vehicleTypeID = vs.id   \
                      group by DataPoint2, Years ORDER BY FIELD(MONTHS,'Jan','Feb','Mar','Apr', 'May','Jun',                  
-                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`); 
+                    'Jul','Aug','Sep','Oct','Nov', 'Dec')`);
   },
 
 

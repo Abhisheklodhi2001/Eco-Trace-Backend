@@ -39,8 +39,8 @@ module.exports = {
     pageSize,
     offset
   ) => {
-    return db.query(`select a.vehicle_type as category, a.sub_category as subcategory, a.no_of_vehicles as quantity,a.unit_of_mass as  unit , a.emission, a.facility_id as facility, a.distance_travelled_km, a.mass_of_product_trans , a.storage_facility_type, a.year, a.month, a.avg_no_of_days, a.area_occupied, a.no_of_vehicles \
-                    ,dbu.tenantName as user_name from  upstream_vehicle_storage_emissions a, \`dbo.tenants\` dbu  where  dbu.id= a.user_id and a.status  ='S'  and a.facility_id ='${facility}' and a.year ='${year}' and a.month in (${month}) ORDER BY a.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
+    return db.query(`select a.vehicle_type, vehicletypes.vehicle_type AS category, a.sub_category as subcategory, a.no_of_vehicles as quantity,a.unit_of_mass as  unit , a.emission, a.facility_id as facility, a.distance_travelled_km, a.mass_of_product_trans , a.storage_facility_type, a.year, a.month, a.avg_no_of_days, a.area_occupied, a.no_of_vehicles \
+                    ,dbu.tenantName as user_name from  upstream_vehicle_storage_emissions a, \`dbo.tenants\` dbu, vehicletypes   where  dbu.id= a.user_id and a.status  ='S'  and a.facility_id ='${facility}' and a.year ='${year}' AND vehicletypes.id = a.vehicle_type AND a.month in (${month}) ORDER BY a.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
   },
 
   getFranchiseEmissionReport: async (
@@ -92,7 +92,7 @@ module.exports = {
     offset
   ) => {
     return db.query(`select f.category, f.sub_category as subcategory, f.franchise_space as quantity, f.unit , f.emission, f.facility_id as facility, f.year, f.month, f.scope1_emission, f.scope2_emission, f.no_of_vehicles, f.distance_travelled, f.status,  dbu.tenantName as user_name\
-                    from  upstreamLease_emission f, \`dbo.tenants\` dbu where f.status  ='S'  and f.facility_id ='${facility}' and f.year ='${year}' and f.month in (${month}) ORDER BY f.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
+                    from  upstreamLease_emission f, \`dbo.tenants\` dbu where f.status  ='S'  and f.facility_id ='${facility}' and f.year ='${year}' AND dbu.Id = f.user_id AND f.month in (${month}) ORDER BY f.created_at ASC LIMIT ${pageSize} OFFSET ${offset}`);
   },
 
   getDownstreamLeaseEmissionReport: async (
