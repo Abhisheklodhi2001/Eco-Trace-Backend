@@ -1185,9 +1185,9 @@ exports.GetpendingDataEnteries = async (req, res) => {
 
             if (unit.toLowerCase() === "km") {
               emissionFactor = item.kgCO2e_km;
-            } else if (unit.toLowerCase() === "litres") {
+            } else if (unit.toLowerCase() === "litre") {
               emissionFactor = item.kgCO2e_litre;
-            } else if (unit.toLowerCase() !== "km" && unit.toLowerCase() !== "litres") {
+            } else if (unit.toLowerCase() !== "km" && unit.toLowerCase() !== "litre") {
               emissionFactor = item.kgCO2e_ccy;
             }
           }
@@ -5861,7 +5861,7 @@ exports.addVehicleFeet = async (req, res) => {
         success: false,
       });
     } else {
-      const user_id = req.user.usefalse
+      const user_id = req.user.user_id
 
       const vehicles = JSON.parse(vehicleJson);
 

@@ -137,13 +137,13 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
             const ef = emissionDetails[0].ef;
             let totalEmission = ef * areaoccp;
             upLeaseData.emission_factor_lease = ef;
-            upLeaseData.emission_factor_lease_unit = 'tonnes co2e/m2.month';
+            upLeaseData.emission_factor_lease_unit = 'kg co2e/m2.month';
             upLeaseData.emission = totalEmission;
           } else if (year == startYear) {
             const ef = emissionDetails[0].ef;
             let totalEmission = ef * areaoccp;
             upLeaseData.emission_factor_lease = ef;
-            upLeaseData.emission_factor_lease_unit = 'tonnes co2e/m2.month';
+            upLeaseData.emission_factor_lease_unit = 'kg co2e/m2.month';
             upLeaseData.emission = totalEmission;
           } else {
             return res.json({
@@ -440,13 +440,13 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
             const ef = emissionDetails[0].ef;
             let totalEmission = ef * areaoccp;
             downLeaseData.emission_factor_lease = ef;
-            downLeaseData.emission_factor_lease_unit = 'tonnes co2e/m2.month';
+            downLeaseData.emission_factor_lease_unit = 'kg co2e/m2.month';
             downLeaseData.emission = totalEmission;
           } else if (year == startYear) {
             const ef = emissionDetails[0].ef;
             let totalEmission = ef * areaoccp;
             downLeaseData.emission_factor_lease = ef;
-            downLeaseData.emission_factor_lease_unit = 'tonnes co2e/m2.month';
+            downLeaseData.emission_factor_lease_unit = 'kg co2e/m2.month';
             downLeaseData.emission = totalEmission;
           } else {
             return res.json({

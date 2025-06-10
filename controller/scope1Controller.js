@@ -188,7 +188,7 @@ exports.GetUnits = async (req, res) => {
     const units = await getSelectedColumn("`dbo.units`", where, "*");
     if (units.length > 0) {
       units.forEach((val) => {
-        if (val.seedsubcatID == '1' && val.UnitName === 'Kwh') {
+        if (val.seedsubcatID == '1' && (val.UnitName === 'Kwh' || val.UnitName === 'KL')) {
           delete val.ID;
           delete val.UnitName;
           delete val.seedsubcatID;

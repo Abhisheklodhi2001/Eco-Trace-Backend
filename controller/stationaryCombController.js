@@ -183,7 +183,12 @@ exports.stationaryCombustionEmission = async (req, res) => {
         status: 400,
       });
     }
-    if (unit.toLowerCase() === kgUnit) {
+
+    if (readingValue != 'null') {
+      emissionFactor = emissionDetails[0]?.kgCO2e_kwh
+      emissionFactor1 = emissionDetails[0]?.scope3_kgCO2e_kwh
+    }
+    else if (unit.toLowerCase() === kgUnit) {
       emissionFactor = emissionDetails[0]?.kgCO2e_kg
       emissionFactor1 = emissionDetails[0]?.scope3_kgCO2e_kg
     }
@@ -204,8 +209,8 @@ exports.stationaryCombustionEmission = async (req, res) => {
       emissionFactor1 = emissionDetails[0]?.scope3_kg_CO2e_litres
     }
     if (stationaryCombustionData.calorificValue) {
-      emissionFactor = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor)
-      emissionFactor1 = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor1)
+      emissionFactor = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor) * readingValue;
+      emissionFactor1 = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor1) * readingValue;
     }
     let emsssionvalue = 0;
     let emsssionvalue1 = 0;
@@ -268,7 +273,7 @@ exports.stationaryCombustionEmission = async (req, res) => {
       emsssionvalue = emissionFactor;
       emsssionvalue1 = emissionFactor1;
     }
-
+ 
     stationaryCombustionData.ghgEmissionFactor = emsssionvalue;
     stationaryCombustionData.Scope3GHGEmissionFactor = emsssionvalue1;
     stationaryCombustionData.ghgEmissions = parseFloat(readingValue * emsssionvalue);
@@ -285,6 +290,7 @@ exports.stationaryCombustionEmission = async (req, res) => {
       var tempInserted = await insertCombustionEmission(stationaryCombustionData);
       resultInserted.push(tempInserted.insertId);
     }
+    
     //Check Vehicle Data as well
     if (resultInserted.length > 0) {
       return res.json({
