@@ -28,7 +28,7 @@ module.exports = {
   },
 
   getrefrigerant: async (item, country_id) => {
-    return db.query("select * from `dbo.refrigents`  where subCatTypeID=? and country_id = ? ", [item, country_id]);
+    return db.query("select * from `dbo.refrigents`  where ID=? and country_id = ? ", [item, country_id]);
   },
 
   Allrefrigerants: async (user_id) => {

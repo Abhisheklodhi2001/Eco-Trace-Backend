@@ -3,12 +3,43 @@ const config = require("../config");
 const baseurl = config.base_url;
 
 module.exports = {
-  fetchCombustionEmission: async (seed_id, type_id, country_id) => {
-    return db.query(`select *  from stationarycombustion where  SubCategorySeedID= ? and SubCatTypeID= ? and country_id = ?`, [seed_id, type_id, country_id]);
+  fetchCombustionEmission: async (seed_id, type_id, country_id, calorificValue, unit) => {
+    console.log(seed_id, type_id, country_id, calorificValue, unit);
+    
+    // return
+    let baseQuery = `SELECT * FROM stationarycombustion WHERE SubCategorySeedID = ? AND SubCatTypeID = ? AND country_id = ?`;
+    let params = [seed_id, type_id, country_id];
+    let additionalCondition = '';
+
+    if (calorificValue) {
+      additionalCondition = ` AND kgCO2e_kwh IS NOT NULL`;
+    } else {
+      switch (unit.toLowerCase()) {
+        case 'kwh':
+          additionalCondition = ` AND kgCO2e_kwh IS NOT NULL`;
+          break;
+        case 'kg':
+          additionalCondition = ` AND kgCO2e_kg IS NOT NULL`;
+          break;
+        case 'litres':
+          additionalCondition = ` AND kgCO2e_litre IS NOT NULL`;
+          break;
+        case 'kl':
+          additionalCondition = ` AND kgCO2e_kwh IS NOT NULL`;
+          break;
+        case 'tonnes':
+          additionalCondition = ` AND kgCO2e_tonnes IS NOT NULL`;
+          break;
+        default:
+          additionalCondition = '';
+      }
+    }
+    const finalQuery = baseQuery + additionalCondition;
+    return db.query(finalQuery, params);
   },
 
-  getStationaryComissionFactorByItemType: async (type) => {
-    return await db.query('select *  from stationarycombustion WHERE ItemType = ?', [type])
+  getStationaryComissionFactorByItemType: async (type, country_id) => {
+    return await db.query('select *  from stationarycombustion WHERE ItemType = ? AND country_id = ?', [type, country_id])
   },
 
   checkCategoryInTemplate: async (facilityId) => {

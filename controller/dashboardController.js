@@ -408,7 +408,7 @@ exports.dashboardScope = async (req, res) => {
                 for (const key of Object.keys(monthlyData2)) {
                   monthlyData2[key] += portion;
                 }
-              } else {  
+              } else {
                 if (item.month_number && monthlyData1.hasOwnProperty(item.month_number)) {
                   monthlyData2[item.month_number] += emission;
                 }
@@ -419,6 +419,42 @@ exports.dashboardScope = async (req, res) => {
 
           if (categorydata.length > 0) {
             for (item of categorydata) {
+              if (
+                item.month_number &&
+                monthlyData2.hasOwnProperty(item.month_number)
+              ) {
+                monthlyData2[item.month_number] += parseFloat(
+                  item?.scope3_emission ? item?.scope3_emission : 0
+                );
+                let emissionFixed = parseFloat(
+                  item?.scope3_emission ? item?.scope3_emission : 0
+                );
+                sum2 += emissionFixed;
+                // Add emission value to the corresponding month
+              }
+            }
+          }
+
+          if (categorydata5.length > 0) {
+            for (item of categorydata5) {
+              if (
+                item.month_number &&
+                monthlyData2.hasOwnProperty(item.month_number)
+              ) {
+                monthlyData2[item.month_number] += parseFloat(
+                  item?.scope3_emission ? item?.scope3_emission : 0
+                );
+                let emissionFixed = parseFloat(
+                  item?.scope3_emission ? item?.scope3_emission : 0
+                );
+                sum2 += emissionFixed;
+                // Add emission value to the corresponding month
+              }
+            }
+          }
+
+          if (categorydata6.length > 0) {
+            for (item of categorydata6) {
               if (
                 item.month_number &&
                 monthlyData2.hasOwnProperty(item.month_number)
@@ -922,11 +958,81 @@ exports.dashboardTop5 = async (req, res) => {
           }
         }
 
-        const resultArray2 = Object.keys(categoryTotals3).map((category) => ({
-          emission: parseFloat(categoryTotals3[category] / 1000).toFixed(3),
-          category,
-          scope: "scope3",
-        }));
+        if (categorydata5.length > 0) {
+          for (item of categorydata5) {
+            if (
+              item.month_number &&
+              monthlyData2.hasOwnProperty(item.month_number)
+            ) {
+              monthlyData2[item.month_number] += parseFloat(
+                item?.scope3_emission ? item?.scope3_emission : 0
+              );
+              let emissionFixed = parseFloat(
+                item?.scope3_emission ? item?.scope3_emission : 0
+              );
+              // emissionFixed = (emissionFixed/1000).toFixed(3)
+              let category = item.category;
+              if (!categoryTotals3[category]) {
+                categoryTotals3[category] = 0;
+              }
+              categoryTotals3[category] += emissionFixed;
+
+
+              // Add emission value to the corresponding month
+            }
+          }
+        }
+
+        if (categorydata6.length > 0) {
+          for (item of categorydata6) {
+            if (
+              item.month_number &&
+              monthlyData2.hasOwnProperty(item.month_number)
+            ) {
+              monthlyData2[item.month_number] += parseFloat(
+                item?.scope3_emission ? item?.scope3_emission : 0
+              );
+              let emissionFixed = parseFloat(
+                item?.scope3_emission ? item?.scope3_emission : 0
+              );
+              // emissionFixed = (emissionFixed/1000).toFixed(3)
+              let category = item.category;
+              if (!categoryTotals3[category]) {
+                categoryTotals3[category] = 0;
+              }
+              categoryTotals3[category] += emissionFixed;
+
+
+              // Add emission value to the corresponding month
+            }
+          }
+        }
+
+        const combinedCategories = ['Stationary Combustion', 'Electricity', 'Heat and Steam'];
+        let combinedEmission = 0;
+        let resultArray2 = [];
+
+        Object.keys(categoryTotals3).forEach((category) => {
+          const emission = categoryTotals3[category];
+
+          if (combinedCategories.includes(category)) {
+            combinedEmission += emission;
+          } else {
+            resultArray2.push({
+              emission: parseFloat(emission.toFixed(3) / 1000),
+              category,
+              scope: "scope3",
+            });
+          }
+        });
+
+        if (combinedEmission > 0) {
+          resultArray2.unshift({
+            emission: parseFloat(combinedEmission.toFixed(3) / 1000),
+            category: 'Fuel and Energy-related Activities',
+            scope: 'scope3',
+          });
+        }
 
         let array = [...resultArray, ...resultArray1, ...resultArray2];
 
@@ -1316,11 +1422,83 @@ exports.ScopewiseEmssion = async (req, res) => {
           }
         }
 
-        const resultArray2 = Object.keys(categoryTotals3).map((category) => ({
-          emission: parseFloat(categoryTotals3[category].toFixed(1)),
-          category,
-          scope: "scope3",
-        }));
+        if (categorydata5.length > 0) {
+          for (item of categorydata5) {
+            if (
+              item.month_number &&
+              monthlyData2.hasOwnProperty(item.month_number)
+            ) {
+              monthlyData2[item.month_number] += parseFloat(
+                item?.scope3_emission ? item?.scope3_emission : 0
+              );
+              let emissionFixed = parseFloat(
+                item?.scope3_emission ? item?.scope3_emission : 0
+              );
+
+              let category = item.category;
+              if (!categoryTotals3[category]) {
+                categoryTotals3[category] = 0;
+              }
+              categoryTotals3[category] += emissionFixed;
+
+
+              // Add emission value to the corresponding month
+            }
+          }
+        }
+
+        if (categorydata6.length > 0) {
+          for (item of categorydata6) {
+            if (
+              item.month_number &&
+              monthlyData2.hasOwnProperty(item.month_number)
+            ) {
+              monthlyData2[item.month_number] += parseFloat(
+                item?.scope3_emission ? item?.scope3_emission : 0
+              );
+              let emissionFixed = parseFloat(
+                item?.scope3_emission ? item?.scope3_emission : 0
+              );
+
+              let category = item.category;
+              if (!categoryTotals3[category]) {
+                categoryTotals3[category] = 0;
+              }
+              categoryTotals3[category] += emissionFixed;
+
+
+              // Add emission value to the corresponding month
+            }
+          }
+        }
+
+        const combinedCategories = ['Stationary Combustion', 'Electricity', 'Heat and Steam'];
+
+        let combinedEmission = 0;
+        let combinedEmission1 = 0;
+        const resultArray2 = [];
+
+        Object.keys(categoryTotals3).forEach((category) => {
+          const emission = categoryTotals3[category];
+
+          if (combinedCategories.includes(category)) {
+            combinedEmission += emission;
+          } else {
+            resultArray2.push({
+              emission:parseFloat(emission.toFixed(3) / 1000),
+              category,
+              scope: "scope3",
+            });
+          }
+        });
+
+        if (combinedEmission > 0) {
+          resultArray2.unshift({
+            emission: parseFloat(combinedEmission.toFixed(3) / 1000),
+            category: 'Fuel and Energy-related Activities',
+            scope: 'scope3',
+          });
+        }
 
         let newDAta = [];
         let newDAta2 = [];
@@ -1341,10 +1519,19 @@ exports.ScopewiseEmssion = async (req, res) => {
         }
 
         for (let category in categoryTotals3) {
-          newDAta3.push(
-            `${category} - ${parseFloat(
-              categoryTotals3[category] / 1000
-            ).toFixed(3)} Tonnes`
+          const emission = parseFloat(categoryTotals3[category]);
+          if (combinedCategories.includes(category)) {
+            combinedEmission1 += emission;
+          } else {
+            newDAta3.push(
+              `${category} - ${(emission / 1000).toFixed(3)} Tonnes`
+            );
+          }
+        }
+
+        if (combinedEmission1 > 0) {
+          newDAta3.unshift(
+            `Fuel and Energy-related Activities - ${(combinedEmission1 / 1000).toFixed(3)} Tonnes`
           );
         }
 
@@ -1362,9 +1549,7 @@ exports.ScopewiseEmssion = async (req, res) => {
             parseFloat(num.toFixed(1) / 1000)
           ),
           labelScope2: newDAta2,
-          seriesScope3: Object.values(categoryTotals3).map((num) =>
-            parseFloat(num.toFixed(1) / 1000)
-          ),
+          seriesScope3: resultArray2.map((val) => parseFloat((val.emission / 1000).toFixed(4))),
           labelScope3: newDAta3,
           status: 200,
         });

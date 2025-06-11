@@ -155,7 +155,9 @@ exports.stationaryCombustionEmission = async (req, res) => {
     const emissionDetails = await fetchCombustionEmission(
       SubCategorySeedID,
       subCategoryTypeId,
-      countrydata[0].CountryId
+      countrydata[0].CountryId,
+      calorificValue,
+      unit.toLowerCase()
     );
 
     if (emissionDetails.length > 0) {
@@ -179,12 +181,12 @@ exports.stationaryCombustionEmission = async (req, res) => {
     } else {
       return res.json({
         success: false,
-        message: "EF not found while adding  stationaryCombustion Emissions",
+        message: "EF not found while adding Stationary Combustion",
         status: 400,
       });
     }
 
-    if (readingValue != 'null') {
+    if (calorificValue) {
       emissionFactor = emissionDetails[0]?.kgCO2e_kwh
       emissionFactor1 = emissionDetails[0]?.scope3_kgCO2e_kwh
     }
@@ -192,7 +194,7 @@ exports.stationaryCombustionEmission = async (req, res) => {
       emissionFactor = emissionDetails[0]?.kgCO2e_kg
       emissionFactor1 = emissionDetails[0]?.scope3_kgCO2e_kg
     }
-    else if (unit.toLowerCase() === litreUnit) {
+    else if (unit.toLowerCase() === litreUnit) {            
       emissionFactor = emissionDetails[0]?.kgCO2e_litre
       emissionFactor1 = emissionDetails[0]?.scope3_kg_CO2e_litres
     }
@@ -208,76 +210,104 @@ exports.stationaryCombustionEmission = async (req, res) => {
       emissionFactor = emissionDetails[0]?.kgCO2e_litre
       emissionFactor1 = emissionDetails[0]?.scope3_kg_CO2e_litres
     }
-    if (stationaryCombustionData.calorificValue) {
-      emissionFactor = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor) * readingValue;
-      emissionFactor1 = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor1) * readingValue;
-    }
-    let emsssionvalue = 0;
-    let emsssionvalue1 = 0;
+    let finalEFScope1 = 0;
+    let finalEFScope3 = 0;
 
-    if (emissionDetails[0].Item === "Petrol" && blendType !== "No Blend") {
-      let multiplyFactor;
-      const getStationaryComissionFactor = await getStationaryComissionFactorByItemType('Bioethanol');
+    if (stationaryCombustionData.calorificValue) {
+      emissionFactor = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor);
+      emissionFactor1 = parseFloat(stationaryCombustionData.calorificValue) * parseFloat(emissionFactor1);
+    }
+
+    if (emissionDetails[0].Item == "Petrol" && blendType != "No Blend") {
+      let ethanolEF;
+      let ethanolEF1;
+      const getStationaryComissionFactor = await getStationaryComissionFactorByItemType('Bioethanol', countrydata[0].CountryId);
       if (unit.toLowerCase() === kgUnit) {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_kg
+        ethanolEF = getStationaryComissionFactor[0]?.kgCO2e_kg;
+        ethanolEF1 = getStationaryComissionFactor[0]?.scope3_kgCO2e_kg;
       }
       else if (unit.toLowerCase() === litreUnit) {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_litre
+        ethanolEF = getStationaryComissionFactor[0]?.kgCO2e_litre;
+        ethanolEF1 = getStationaryComissionFactor[0]?.scope3_kg_CO2e_litres;
       }
       else if (unit.toLowerCase() === kwhUnit) {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_kwh
+        ethanolEF = getStationaryComissionFactor[0]?.kgCO2e_kwh;
+        ethanolEF1 = getStationaryComissionFactor[0]?.scope3_kgCO2e_kwh;
       }
       else if (unit.toLowerCase() === tonnesUnit) {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_tonnes
+        ethanolEF = getStationaryComissionFactor[0]?.kgCO2e_tonnes;
+        ethanolEF1 = getStationaryComissionFactor[0]?.scope3_kgCO2e_tonnes;
       }
       else if (unit.toLowerCase() === 'kl') {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_litre
+        ethanolEF = getStationaryComissionFactor[0]?.kgCO2e_litre;
+        ethanolEF1 = getStationaryComissionFactor[0]?.scope3_kg_CO2e_litres;
       }
-      if (blendType === "Perc. Blend") {
+      if (blendType === "Perc. Blend" && !calorificValue) {
         let percent = parseFloat(blendPercent / 100);
-        emsssionvalue = parseFloat((percent * multiplyFactor) + ((1 - percent) * emissionFactor));
-        emsssionvalue1 = parseFloat((percent * multiplyFactor) + ((1 - percent) * emissionFactor1));
+        finalEFScope1 = parseFloat(percent * ethanolEF + (1 - percent) * emissionFactor);
+        finalEFScope3 = parseFloat(percent * ethanolEF1 + (1 - percent) * emissionFactor1);
+      } else if (blendType === "Perc. Blend" && calorificValue) {
+        let percent = parseFloat(blendPercent / 100);
+        finalEFScope1 = parseFloat(emissionFactor * (1 - percent) + ethanolEF * percent);
+        finalEFScope3 = parseFloat(emissionFactor1 * (1 - percent) + ethanolEF1 * percent);
+      } else if (blendType === "Average Blend" && !calorificValue) {
+        finalEFScope1 = parseFloat(0.07 * ethanolEF + (1 - 0.07) * emissionFactor);
+        finalEFScope3 = parseFloat(0.07 * ethanolEF1 + (1 - 0.07) * emissionFactor1);
+      } else if (blendType === "Average Blend" && calorificValue) {
+        finalEFScope1 = parseFloat(emissionFactor * (1 - 0.07) + ethanolEF * 0.07);
+        finalEFScope3 = parseFloat(emissionFactor1 * (1 - 0.07) + ethanolEF1 * 0.07);
       }
-      else if (blendType === "Average Blend") {
-        emsssionvalue = parseFloat((0.07 * multiplyFactor) + ((1 - 0.07) * emissionFactor));
-        emsssionvalue1 = parseFloat((0.07 * multiplyFactor) + ((1 - 0.07) * emissionFactor1));
-      }
-    } else if (emissionDetails[0].Item === "Diesel" && blendType !== "No Blend") {
-      let multiplyFactor;
-      const getStationaryComissionFactor = await getStationaryComissionFactorByItemType('Biodiesel ME');
+    } else if (emissionDetails[0].Item == "Diesel" && blendType != "No Blend") {
+      let BiodieselEF;
+      let BiodieselEF1;
+      const getStationaryComissionFactor = await getStationaryComissionFactorByItemType('Biodiesel ME', countrydata[0].CountryId);
       if (unit.toLowerCase() === kgUnit) {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_kg
+        BiodieselEF = getStationaryComissionFactor[0]?.kgCO2e_kg;
+        BiodieselEF1 = getStationaryComissionFactor[0]?.scope3_kgCO2e_kg;
       }
       else if (unit.toLowerCase() === litreUnit) {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_litre
+        BiodieselEF = getStationaryComissionFactor[0]?.kgCO2e_litre;
+        BiodieselEF1 = getStationaryComissionFactor[0]?.scope3_kg_CO2e_litres;
       }
       else if (unit.toLowerCase() === kwhUnit) {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_kwh
+        BiodieselEF = getStationaryComissionFactor[0]?.kgCO2e_kwh;
+        BiodieselEF1 = getStationaryComissionFactor[0]?.scope3_kgCO2e_kwh;
       }
       else if (unit.toLowerCase() === tonnesUnit) {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_tonnes
+        BiodieselEF = getStationaryComissionFactor[0]?.kgCO2e_tonnes;
+        BiodieselEF1 = getStationaryComissionFactor[0]?.scope3_kgCO2e_tonnes;
       }
       else if (unit.toLowerCase() === 'kl') {
-        multiplyFactor = getStationaryComissionFactor[0]?.kgCO2e_litre
+        BiodieselEF = getStationaryComissionFactor[0]?.kgCO2e_litre;
+        BiodieselEF1 = getStationaryComissionFactor[0]?.scope3_kg_CO2e_litres;
       }
-      if (blendType === "Perc. Blend") {
+      console.log("emissionFactor =>", emissionFactor);
+      console.log("BiodieselEF =>", BiodieselEF);
+
+      if (blendType === "Perc. Blend" && !calorificValue) {
         let percent = parseFloat(blendPercent / 100);
-        emsssionvalue = parseFloat((percent * multiplyFactor) + ((1 - percent) * emissionFactor));
-        emsssionvalue1 = parseFloat((percent * multiplyFactor) + ((1 - percent) * emissionFactor1));
-      }
-      else if (blendType === "Average Blend") {
-        emsssionvalue = parseFloat((0.07 * multiplyFactor) + ((1 - 0.07) * emissionFactor));
-        emsssionvalue1 = parseFloat((0.07 * multiplyFactor) + ((1 - 0.07) * emissionFactor1));
+        finalEFScope1 = parseFloat(percent * BiodieselEF + (1 - percent) * emissionFactor);
+        finalEFScope3 = parseFloat(percent * BiodieselEF1 + (1 - percent) * emissionFactor1);
+      } else if (blendType === "Perc. Blend" && calorificValue) {
+        let percent = parseFloat(blendPercent / 100);
+        finalEFScope1 = parseFloat(emissionFactor * (1 - percent) + BiodieselEF * percent);
+        finalEFScope3 = parseFloat(emissionFactor1 * (1 - percent) + BiodieselEF1 * percent);
+      } else if (blendType === "Average Blend" && !calorificValue) {
+        finalEFScope1 = parseFloat(0.07 * BiodieselEF + (1 - 0.07) * emissionFactor);
+        finalEFScope3 = parseFloat(0.07 * BiodieselEF1 + (1 - 0.07) * emissionFactor1);
+      } else if (blendType === "Average Blend" && calorificValue) {
+        finalEFScope1 = parseFloat(emissionFactor * (1 - 0.07) + BiodieselEF * 0.07);
+        finalEFScope3 = parseFloat(emissionFactor1 * (1 - 0.07) + BiodieselEF1 * 0.07);
       }
     } else {
-      emsssionvalue = emissionFactor;
-      emsssionvalue1 = emissionFactor1;
+      finalEFScope1 = emissionFactor;
+      finalEFScope3 = emissionFactor1;
     }
- 
-    stationaryCombustionData.ghgEmissionFactor = emsssionvalue;
-    stationaryCombustionData.Scope3GHGEmissionFactor = emsssionvalue1;
-    stationaryCombustionData.ghgEmissions = parseFloat(readingValue * emsssionvalue);
-    stationaryCombustionData.Scope3GHGEmission = emsssionvalue1 ? parseFloat(readingValue * emsssionvalue1) : 0.00;
+    
+    stationaryCombustionData.ghgEmissionFactor = finalEFScope1
+    stationaryCombustionData.Scope3GHGEmissionFactor = finalEFScope3
+    stationaryCombustionData.ghgEmissions = parseFloat(readingValue * finalEFScope1);
+    stationaryCombustionData.Scope3GHGEmission = parseFloat(readingValue * finalEFScope3);
 
     // stationaryCombustionData.ghgEmissions = (Math.round(stationaryCombustionData.ghgEmissions) / 10000)
     const checkRes = await checkCategoryInTemplate(facility_id);
@@ -290,7 +320,7 @@ exports.stationaryCombustionEmission = async (req, res) => {
       var tempInserted = await insertCombustionEmission(stationaryCombustionData);
       resultInserted.push(tempInserted.insertId);
     }
-    
+
     //Check Vehicle Data as well
     if (resultInserted.length > 0) {
       return res.json({

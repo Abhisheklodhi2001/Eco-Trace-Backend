@@ -1168,7 +1168,7 @@ exports.downStreamTransportation = async (req, res) => {
         downStreamData.areaOccupied = 0;
         downStreamData.averageNoOfDays = 0;
         downStreamData.facility_id = facility_id;
-        downStreamData.unit_of_mass = mass_unit;
+        downStreamData.unit_of_mass = mass_unit ? mass_unit : "";
         downStreamData.distance_unit = distance_unit;
 
       }
@@ -1214,6 +1214,7 @@ exports.downStreamTransportation = async (req, res) => {
       downStreamData.areaOccupied = areaoccp;
       downStreamData.averageNoOfDays = averageNoOfDays;
       downStreamData.emissionStorage = totalEmission;
+      downStreamData.unit_of_mass = mass_unit ? mass_unit : "";
       downStreamData.emission_factor_storage = EFS;
       downStreamData.emission_factor_storage_unit = "co2e tonnes/m2.day";
       downStreamData.userId = user_id;
@@ -1369,7 +1370,7 @@ exports.upStreamTransportation = async (req, res) => {
         downStreamData.areaOccupied = 0;
         downStreamData.averageNoOfDays = 0;
         downStreamData.facility_id = facility_id;
-        downStreamData.unit_of_mass = mass_unit;
+        downStreamData.unit_of_mass = mass_unit ? mass_unit : '';
         downStreamData.distance_unit = distance_unit;
 
       }
@@ -1415,6 +1416,7 @@ exports.upStreamTransportation = async (req, res) => {
       downStreamData.areaOccupied = areaoccp;
       downStreamData.averageNoOfDays = averageNoOfDays;
       downStreamData.emissionStorage = totalEmission;
+      downStreamData.unit_of_mass = mass_unit ? mass_unit : "";
       downStreamData.emission_factor_storage = EFS;
       downStreamData.emission_factor_storage_unit = "co2e tonnes/m2.day";
       downStreamData.userId = user_id;

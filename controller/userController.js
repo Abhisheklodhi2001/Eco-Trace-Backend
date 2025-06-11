@@ -1114,7 +1114,9 @@ exports.GetpendingDataEnteries = async (req, res) => {
           }
 
           if (categoryID == "7") {
-            let where = ` where  	subCatTypeID = '${item.typeID}'  `;
+            console.log(item);
+
+            let where = ` where ID = '${item.typeID}'  `;
             const heatandsteam = await getSelectedColumn(
               "`dbo.heatandsteam`",
               where,
@@ -5937,7 +5939,7 @@ exports.updateVehicleFeet = async (req, res) => {
         success: false,
       });
     } else {
-      const user_id = req.user.usefalse
+      const user_id = req.user.user_id
 
       const vehicles = JSON.parse(vehicleJson);
 
@@ -6023,7 +6025,7 @@ exports.updateVehicleFeetById = async (req, res) => {
         success: false,
       });
     } else {
-      const user_id = req.user.usefalse
+      const user_id = req.user.user_id
 
       const countryResponse = await country_check(facility_id);
       if (!countryResponse.length) return res.status(400).json({ error: true, message: "Invalid Facility ID", success: false });

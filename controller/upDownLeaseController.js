@@ -91,6 +91,8 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
       } else {
         areaoccp = franchise_space
       }
+    } else {
+      areaoccp = franchise_space
     }
 
     let countrydata = await country_check(facility_id);
@@ -110,9 +112,9 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
         category: category,
         sub_category: sub_category,
         calculation_method: calculation_method,
-        franchise_space: checkNUllUnD(franchise_space),
-        scope1_emission: checkNUllUnD(scope1_emission),
-        scope2_emission: checkNUllUnD(scope2_emission),
+        franchise_space: franchise_space ? franchise_space : "",
+        scope1_emission: scope1_emission ? scope1_emission : "",
+        scope2_emission: scope2_emission ? scope2_emission : "",
         emission: 0,
         month: "",
         year: year,
@@ -124,13 +126,12 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
         vehicle_subtype: vehicle_subtype ? vehicle_subtype : "",
         vehicle_emission: 0,
         no_of_vehicles: no_of_vehicles ? no_of_vehicles : 0,
-
       };
       if (calculation_method === "Average data method") {
-        let where = `where categories = '${category}' and sub_categories = '${sub_category}' and country_id = '${countrydata[0].CountryId}'`;
+        let where = `where categories = '${category}' and sub_categories = '${sub_category}' and country_id = '${countrydata[0].CountryId}' ORDER BY id DESC`;
         const emissionDetails = await getSelectedData("franchise_categories_subcategories", where, "*");
         if (emissionDetails.length > 0) {
-          let yearRange = emissionDetails[0]?.Fiscal_Year; // The string representing the year range
+          let yearRange = emissionDetails[0]?.Fiscal_Year;
           let [startYear, endYear] = yearRange.split('-').map(Number);
 
           if (year >= startYear && year <= endYear) {
@@ -180,9 +181,9 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
         category: category ? category : "",
         sub_category: sub_category ? sub_category : "",
         calculation_method: calculation_method ? calculation_method : "",
-        franchise_space: checkNUllUnD(franchise_space),
-        scope1_emission: checkNUllUnD(scope1_emission),
-        scope2_emission: checkNUllUnD(scope2_emission),
+        franchise_space: franchise_space ? franchise_space : "",
+        scope1_emission: scope1_emission ? scope1_emission : "",
+        scope2_emission: scope2_emission ? scope2_emission : "",
         emission: upLeaseData.emission ? upLeaseData.emission : 0,
         emission_factor_lease: upLeaseData.emission_factor_lease ? upLeaseData.emission_factor_lease : 0.000,
         emission_factor_lease_unit: upLeaseData.emission_factor_lease_unit ? upLeaseData.emission_factor_lease_unit : null,
@@ -208,7 +209,7 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
         });
       } else {
 
-        let yearRange = efRes[0]?.Fiscal_Year; // The string representing the year range
+        let yearRange = efRes[0]?.Fiscal_Year;
         let [startYear, endYear] = yearRange.split('-').map(Number);
 
         if (year >= startYear && year <= endYear) {
@@ -242,9 +243,8 @@ exports.upLeaseEmissionCalculate = async (req, res) => {
       //   resultInserted.push(tempInserted.insertId);
       // }
     }
-
+   
     if (upLeaseData) {
-
       for (let month of monthsArr) {
         upLeaseData.month = month;
         var tempInserted = await insertUpLeaseEmission(upLeaseData);
@@ -388,10 +388,11 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
       } else {
         areaoccp = franchise_space
       }
+    } else {
+      areaoccp = franchise_space
     }
 
     let countrydata = await country_check(facility_id);
-    //console.log(countrydata[0].CountryId);
     if (countrydata.length == 0) {
       return res.json({
         success: false,
@@ -408,9 +409,9 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
         category: category,
         sub_category: sub_category,
         calculation_method: calculation_method,
-        franchise_space: checkNUllUnD(franchise_space),
-        scope1_emission: checkNUllUnD(scope1_emission),
-        scope2_emission: checkNUllUnD(scope2_emission),
+        franchise_space: franchise_space ? franchise_space : "",
+        scope1_emission: scope1_emission ? scope1_emission : "",
+        scope2_emission: scope2_emission ? scope2_emission : "",
         emission: 0,
         month: "",
         year: year,
@@ -424,8 +425,7 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
         no_of_vehicles: no_of_vehicles ? no_of_vehicles : 0,
       };
       if (calculation_method === "Average data method") {
-
-        let where = `where categories = '${category}' and sub_categories = '${sub_category}' and country_id = '${countrydata[0].CountryId}'`;
+        let where = `where categories = '${category}' and sub_categories = '${sub_category}' and country_id = '${countrydata[0].CountryId}' ORDER BY id DESC`;
         const emissionDetails = await getSelectedData(
           "franchise_categories_subcategories",
           where,
@@ -490,9 +490,9 @@ exports.downLeaseEmissionCalculate = async (req, res) => {
         category: category,
         sub_category: sub_category,
         calculation_method: calculation_method,
-        franchise_space: checkNUllUnD(franchise_space),
-        scope1_emission: checkNUllUnD(scope1_emission),
-        scope2_emission: checkNUllUnD(scope2_emission),
+        franchise_space: franchise_space ? franchise_space : "",
+        scope1_emission: scope1_emission ? scope1_emission : "",
+        scope2_emission: scope2_emission ? scope2_emission : "",
         emission: downLeaseData.emission ? downLeaseData.emission : 0,
         emission_factor_lease: downLeaseData.emission_factor_lease ? downLeaseData.emission_factor_lease : 0.000,
         emission_factor_lease_unit: downLeaseData.emission_factor_lease_unit ? downLeaseData.emission_factor_lease_unit : null,

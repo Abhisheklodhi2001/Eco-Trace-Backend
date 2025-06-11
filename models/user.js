@@ -68,7 +68,7 @@ module.exports = {
     },
 
     getAllheatandsteam: async (facilities, year) => {
-        return db.query("select COALESCE('dbo.heatandsteamde', '')  as  tablename ,S.Id as subcategoryID,S.Item as subcatName,A.Unit as unit,A.Status as status,A.months as month,A.GHGEmission as emission,A.TypeName as typeName,A.* from `dbo.heatandsteamde` A LEFT JOIN  subcategoryseeddata S ON S.Id = A.SubCategorySeedID where A.facilities=? and A.year = ?   ORDER BY A.id DESC ", [facilities, year]);
+        return db.query("SELECT COALESCE('dbo.heatandsteamde', '') AS tablename, S.Id AS subcategoryID, S.Item AS subcatName, A.Unit AS unit, CASE WHEN A.Status = 'P' THEN 'Pending' ELSE 'Approved' END AS status, A.months AS month, A.GHGEmission AS emission, B.Item AS typeName, A.* FROM `dbo.heatandsteamde` A LEFT JOIN subcategoryseeddata S ON S.Id = A.SubCategorySeedID LEFT JOIN `dbo.heatandsteam` B ON B.ID = A.typeID WHERE A.facilities = ? AND A.year = ? ORDER BY A.id DESC;", [facilities, year]);
     },
 
     purchaseGoodsDetails: async (facilities, year) => {

@@ -78,7 +78,7 @@ module.exports = {
         } else {
             where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
         }
-        return db.query("select SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Electricity', '')  as  category   from `dbo.renewableelectricityde` A " + where);
+        return db.query("select SUM(A.GHGEmission) as emission,SUM(A.scop3_GHGEmission) as scope3_emission,A.months AS month_number,COALESCE('Electricity', '')  as  category   from `dbo.renewableelectricityde` A " + where);
     },
 
     getAllheatandsteam: async (facilities, year, finalyeardata) => {
@@ -92,7 +92,7 @@ module.exports = {
         } else {
             where += ` and  A.months IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") and  A.months !="" GROUP BY A.months`
         }
-        return db.query("select  SUM(A.GHGEmission) as emission,A.months AS month_number,COALESCE('Heat and Steam', '')  as  category  from `dbo.heatandsteamde` A " + where);
+        return db.query("select  SUM(A.GHGEmission) as emission,SUM(A.scop3GHGEmission) as scope3_emission,A.months AS month_number,COALESCE('Heat and Steam', '')  as  category  from `dbo.heatandsteamde` A " + where);
     },
 
     purchaseGoodsDetails: async (facilities, year, finalyeardata) => {

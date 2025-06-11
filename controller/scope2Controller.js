@@ -326,6 +326,7 @@ exports.Addheatandsteam = async (req, res) => {
       const refunit = await getheatandsteam(SubCategorySeedID, countrydata[0].CountryId);
 
       let GHGEmission = ""
+      let GHGEmissionFactor = "";
       let GHGEmission1 = ""
       if (refunit.length > 0) {
 
@@ -333,13 +334,14 @@ exports.Addheatandsteam = async (req, res) => {
         let [startYear, endYear] = yearRange.split('-').map(Number);
 
         if (year >= startYear && year <= endYear) {
-
           //    console.log(yearRange,"-----------",startYear, endYear,year)
           GHGEmission = parseFloat(refunit[0].kgCO2e_kwh) * readingValue;
+          GHGEmissionFactor = parseFloat(refunit[0].kgCO2e_kwh)
           GHGEmission1 = parseFloat(refunit[0].scop3_kgCO2e_kwh) * readingValue;
 
         } else if (year == startYear) {
           GHGEmission = parseFloat(refunit[0].kgCO2e_kwh) * readingValue;
+          GHGEmissionFactor = parseFloat(refunit[0].kgCO2e_kwh);
           GHGEmission1 = parseFloat(refunit[0].scop3_kgCO2e_kwh) * readingValue;
         } else {
           return res.json({
@@ -369,6 +371,7 @@ exports.Addheatandsteam = async (req, res) => {
         Unit: unit ? unit : "",
         note: note ? note : "",
         GHGEmission: GHGEmission,
+        GHGEmissionFactor: GHGEmissionFactor ? GHGEmissionFactor : "",
         SubCategorySeedID: SubCategorySeedID ? SubCategorySeedID : "",
         typeID: typeID ? typeID : "",
         readingValue: readingValue ? readingValue : "",

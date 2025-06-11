@@ -182,24 +182,28 @@ exports.GetUnits = async (req, res) => {
       })
     }
 
-    const user_id = req.user.user_id;
-    var data = [];
     let where = `WHERE seedsubcatID = '${id}'`;
     const units = await getSelectedColumn("`dbo.units`", where, "*");
     if (units.length > 0) {
-      units.forEach((val) => {
-        if (val.seedsubcatID == '1' && (val.UnitName === 'Kwh' || val.UnitName === 'KL')) {
-          delete val.ID;
-          delete val.UnitName;
-          delete val.seedsubcatID;
-        } else {
-          data.push({
-            ID: val.ID,
-            UnitName: val.UnitName,
-            seedsubcatID: val.seedsubcatID
-          })
-        }
-      });
+      const removeIDs = [1, 2, 3, 4, 5, 6];
+      let data = [];
+
+      if (removeIDs.includes(Number(id))) {
+        data = units.filter(val =>
+          ['Litres', 'Tonnes', 'KG'].includes(val.UnitName)
+        ).map(val => ({
+          ID: val.ID,
+          UnitName: val.UnitName,
+          seedsubcatID: val.seedsubcatID,
+        }));
+      } else {
+        data = units.map(val => ({
+          ID: val.ID,
+          UnitName: val.UnitName,
+          seedsubcatID: val.seedsubcatID,
+        }));
+      }
+
       return res.json({
         success: true,
         message: "Successfully fetched units",
@@ -2253,7 +2257,7 @@ exports.getAttahcmentsbyFacilityID = async (req, res) => {
         success: false,
       });
     } else {
-      const fileUrl = `${config.base_url}/uploads/`
+      const fileUrl = `${config.live_base_url}/uploads/`
       const [stationaryCombustionde, refrigerants, fireExtinguisher, companyOwnedVehichle, electricity, heatAndSteam, purchasedGoodsAndServices, bussinessTravel] = await Promise.all([
         fetchStationaryCombustiondeByFacilityId(facilityId, fileUrl),
         fetchRefrigerantsByFacilityId(facilityId, fileUrl),
