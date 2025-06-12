@@ -759,7 +759,7 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
               item.year = parsedDate.year();
               item.month = parsedDate.format("MMM");
 
-              if (item.vendor == "" || item.vendor == null || item.vendor == undefined) {
+              if (!item.vendor || !item.vendorspecificEF) {
                 EFVRes = await fetchPurchaseGoodCountryData(item.product_category, countrydata[0].CountryId);
               } else {
                 const findVendor = await findVendorByName(item.vendor, tenant_id);
@@ -2159,12 +2159,14 @@ exports.calculateInvestmentEmission = async (req, res) => {
           let totalEmission =
             ef * investee_company_total_revenue * (equity_share / 100);
           investementData.emission = totalEmission;
+          investementData.emission_factor_used = ef;
         } else if (
           investment_type === "Debt investments" ||
           investment_type === "Project finance"
         ) {
           let totalEmission = ef * project_construction_cost * (equity_project_cost / 100);
           investementData.emission = totalEmission;
+          investementData.emission_factor_used = ef;
         } else {
           return res.json({
             status: false,
@@ -2178,6 +2180,7 @@ exports.calculateInvestmentEmission = async (req, res) => {
         if (investment_type.includes("Equity investments")) {
           let totalEmission = (Number(equity_share) / 100) * (Number(scope1_emission) + Number(scope2_emission));
           investementData.emission = totalEmission;
+          investementData.emission_factor_used = "";
         }
         else if (
           investment_type === "Debt investments" ||
@@ -2185,6 +2188,7 @@ exports.calculateInvestmentEmission = async (req, res) => {
         ) {
           let totalEmission = (Number(equity_project_cost) / 100) * (Number(scope1_emission) + Number(scope2_emission));
           investementData.emission = totalEmission;
+          investementData.emission_factor_used = "";
         }
         else {
           return res.json({

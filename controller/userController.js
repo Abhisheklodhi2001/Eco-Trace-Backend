@@ -74,6 +74,7 @@ const {
   updatePassword,
   getflightEF,
   findFacilityWithCountryCode,
+  findVendorByTenantId,
   getPurchaseCategoriesEf,
   getAllPurchaseCategoriesEf,
   findCompanyOwnedVehicleByItemType,
@@ -2025,7 +2026,6 @@ exports.removeGroup = async (req, res) => {
 exports.getSubGroups = async (req, res) => {
   try {
     const { tenantID } = req.body;
-    console.log(tenantID);
     const schema = Joi.alternatives(
       Joi.object({
         tenantID: [Joi.string().empty().required()],
@@ -2053,7 +2053,7 @@ exports.getSubGroups = async (req, res) => {
       facilities = await getSelectedColumn(
         "`dbo.group` F ",
         where,
-        "F.id, F.country_id, F.groupname as name, F.tenantID, C.Name as country_name, F.is_main_group"
+        "F.id, F.country_id, F.groupname as name, F.tenantID, C.Name as country_name, C.CurrencyCode AS country_code, F.is_main_group"
       );
 
       // console.log("faci;ites", facilities);
@@ -2070,14 +2070,14 @@ exports.getSubGroups = async (req, res) => {
         }
 
         where = " LEFT JOIN `dbo.country` C ON  C.ID = F.country_id  where  F.id = '" + rolesdata[0].group_id + "' OR  member_group_id = '" + rolesdata[0].group_id + "' ";
-        facilities = await getSelectedColumn("`dbo.group` F ", where, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name");
+        facilities = await getSelectedColumn("`dbo.group` F ", where, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name, C.CurrencyCode AS country_code");
 
         // let where3 = " LEFT JOIN `dbo.country` C ON  C.ID = F.country_id  where  F.member_group_id = '" + rolesdata[0].group_id + "'  and F.tenantID = '" + tenantID + "'";
         // othersubGroups = await getSelectedColumn("`dbo.group` F ", where3, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name");
 
         let where3 = " LEFT JOIN `dbo.country` C ON  C.ID = F.country_id  where  F.member_group_id = '" + rolesdata[0].group_id + "'and F.tenantID = '" + tenantID + "'";
 
-        othersubGroups = await getSelectedColumn("`dbo.group` F ", where3, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name");
+        othersubGroups = await getSelectedColumn("`dbo.group` F ", where3, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name, C.CurrencyCode AS country_code");
 
 
         if (othersubGroups.length > 0) {
@@ -2092,7 +2092,7 @@ exports.getSubGroups = async (req, res) => {
         const mainGroup = await getSelectedColumn(
           "`dbo.group` F ",
           where,
-          "F.id, F.country_id, F.groupname as name, F.is_main_group, F.tenantID, C.Name as country_name"
+          "F.id, F.country_id, F.groupname as name, F.is_main_group, F.tenantID, C.Name as country_name, C.CurrencyCode AS country_code"
         );
 
         facilities.push(...mainGroup);
@@ -5683,10 +5683,11 @@ exports.updatePassword = async (req, res) => {
 
 exports.getExcelSheet = async (req, res) => {
   try {
-    const { facility_id } = req.query;
+    const { facility_id, tenantID } = req.query;
 
     const schema = Joi.object({
       facility_id: Joi.number().required(),
+      tenantID: Joi.number().required()
     });
 
     const result = schema.validate(req.query);
@@ -5699,10 +5700,11 @@ exports.getExcelSheet = async (req, res) => {
     }
 
     const findResult = await findFacilityWithCountryCode(facility_id);
-    if (findResult.length === 0) {
-      return res.status(404).json({ error: true, message: "Facility not found", success: false });
-    }
+    if (findResult.length === 0) return res.status(404).json({ error: true, message: "Facility not found", success: false });
 
+    const findVendor = await findVendorByTenantId(tenantID);
+   if(!findVendor) return res.status(404).json({ error: true, message: "Vendor not found", success: false });
+    const modelValues = findVendor.map(val => val.name).join(",");
     const currencyCode = findResult[0].CurrencyCode;
     const unitDropdownValues = `Kg,Tonnes,Litres,${currencyCode}`;
 
@@ -5711,11 +5713,13 @@ exports.getExcelSheet = async (req, res) => {
     const worksheet = workbook.getWorksheet(1);
 
     const unitColumnIndex = 6;
+    const unitColumnIndex1 = 8;
     const lookupColumnIndex = 10;
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
         const unitCell = row.getCell(unitColumnIndex);
+        const unitCell1 = row.getCell(unitColumnIndex1);
         const lookupCell = row.getCell(lookupColumnIndex);
         const dateCell = row.getCell(3);
         if (dateCell.value) {
@@ -5725,6 +5729,18 @@ exports.getExcelSheet = async (req, res) => {
 
           dateCell.value = dateValue;
         }
+
+        if (modelValues.length > 0) {
+          unitCell1.dataValidation = {
+            type: "list",
+            allowBlank: false,
+            formulae: [`"${modelValues}"`],
+            showErrorMessage: true,
+            errorTitle: "Invalid Entry",
+            error: "Please select a valid vendor.",
+          };
+        }
+
         unitCell.dataValidation = {
           type: "list",
           allowBlank: false,
@@ -5750,8 +5766,6 @@ exports.getExcelSheet = async (req, res) => {
       }
     });
   } catch (error) {
-    console.log(error);
-
     return res.status(500).json({ error: true, message: "Internal Server Error " + error.message, success: false });
   }
 };

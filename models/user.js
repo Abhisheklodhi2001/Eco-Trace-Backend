@@ -271,6 +271,10 @@ module.exports = {
         return await db.query('SELECT B.CurrencyCode FROM `dbo.facilities` AS A LEFT JOIN `dbo.country` AS B ON B.ID = A.CountryId WHERE A.ID = ?', [id]);
     },
 
+    findVendorByTenantId: async (id) => {
+        return await db.query("SELECT * FROM `vendor` WHERE user_id = ?;", [id]);
+    },
+
     getPurchaseCategoriesEf: async (product) => {
         const cleanedInput = product.trim();
 
