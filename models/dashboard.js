@@ -346,7 +346,7 @@ module.exports = {
         let where = " where  status = 'S'";
 
         if (facilities != '0') {
-            where += ` and A.facilities IN (${facilities}) and A.year = ${year}` //
+            where += ` and A.facilities IN (${facilities}) and A.year = ${year} AND A.supplier IS NOT NULL ` //
         }
         where += `   GROUP BY A.supplier,A.unit ORDER BY emission DESC`;
         //where += `and A.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") and A.month !="" GROUP BY A.month`

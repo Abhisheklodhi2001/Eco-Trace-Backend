@@ -89,7 +89,7 @@ module.exports = {
 
   insertInvestmentEmission: async (data) => {
     return db.query(
-      "INSERT INTO   `investment_emissions` (category, sub_category, investement_type, calculation_method, equity_share, equity_of_projectcost, emission, emission_factor_used, scope1_emission, scope2_emission, scope1_year, scope2_year, investee_company_total_revenue, project_construction_cost, user_id, status,project_phase,facilities,month,year,sub_group_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+      "INSERT INTO   `investment_emissions` (category, sub_category, investement_type, calculation_method, equity_share, equity_of_projectcost, emission, emission_factor_used, emission_factor_unit, scope1_emission, scope2_emission, scope1_year, scope2_year, investee_company_total_revenue, project_construction_cost, user_id, status,project_phase,facilities,month,year,sub_group_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
       [
         data.category,
         data.sub_category,
@@ -98,7 +98,8 @@ module.exports = {
         data.equity_share,
         data.equity_project_cost,
         data.emission,
-        data.emission_factor_used,
+        data.emissionFactorUsed,
+        data.emission_factor_unit,
         data.scope1_emission,
         data.scope2_emission,
         data.scope1_year,
@@ -106,7 +107,7 @@ module.exports = {
         data.investee_company_total_revenue,
         data.project_construction_cost,
         data.user_id,
-        'S',
+        'P',
         data.project_phase,
         data.facilities,
         data.month,

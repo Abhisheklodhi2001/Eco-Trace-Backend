@@ -1403,29 +1403,10 @@ exports.GetpendingDataEnteries = async (req, res) => {
           }
 
           if (categoryID == "23") {
-            let where = `where investment_type = '${item.category}' and 	broad_categories = '${item.sub_category}'`;
-            const franchiseDetails = await getSelectedData(
-              "investment_types",
-              where,
-              "emission_factor,broad_categories"
-            );
-            let ef = "";
-            if (franchiseDetails.length > 0) {
-              // investementData.sub_category = franchiseDetails[0].broad_categories;
-              ef = franchiseDetails[0].emission_factor;
-
-              if (item.calculation_method === "Average data method") {
-                emissionFactor = ef ? ef : "0.000";
-              } else if (
-                item.calculation_method === "Investment Specific method"
-              ) {
-                emissionFactor =
-                  Number(item.scope1_emission) + Number(item.scope2_emission);
-              }
-            }
+            emissionFactor = item.emission_factor_used;
           }
 
-          item.emissionFactorUsed = parseFloat(emissionFactor).toFixed(4);
+          item.emissionFactorUsed = emissionFactor ? parseFloat(emissionFactor).toFixed(4) : "";
           let mainEmission = item.emission / 1000;
           item.emission = parseFloat(mainEmission).toFixed(4);
         })

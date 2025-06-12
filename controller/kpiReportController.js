@@ -1644,7 +1644,7 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
                     overallAnnualSum3 += Number((item.emission / 1000).toFixed(4)) || null;
                 }
             });
-            waterEmissionByMonth = { annual_total: overallAnnualSum3? Number(overallAnnualSum3.toFixed(4)) : overallAnnualSum3, ...waterEmissionByMonth };
+            waterEmissionByMonth = { annual_total: overallAnnualSum3 ? Number(overallAnnualSum3.toFixed(4)) : overallAnnualSum3, ...waterEmissionByMonth };
 
             return res.json({
                 success: true,
@@ -1812,7 +1812,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
             noOfDieselVehicles?.forEach((item) => {
                 if (item.month_number && noOfDieselVehiclesByMonth.hasOwnProperty(item.month_number)) {
                     noOfDieselVehiclesByMonth[item.month_number] += parseFloat(item.no_of_vehicle) || null;
-                    overallAnnualSum1 += parseFloat(item.no_of_vehicle) || null;
+                    overallAnnualSum1 += Math.round(item.no_of_vehicle / 12) || null;
                 }
             });
             noOfDieselVehiclesByMonth = { annual_total: overallAnnualSum1, ...noOfDieselVehiclesByMonth };
@@ -1820,7 +1820,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
             noOfPetrolVehicles?.forEach((item) => {
                 if (item.month_number && noOfPetrolVehiclesByMonth.hasOwnProperty(item.month_number)) {
                     noOfPetrolVehiclesByMonth[item.month_number] += parseFloat(item.no_of_vehicle) || null;
-                    overallAnnualSum2 += parseFloat(item.no_of_vehicle) || null;
+                    overallAnnualSum2 += Math.round(item.no_of_vehicle / 12) || null;
                 }
             });
             noOfPetrolVehiclesByMonth = { annual_total: overallAnnualSum2, ...noOfPetrolVehiclesByMonth };
@@ -1828,7 +1828,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
             totalVehicles?.forEach((item) => {
                 if (item.month_number && totalVehiclesByMonth.hasOwnProperty(item.month_number)) {
                     totalVehiclesByMonth[item.month_number] += parseFloat(item.no_of_vehicle) || null;
-                    overallAnnualSum3 += parseFloat(item.no_of_vehicle) || null;
+                    overallAnnualSum3 += Math.round(item.no_of_vehicle / 12) || null;
                 }
             });
             totalVehiclesByMonth = { annual_total: overallAnnualSum3, ...totalVehiclesByMonth };

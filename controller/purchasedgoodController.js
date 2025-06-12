@@ -2067,16 +2067,16 @@ exports.calculateInvestmentEmission = async (req, res) => {
 
     const user_id = req.user.user_id;
 
-    let where2 = `where user_id = '${user_id}' and year = '${year}' and status !='R' and  sub_group_id = '${sub_group_id}'  `;
-    const investmentDetails = await getData("investment_emissions", where2);
-    if (investmentDetails.length > 0) {
-      return res.json({
-        status: false,
-        message: "Investment emissions already exists for this year",
-        status: 400,
-      });
+    // let where2 = `where user_id = '${user_id}' and status !='R' and  sub_group_id = '${sub_group_id}'  `;
+    // const investmentDetails = await getData("investment_emissions", where2);
+    // if (investmentDetails.length > 0) {
+    //   return res.json({
+    //     status: false,
+    //     message: "Investment emissions already exists for this year",
+    //     status: 400,
+    //   });
 
-    }
+    // }
 
     let investementData = {
       user_id: tenant_id ? tenant_id : user_id,
@@ -2109,7 +2109,7 @@ exports.calculateInvestmentEmission = async (req, res) => {
       project_construction_cost: project_construction_cost === undefined || project_construction_cost === null ? 0 : project_construction_cost,
       project_phase: project_phase,
 
-      unit: unit === undefined || unit === null ? 0 : unit,
+      unit: unit === undefined || unit === null ? "" : unit,
     };
     let countrydata = await countryBysubgroup(sub_group_id);
 
@@ -2159,19 +2159,20 @@ exports.calculateInvestmentEmission = async (req, res) => {
           let totalEmission =
             ef * investee_company_total_revenue * (equity_share / 100);
           investementData.emission = totalEmission;
-          investementData.emission_factor_used = ef;
+          investementData.emissionFactorUsed = ef;
+          investementData.emission_factor_unit = "kg CO2e/" + unit;
         } else if (
           investment_type === "Debt investments" ||
           investment_type === "Project finance"
         ) {
           let totalEmission = ef * project_construction_cost * (equity_project_cost / 100);
           investementData.emission = totalEmission;
-          investementData.emission_factor_used = ef;
+          investementData.emissionFactorUsed = ef;
+          investementData.emission_factor_unit = "kg CO2e/" + unit;
         } else {
           return res.json({
             status: false,
-            msg: " Please select a valid investment type",
-            error: "Incorrect parameter passed",
+            message: " Please select a valid investment type",
             status: 500,
           });
         }
@@ -2179,31 +2180,31 @@ exports.calculateInvestmentEmission = async (req, res) => {
       else if (calculation_method === "Investment Specific method") {
         if (investment_type.includes("Equity investments")) {
           let totalEmission = (Number(equity_share) / 100) * (Number(scope1_emission) + Number(scope2_emission));
-          investementData.emission = totalEmission;
-          investementData.emission_factor_used = "";
+          investementData.emission = totalEmission * 1000;
+          investementData.emissionFactorUsed = "";
+          investementData.emission_factor_unit = "";
         }
         else if (
           investment_type === "Debt investments" ||
           investment_type === "Project finance"
         ) {
           let totalEmission = (Number(equity_project_cost) / 100) * (Number(scope1_emission) + Number(scope2_emission));
-          investementData.emission = totalEmission;
-          investementData.emission_factor_used = "";
+          investementData.emission = totalEmission * 1000;
+          investementData.emissionFactorUsed = "";
+          investementData.emission_factor_unit = "";
         }
         else {
           return res.json({
             status: false,
-            msg: " Please select a valid investment type",
-            error: "Incorrect parameter passed",
+            message: " Please select a valid investment type",
             status: 500,
           });
         }
       }
     } else {
       return res.json({
-        status: true,
-        msg: "Some problem occured while selecting categories and sub-ctegories , Please check the input params category and sub_category_id",
-        error: "Parameters Incorrect",
+        status: false,
+        message: "EF not found for this country",
         status: 500,
       });
     }
