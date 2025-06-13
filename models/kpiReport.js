@@ -252,6 +252,16 @@ module.exports = {
         return db.query("select SUM(A.emission) as emission,A.month AS month_number,COALESCE('Water Supply and Treatment', '')  as  category from water_supply_treatment_category A " + where);
     },
 
+    water_supply_treatment_categoryDetailsemission: async (facilities, year) => {
+        let where = "";
+        where = ` where  A.year = '${year}' and status = 'S' `;
+        if (facilities != '0') {
+            where += `  and  A.facilities IN (${facilities})`
+        }
+
+        return db.query("select A.* from water_supply_treatment_category A " + where);
+    },
+
     employee_commuting_categoryDetails: async (facilities, year, finalyeardata) => {
         let where = "";
         where = ` where  A.year = '${year}' and status = 'S'`;

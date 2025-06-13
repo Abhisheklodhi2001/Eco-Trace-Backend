@@ -52,6 +52,7 @@ exports.GhgScopewiseEmssion = async (req, res) => {
             let categoryTotals3 = {};
             let array1 = [];
             let array2 = [];
+            let array3 = [];
 
             let categorydata, categorydata2, categorydata3, categorydata4, categorydata5, categorydata6, categorydata7, categorydata8, categorydata9, categorydata10, categorydata11, categorydata12, categorydata13, categorydata14, categorydata15, categorydata16, categorydata17, categorydata18, categorydata19, categorydata20, categorydata21 = "";
 
@@ -237,11 +238,73 @@ exports.GhgScopewiseEmssion = async (req, res) => {
                     }
                 }
 
-                const resultArray2 = Object.keys(categoryTotals3).map((category) => ({
-                    emission: parseFloat(categoryTotals3[category].toFixed(1)),
-                    category,
-                    scope: "scope3",
-                }));
+                if (categorydata5.length > 0) {
+                    for (item of categorydata5) {
+                        if (item.month_number &&
+                            monthlyData2.hasOwnProperty(item.month_number)) {
+                            monthlyData2[item.month_number] += parseFloat(
+                                item?.scope3_emission ? item?.scope3_emission : 0
+                            );
+                            let emissionFixed = parseFloat(
+                                item?.scope3_emission ? item?.scope3_emission : 0
+                            );
+
+                            let category = item.category;
+                            if (!categoryTotals3[category]) {
+                                categoryTotals3[category] = 0;
+                            }
+                            categoryTotals3[category] += emissionFixed;
+                        }
+                    }
+                }
+
+                if (categorydata6.length > 0) {
+                    for (item of categorydata6) {
+                        if (item.month_number &&
+                            monthlyData2.hasOwnProperty(item.month_number)) {
+                            monthlyData2[item.month_number] += parseFloat(
+                                item?.scope3_emission ? item?.scope3_emission : 0
+                            );
+                            let emissionFixed = parseFloat(
+                                item?.scope3_emission ? item?.scope3_emission : 0
+                            );
+
+                            let category = item.category;
+                            if (!categoryTotals3[category]) {
+                                categoryTotals3[category] = 0;
+                            }
+                            categoryTotals3[category] += emissionFixed;
+                        }
+                    }
+                }
+
+                const combinedCategories = ['Stationary Combustion', 'Electricity', 'Heat and Steam'];
+
+                let combinedEmission = 0;
+                let combinedEmission1 = 0;
+                const resultArray2 = [];
+
+                Object.keys(categoryTotals3).forEach((category) => {
+                    const emission = categoryTotals3[category];
+
+                    if (combinedCategories.includes(category)) {
+                        combinedEmission += emission;
+                    } else {
+                        resultArray2.push({
+                            emission: parseFloat(emission.toFixed(3) / 1000),
+                            category,
+                            scope: "scope3",
+                        });
+                    }
+                });
+
+                if (combinedEmission > 0) {
+                    resultArray2.unshift({
+                        emission: parseFloat(combinedEmission.toFixed(3) / 1000),
+                        category: 'Fuel and Energy-related Activities',
+                        scope: 'scope3',
+                    });
+                }
 
                 let newDAta = [];
                 let newDAta2 = [];
@@ -264,10 +327,19 @@ exports.GhgScopewiseEmssion = async (req, res) => {
                 }
 
                 for (let category in categoryTotals3) {
-                    newDAta3.push(
-                        `${category} - ${parseFloat(
-                            categoryTotals3[category] / 1000
-                        ).toFixed(3)} Tonnes`
+                    const emission = parseFloat(categoryTotals3[category]);
+                    if (combinedCategories.includes(category)) {
+                        combinedEmission1 += emission;
+                    } else {
+                        newDAta3.push(
+                            `${category} - ${(emission / 1000).toFixed(3)} Tonnes`
+                        );
+                    }
+                }
+
+                if (combinedEmission1 > 0) {
+                    newDAta3.unshift(
+                        `Fuel and Energy-related Activities - ${(combinedEmission1 / 1000).toFixed(3)} Tonnes`
                     );
                 }
 
@@ -374,8 +446,7 @@ exports.GhgScopewiseEmssion = async (req, res) => {
                     seriesScope2: Object.values(categoryTotals2).map((num) => parseFloat(num.toFixed(1) / 1000)
                     ),
                     labelScope2: newDAta2,
-                    seriesScope3: Object.values(categoryTotals3).map((num) => parseFloat(num.toFixed(1) / 1000)
-                    ),
+                    seriesScope3: resultArray2.map((val) => parseFloat((val.emission / 1000).toFixed(4))),
                     labelScope3: newDAta3,
                     waste_disposed: parseFloat(totalsum),
                     waste_disposed_unit: unit,

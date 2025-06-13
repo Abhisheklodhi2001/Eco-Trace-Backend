@@ -1601,11 +1601,12 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
                 waterEmissionByMonth[month] = null;
             });
 
-            const [waterDischarge, waterWithdrawal, waterTreatment, waterEmission] = await Promise.all([
+            const [waterDischarge, waterWithdrawal, waterTreatment, waterEmission, waterSupplyTreatment] = await Promise.all([
                 kpiModel.water_discharge_by_destination(facilities, year, finalyeardata),
                 kpiModel.water_withdrawl_by_source(facilities, year, finalyeardata),
                 kpiModel.water_supply_treatment_category(facilities, year, finalyeardata),
                 kpiModel.water_supply_treatment_categoryDetails(facilities, year, finalyeardata),
+                kpiModel.water_supply_treatment_categoryDetailsemission(facilities, year)
             ]);
 
             waterDischarge?.forEach((item) => {
@@ -1615,20 +1616,6 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
                 }
             });
             waterDischargeByMonth = { annual_total: overallAnnualSum ? Number(overallAnnualSum.toFixed(4)) : overallAnnualSum, ...waterDischargeByMonth };
-
-            waterWithdrawal?.forEach((item) => {
-                if (item.month_number && waterUsageByMonth.hasOwnProperty(item.month_number)) {
-                    waterUsageByMonth[item.month_number] += parseFloat(item.water_withdrawl) || null;
-                    overallAnnualSum1 += parseFloat(item.water_withdrawl) || null;
-                }
-            });
-            waterUsageByMonth = { annual_total: overallAnnualSum1 ? Number(overallAnnualSum1.toFixed(4)) : overallAnnualSum1, ...waterUsageByMonth };
-
-            Object.keys(waterUsageByMonth).forEach((month) => {
-                if (waterDischargeByMonth[month]) {
-                    waterUsageByMonth[month] -= waterDischargeByMonth[month];
-                }
-            });
 
             waterTreatment?.forEach((item) => {
                 if (item.month_number && waterTreatmentByMonth.hasOwnProperty(item.month_number)) {
@@ -1646,13 +1633,37 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
             });
             waterEmissionByMonth = { annual_total: overallAnnualSum3 ? Number(overallAnnualSum3.toFixed(4)) : overallAnnualSum3, ...waterEmissionByMonth };
 
+            for (const item of waterSupplyTreatment) {
+                let where1 = `WHERE G.water_supply_treatment_id = '${item.id}' AND G.water_withdrawl != ''`;
+
+                if (finalyeardata == '2') {
+                    where1 += ` AND G.month IN ("Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar") AND G.month != '' GROUP BY G.water_withdrawl`;
+                } else {
+                    where1 += ` AND G.month IN ("Jan","Feb","Mar","Apr","May","Jun","July","Aug","Sep","Oct","Nov","Dec") AND G.month != '' GROUP BY G.water_withdrawl`;
+                }
+
+                const water_withdrawl = await getSelectedColumn(
+                    "water_withdrawl_by_source G",
+                    where1,
+                    "G.totalwaterwithdrawl, G.water_withdrawl, G.month AS month_number"
+                );
+
+                water_withdrawl?.forEach((item) => {
+                    if (item.month_number && waterUsageByMonth.hasOwnProperty(item.month_number)) {
+                        waterUsageByMonth[item.month_number] += parseFloat(item.totalwaterwithdrawl) || null;
+                        overallAnnualSum1 += parseFloat(item.totalwaterwithdrawl) || null;
+                    }
+                });
+                waterUsageByMonth = { annual_total: overallAnnualSum1 ? Number(overallAnnualSum1.toFixed(4)) : overallAnnualSum1, ...waterUsageByMonth };
+            }
+
             return res.json({
                 success: true,
                 message: "Succesfully fetched kpi inventory water",
                 data: {
-                    waterDischarge: Object.values(waterDischargeByMonth),
+                    waterTreatment: Object.values(waterDischargeByMonth),
                     waterWithdrawal: Object.values(waterUsageByMonth),
-                    waterTreatment: Object.values(waterTreatmentByMonth),
+                    waterDischarge: Object.values(waterTreatmentByMonth),
                     waterEmission: Object.values(waterEmissionByMonth)
                 },
                 month: month,
@@ -1812,7 +1823,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
             noOfDieselVehicles?.forEach((item) => {
                 if (item.month_number && noOfDieselVehiclesByMonth.hasOwnProperty(item.month_number)) {
                     noOfDieselVehiclesByMonth[item.month_number] += parseFloat(item.no_of_vehicle) || null;
-                    overallAnnualSum1 += Math.round(item.no_of_vehicle / 12) || null;
+                    overallAnnualSum1 += Math.round(item.no_of_vehicle / noOfDieselVehicles.length) || null;
                 }
             });
             noOfDieselVehiclesByMonth = { annual_total: overallAnnualSum1, ...noOfDieselVehiclesByMonth };
@@ -1820,7 +1831,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
             noOfPetrolVehicles?.forEach((item) => {
                 if (item.month_number && noOfPetrolVehiclesByMonth.hasOwnProperty(item.month_number)) {
                     noOfPetrolVehiclesByMonth[item.month_number] += parseFloat(item.no_of_vehicle) || null;
-                    overallAnnualSum2 += Math.round(item.no_of_vehicle / 12) || null;
+                    overallAnnualSum2 += Math.round(item.no_of_vehicle / noOfPetrolVehicles.length) || null;
                 }
             });
             noOfPetrolVehiclesByMonth = { annual_total: overallAnnualSum2, ...noOfPetrolVehiclesByMonth };
@@ -1828,7 +1839,7 @@ exports.kpiInventoryGeneralData = async (req, res) => {
             totalVehicles?.forEach((item) => {
                 if (item.month_number && totalVehiclesByMonth.hasOwnProperty(item.month_number)) {
                     totalVehiclesByMonth[item.month_number] += parseFloat(item.no_of_vehicle) || null;
-                    overallAnnualSum3 += Math.round(item.no_of_vehicle / 12) || null;
+                    overallAnnualSum3 += Math.round(item.no_of_vehicle / totalVehicles.length) || null;
                 }
             });
             totalVehiclesByMonth = { annual_total: overallAnnualSum3, ...totalVehiclesByMonth };
