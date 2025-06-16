@@ -1655,6 +1655,12 @@ exports.kpiInventoryWaterUsage = async (req, res) => {
                     }
                 });
                 waterUsageByMonth = { annual_total: overallAnnualSum1 ? Number(overallAnnualSum1.toFixed(4)) : overallAnnualSum1, ...waterUsageByMonth };
+
+                Object.keys(waterUsageByMonth).forEach((month) => {
+                    if (waterTreatmentByMonth[month]) {
+                        waterUsageByMonth[month] -= waterTreatmentByMonth[month];
+                    }
+                });
             }
 
             return res.json({

@@ -714,13 +714,14 @@ exports.purchaseGoods = async (req, res) => {
 
 exports.bulkPurchaseGoodsUpload = async (req, res) => {
   try {
-    const { facilities, jsonData, is_annual, productcodestandard, tenant_id } = req.body;
+    const { facilities, jsonData, is_annual, productcodestandard, tenant_id, super_tenant_id } = req.body;
     const schema = Joi.object({
       facilities: Joi.string().allow('').required(),
       jsonData: Joi.string().allow('').required(),
       is_annual: Joi.string().allow('').required(),
       productcodestandard: Joi.string().allow('').required(),
       tenant_id: Joi.number().required(),
+      super_tenant_id: Joi.number().required(),
       file: Joi.string().optional()
     });
     const result = schema.validate(req.body);
@@ -750,75 +751,87 @@ exports.bulkPurchaseGoodsUpload = async (req, res) => {
       let data = JSON.parse(jsonData);
 
       if (data?.length > 0) {
-        await Promise.all(
-          data.map(async (item) => {
-            if (item.is_find == true) {
-              let emission = '';
-              let EFVRes;
-              const parsedDate = moment(item.purchase_date, "DD-MM-YYYY");
-              item.year = parsedDate.year();
-              item.month = parsedDate.format("MMM");
+        await data.reduce(async (previousPromise, item) => {
+          await previousPromise;
 
-              if (!item.vendor || !item.vendorspecificEF) {
-                EFVRes = await fetchPurchaseGoodCountryData(item.product_category, countrydata[0].CountryId);
+          if (item.is_find == true) {
+            let emission = '';
+            let EFVRes;
+
+            const parsedDate = moment(item.purchase_date, "DD-MM-YYYY");
+            item.year = parsedDate.year();
+            item.month = parsedDate.format("MMM");
+
+            if (!item.vendor && !item.vendorspecificEF) {
+              EFVRes = await fetchPurchaseGoodCountryData(item.product_category, countrydata[0].CountryId);
+            } else {
+              const findVendor = await findVendorByName(item.vendor, super_tenant_id);
+              let vendorId;
+              if (findVendor.length > 0) {
+                vendorId = findVendor[0].id;
               } else {
-                const findVendor = await findVendorByName(item.vendor, tenant_id);
-                const vendorAdd = findVendor.length > 0 ? findVendor[0] : await addVendorName(item.vendor, tenant_id, countrydata[0].CountryId)
-                item.vendorId = vendorAdd.insertId;
-                EFVRes = await fetchPurchaseGoodCountryData(item.product_category, vendorAdd.affectedRows > 0 ? countrydata[0].CountryId : vendorAdd.country_id);
+                const now = new Date();
+                const yearMonth = now.getFullYear().toString() + String(now.getMonth() + 1).padStart(2, '0');
+                const uniqueNumber = yearMonth + Math.floor(1000 + Math.random() * 9000);
+                const vendorInsert = await addVendorName(item.vendor, uniqueNumber, super_tenant_id, countrydata[0].CountryId);
+                vendorId = vendorInsert.insertId;
               }
+              item.vendorId = vendorId;
 
-              if (EFVRes.length > 0) {
-                if (item.unit == 'Kg') {
-                  emission = item.vendorspecificEF == "" || '' ? EFVRes[0]?.EFkgC02e_kg : item.vendorspecificEF;
-                } else if (item.unit == 'Tonnes') {
-                  emission = item.vendorspecificEF == "" || '' ? EFVRes[0]?.EFkgC02e_tonnes : item.vendorspecificEF;
-                } else if (item.unit == 'Litres') {
-                  emission = item.vendorspecificEF == " " || '' ? EFVRes[0]?.EFkgC02e_litres : item.vendorspecificEF;
-                } else {
-                  emission = item.vendorspecificEF == "" || '' ? EFVRes[0]?.EFkgC02e_ccy : item.vendorspecificEF;
-                }
-              }
+              EFVRes = await fetchPurchaseGoodCountryData(item.product_category, countrydata[0].CountryId);
+            }
 
-              let purchasegoods = "";
-              let productcode = "";
-
-              if (item.product_category) {
-                where = ` where id = '${item.product_category}'`;
-                purchasegoods = await getSelectedData("purchase_goods_categories_ef", where, 'HSN_code');
-                productcode = purchasegoods[0]?.HSN_code;
+            if (EFVRes.length > 0) {
+              if (item.unit == 'Kg') {
+                emission = item.vendorspecificEF == "" || '' ? EFVRes[0]?.EFkgC02e_kg : item.vendorspecificEF;
+              } else if (item.unit == 'Tonnes') {
+                emission = item.vendorspecificEF == "" || '' ? EFVRes[0]?.EFkgC02e_tonnes : item.vendorspecificEF;
+              } else if (item.unit == 'Litres') {
+                emission = item.vendorspecificEF == "" || '' ? EFVRes[0]?.EFkgC02e_litres : item.vendorspecificEF;
               } else {
-                productcode = "";
-              }
-
-              if (is_annual == '0' && item.month != 'Invalid date') {
-                const rowData = {
-                  typeofpurchase: item.typeofpurchase ? item.typeofpurchase : "",
-                  product_category: item.product_category ? item.product_category : "",
-                  is_annual: is_annual ? is_annual : "",
-                  productcodestandard: productcodestandard ? productcodestandard : "",
-                  productcode: item.productcode ? item.productcode : "",
-                  valuequantity: item.valuequantity ? item.valuequantity : "",
-                  unit: item.unit ? item.unit : "",
-                  vendor_id: item.vendorId ? item.vendorId : null,
-                  supplier: item.vendor ? item.vendor : null,
-                  supplierspecificEF: item.vendorspecificEF ? item.vendorspecificEF : null,
-                  supplierunit: item.vendorunit ? item.vendorunit : "",
-                  emission: emission ? (emission * item.valuequantity) : 0,
-                  emission_factor_used: emission ? emission : 0,
-                  FileName: req.file != undefined ? req.file.filename : null,
-                  user_id: user_id,
-                  status: 'P',
-                  facilities: facilities,
-                  year: item.year,
-                  month: item.month
-                };
-                array.push(rowData);
+                emission = item.vendorspecificEF == "" || '' ? EFVRes[0]?.EFkgC02e_ccy : item.vendorspecificEF;
               }
             }
-          })
-        );
+
+            let purchasegoods = "";
+            let productcode = "";
+
+            if (item.product_category) {
+              where = ` where id = '${item.product_category}'`;
+              purchasegoods = await getSelectedData("purchase_goods_categories_ef", where, 'HSN_code');
+              productcode = purchasegoods[0]?.HSN_code;
+            } else {
+              productcode = "";
+            }
+
+            if (is_annual == '0' && item.month != 'Invalid date') {
+              const rowData = {
+                typeofpurchase: item.typeofpurchase ? item.typeofpurchase : "",
+                product_category: item.product_category ? item.product_category : "",
+                is_annual: is_annual ? is_annual : "",
+                productcodestandard: productcodestandard ? productcodestandard : "",
+                productcode: item.productcode ? item.productcode : "",
+                valuequantity: item.valuequantity ? item.valuequantity : "",
+                unit: item.unit ? item.unit : "",
+                vendor_id: item.vendorId ? item.vendorId : null,
+                supplier: item.vendor ? item.vendor : null,
+                supplierspecificEF: item.vendorspecificEF ? item.vendorspecificEF : null,
+                supplierunit: item.vendorunit ? item.vendorunit : "",
+                emission: emission ? (emission * item.valuequantity) : 0,
+                emission_factor_used: emission ? emission : 0,
+                FileName: req.file != undefined ? req.file.filename : null,
+                user_id: user_id,
+                status: 'P',
+                facilities: facilities,
+                year: item.year,
+                month: item.month
+              };
+              array.push(rowData);
+            }
+          }
+        }, Promise.resolve());
       }
+
 
       if (arrrymessgae.length > 0) {
         return res.json({

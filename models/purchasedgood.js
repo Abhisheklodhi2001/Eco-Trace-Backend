@@ -26,11 +26,11 @@ module.exports = {
   },
 
   findVendorByName: async (vendor_name, tenant_id) => {
-    return await db.query('SELECT id AS insertId, vendor.* FROM `vendor` WHERE name = ? AND user_id = ?', [vendor_name, tenant_id]);
+    return await db.query('SELECT id AS insertId, vendor.* FROM `vendor` WHERE name LIKE ? AND user_id = ?', [`%${vendor_name}%`, tenant_id]);
   },
 
-  addVendorName: async (vendor_name, tenant_id, country_id) => {
-    return await db.query('INSERT INTO `vendor`(`name`, `user_id`, `country_id`) VALUES (?,?,?)', [vendor_name, tenant_id, country_id])
+  addVendorName: async (vendor_name, uniqueNumber, tenant_id, country_id) => {
+    return await db.query('INSERT INTO `vendor`(`name`, refer_id, `user_id`, `country_id`) VALUES (?,?,?,?)', [vendor_name, uniqueNumber, tenant_id, country_id])
   },
 
   fetchVendorCountry: async (vendor) => {
