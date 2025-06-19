@@ -112,7 +112,6 @@ router.post("/addpackageBySuperadmin", auth, userController.addpackageBySuperadm
 
 router.post("/getSubGroups", auth, userController.getSubGroups);
 
-
 router.post("/Updatecountry", auth, userController.Updatecountry);
 
 router.post("/AddSuperAdmin", auth, userController.AddSuperAdmin);

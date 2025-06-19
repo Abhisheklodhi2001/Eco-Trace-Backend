@@ -1485,7 +1485,7 @@ exports.ScopewiseEmssion = async (req, res) => {
             combinedEmission += emission;
           } else {
             resultArray2.push({
-              emission:parseFloat(emission.toFixed(3) / 1000),
+              emission: parseFloat(emission.toFixed(3) / 1000),
               category,
               scope: "scope3",
             });
@@ -4968,38 +4968,38 @@ exports.getFacilityByTenantIdMainGroup = async (req, res) => {
         success: false,
       });
     } else {
-      let where11 =
-        ' where G.tenantID = "' +
-        tenantID +
-        '" and (is_subgroup = 0 AND is_main_group = 0 AND group_by =0) ';
-      const facilities = await getSelectedColumn(
-        "`dbo.group` G",
-        where11,
-        " G.groupname as AssestName,G.tenantID,G.id"
-      );
+      // let where11 =
+      //   ' where G.tenantID = "' +
+      //   tenantID +
+      //   '" and (is_subgroup = 0 AND is_main_group = 0 AND group_by =0) ';
+      // const facilities = await getSelectedColumn(
+      //   "`dbo.group` G",
+      //   where11,
+      //   " G.groupname as AssestName,G.tenantID,G.id"
+      // );
 
-      if (facilities.length > 0) {
-        await Promise.all(
-          facilities.map(async (item) => {
-            item.name = item.AssestName;
-            let where1 = ' where G.groupId = "' + item.id + '"';
-            const groupmap = await getSelectedColumn(
-              "`dbo.groupmapping` G",
-              where1,
-              " G.facilityId"
-            );
+      // if (facilities.length > 0) {
+      //   await Promise.all(
+      //     facilities.map(async (item) => {
+      //       item.name = item.AssestName;
+      //       let where1 = ' where G.groupId = "' + item.id + '"';
+      //       const groupmap = await getSelectedColumn(
+      //         "`dbo.groupmapping` G",
+      //         where1,
+      //         " G.facilityId"
+      //       );
 
-            item.ID = groupmap?.map((item) => String(item.facilityId));
-          })
-        );
-      }
+      //       item.ID = groupmap?.map((item) => String(item.facilityId));
+      //     })
+      //   );
+      // }
 
       let where1 =
-        ' where G.tenantID = "' +
+        'LEFT JOIN `dbo.group` AS G ON G.tenantID = A.tenantID where A.tenant_id = "' +
         tenantID +
-        '" and (is_subgroup =1 or is_main_group=1)';
+        '" and (G.is_subgroup =1 or G.is_main_group=1)';
       const groupmap = await getSelectedColumn(
-        "`dbo.group` G",
+        "`dbo.aspnetuserroles` A",
         where1,
         " G.groupname as AssestName,G.tenantID,G.id, G.is_subgroup, G.is_main_group"
       );
@@ -5030,16 +5030,15 @@ exports.getFacilityByTenantIdMainGroup = async (req, res) => {
           })
         );
       }
-      let array = [...facilities, ...groupmap];
+      let array = [...groupmap];
 
       if (array) {
-        return res.json(array);
-        // return res.json({
-        //     success: true,
-        //     message: "Succesfully fetched facilities",
-        //     categories: array,
-        //     status: 200,
-        // });
+        return res.json({
+          success: true,
+          message: "Succesfully fetched facilities",
+          categories: array,
+          status: 200,
+        });
       } else {
         return res.json({
           success: false,
@@ -5110,73 +5109,75 @@ exports.getFacilityGroupsByTenantIdAdmin = async (req, res) => {
         success: false,
       });
     } else {
-      let where11 =
-        ' where G.tenantID = "' + tenantID + '" and is_subgroup = 0';
-      const facilities = await getSelectedColumn(
-        "`dbo.group` G",
-        where11,
-        " G.groupname as AssestName,G.tenantID,G.id"
+      // let where11 =
+      //   ' where G.tenantID = "' + tenantID + '" and is_subgroup = 0';
+      // const facilities = await getSelectedColumn(
+      //   "`dbo.group` G",
+      //   where11,
+      //   " G.groupname as AssestName,G.tenantID,G.id"
+      // );
+
+      // if (facilities.length > 0) {
+      //   await Promise.all(
+      //     facilities.map(async (item) => {
+      //       item.name = item.AssestName;
+      //       let where1 = ' where G.groupId = "' + item.id + '"';
+      //       const groupmap = await getSelectedColumn(
+      //         "`dbo.groupmapping` G",
+      //         where1,
+      //         " G.facilityId"
+      //       );
+
+      //       item.ID = groupmap?.map((item) => String(item.facilityId));
+      //     })
+      //   );
+      // }
+      let where1 =
+        'LEFT JOIN `dbo.group` AS G ON G.tenantID = A.tenantID where A.tenant_id = "' +
+        tenantID +
+        '" and (G.is_subgroup =1 or G.is_main_group=1)';
+      const groupmap = await getSelectedColumn(
+        "`dbo.aspnetuserroles` A",
+        where1,
+        " G.groupname as AssestName,G.tenantID,G.id, G.is_subgroup, G.is_main_group"
       );
 
-      if (facilities.length > 0) {
+      if (groupmap.length > 0) {
         await Promise.all(
-          facilities.map(async (item) => {
-            item.name = item.AssestName;
-            let where1 = ' where G.groupId = "' + item.id + '"';
-            const groupmap = await getSelectedColumn(
-              "`dbo.groupmapping` G",
-              where1,
-              " G.facilityId"
-            );
-
-            item.ID = groupmap?.map((item) => String(item.facilityId));
-          })
-        );
-      }
-      const getGroup = await getGroupIdByTenant(tenantID);
-      if (getGroup.length > 0) {
-        groupId = getGroup[0]?.group_id;
-        let where1 =
-          ' where G.ID = "' +
-          groupId +
-          '" or member_group_id = "' +
-          groupId +
-          '"';
-        const groupmap = await getSelectedColumn(
-          "`dbo.group` G",
-          where1,
-          " G.groupname as AssestName,G.tenantID,G.id, G.is_subgroup, G.is_main_group"
-        );
-
-        if (groupmap.length > 0) {
-          await Promise.all(
-            groupmap.map(async (item) => {
+         groupmap.map(async (item) => {
+            var groupmap1 = [];
+            if (item.is_main_group == 1) {
               item.name = item.AssestName;
-              let where1 = ' where G.sub_group_id = "' + item.id + '"';
-              const groupmap1 = await getSelectedColumn(
+              let where1 = ' where G.groupId = "' + item.id + '"';
+              groupmap1 = await getSelectedColumn(
                 "`dbo.groupmapping` G",
                 where1,
                 " G.facilityId"
               );
+            }
+            else {
+              item.name = item.AssestName;
+              let where1 = ' where G.sub_group_id = "' + item.id + '"';
+              groupmap1 = await getSelectedColumn(
+                "`dbo.groupmapping` G",
+                where1,
+                " G.facilityId"
+              );
+            }
+            item.ID = groupmap1?.map((item) => String(item.facilityId));
+          })
+        );
+      }
+      let array = [...groupmap];
 
-              item.ID = groupmap1?.map((item) => String(item.facilityId));
-            })
-          );
-        }
-        let array = [...facilities, ...groupmap];
-
-        if (array) {
-          return res.json(array);
-        } else {
-          return res.json({
-            success: false,
-            message: "data not found!",
-            status: 200,
-          });
-        }
-      } else {
-        let array = [...facilities];
+      if (array) {
         return res.json(array);
+      } else {
+        return res.json({
+          success: false,
+          message: "data not found!",
+          status: 200,
+        });
       }
     }
   } catch (err) {

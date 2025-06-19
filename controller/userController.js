@@ -2037,10 +2037,9 @@ exports.getSubGroups = async (req, res) => {
         "F.id, F.country_id, F.groupname as name, F.tenantID, C.Name as country_name, C.CurrencyCode AS country_code, F.is_main_group"
       );
 
-      // console.log("faci;ites", facilities);
       if (facilities.length == 0) {
         let where1 = " where  A.tenant_id = '" + tenantID + "'";
-        const rolesdata = await getSelectedColumn("`dbo.aspnetuserroles` A ", where1, "A.group_id");
+        const rolesdata = await getSelectedColumn("`dbo.aspnetuserroles` A ", where1, "A.group_id, A.tenantID");
 
         if (rolesdata[0].group_id == 0) {
           return res.json({
@@ -2050,20 +2049,26 @@ exports.getSubGroups = async (req, res) => {
           });
         }
 
-        where = " LEFT JOIN `dbo.country` C ON  C.ID = F.country_id  where  F.id = '" + rolesdata[0].group_id + "' OR  member_group_id = '" + rolesdata[0].group_id + "' ";
-        facilities = await getSelectedColumn("`dbo.group` F ", where, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name, C.CurrencyCode AS country_code");
+        // let where =
+        //   " LEFT JOIN `dbo.country` C ON  C.ID = F.country_id  where  F.is_subgroup = '1' and F.tenantID = '" +
+        //   rolesdata[0].tenantID +
+        //   "' ";
+        // facilities = await getSelectedColumn("`dbo.group` F ", where, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name, C.CurrencyCode AS country_code");
 
         // let where3 = " LEFT JOIN `dbo.country` C ON  C.ID = F.country_id  where  F.member_group_id = '" + rolesdata[0].group_id + "'  and F.tenantID = '" + tenantID + "'";
         // othersubGroups = await getSelectedColumn("`dbo.group` F ", where3, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name");
 
-        let where3 = " LEFT JOIN `dbo.country` C ON  C.ID = F.country_id  where  F.member_group_id = '" + rolesdata[0].group_id + "'and F.tenantID = '" + tenantID + "'";
+        let where2 =
+          " LEFT JOIN `dbo.country` C ON  C.ID = F.country_id  where  (F.is_main_group = '1' OR F.is_subgroup = '1') and F.tenantID = '" +
+          rolesdata[0].tenantID +
+          "' ";
+        const mainGroup = await getSelectedColumn(
+          "`dbo.group` F ",
+          where2,
+          "F.id, F.country_id, F.groupname as name, F.is_main_group, F.tenantID, C.Name as country_name, C.CurrencyCode AS country_code"
+        );
 
-        othersubGroups = await getSelectedColumn("`dbo.group` F ", where3, "F.id ,F.country_id,F.is_main_group,F.groupname as name,F.tenantID,C.Name as country_name, C.CurrencyCode AS country_code");
-
-
-        if (othersubGroups.length > 0) {
-          facilities.push(...othersubGroups);
-        }
+        facilities.push(...mainGroup);
       } else {
         facilities = [];
         let where =
@@ -3050,10 +3055,11 @@ exports.Updateregister = async (req, res) => {
 
 exports.getAllusers = async (req, res) => {
   try {
-    const { tenantId } = req.body;
+    const { tenantId, search } = req.body;
     const schema = Joi.alternatives(
       Joi.object({
         tenantId: [Joi.string().empty().required()],
+        search: [Joi.string().empty().required().allow('')]
       })
     );
     const result = schema.validate(req.body);
@@ -3067,7 +3073,7 @@ exports.getAllusers = async (req, res) => {
         success: false,
       })
     } else {
-      const getgroup = await fetchAllusers(tenantId);
+      const getgroup = await fetchAllusers(tenantId, search);
       var facility = [];
       if (getgroup.length > 0) {
         await Promise.all(
@@ -3137,7 +3143,12 @@ exports.getAllusers = async (req, res) => {
             item.password = "";
           })
         );
-        return res.json(getgroup);
+        return res.json({
+          success: true,
+          message: "Retrived get all users successfully",
+          status: 200,
+          data: getgroup
+        });
       } else {
         return res.json({
           success: false,
@@ -5684,7 +5695,7 @@ exports.getExcelSheet = async (req, res) => {
     if (findResult.length === 0) return res.status(404).json({ error: true, message: "Facility not found", success: false });
 
     const findVendor = await findVendorByTenantId(tenantID);
-   if(!findVendor) return res.status(404).json({ error: true, message: "Vendor not found", success: false });
+    if (!findVendor) return res.status(404).json({ error: true, message: "Vendor not found", success: false });
     const modelValues = findVendor.map(val => val.name).join(",");
     const currencyCode = findResult[0].CurrencyCode;
     const unitDropdownValues = `Kg,Tonnes,Litres,${currencyCode}`;
@@ -5696,6 +5707,15 @@ exports.getExcelSheet = async (req, res) => {
     const unitColumnIndex = 6;
     const unitColumnIndex1 = 8;
     const lookupColumnIndex = 10;
+
+    const hiddenSheet = workbook.addWorksheet('VendorListHidden');
+    hiddenSheet.state = 'veryHidden';
+
+    findVendor.forEach((vendor, index) => {
+      hiddenSheet.getCell(`A${index + 1}`).value = vendor.name;
+    });
+
+    const range = `VendorListHidden!$A$1:$A$${findVendor.length}`;
 
     worksheet.eachRow((row, rowNumber) => {
       if (rowNumber > 1) {
@@ -5715,7 +5735,7 @@ exports.getExcelSheet = async (req, res) => {
           unitCell1.dataValidation = {
             type: "list",
             allowBlank: false,
-            formulae: [`"${modelValues}"`],
+            formulae: [`=${range}`],
             showErrorMessage: true,
             errorTitle: "Invalid Entry",
             error: "Please select a valid vendor.",

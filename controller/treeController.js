@@ -558,11 +558,9 @@ exports.addChildInTree = async (req, res) => {
             let facilityId = facilitiesid.insertId
 
             if (newchild[0]?.id) {
-
               if (datafetxch.length > 0) {
-
                 let detail = {
-                  groupId: datafetxch[0]?.member_group_id,
+                  groupId: newchild[0]?.new_relation_id,
                   CountryId: 101,
                   facilityId: facilityId,
                   sub_group_id: datafetxch[0]?.id ? datafetxch[0]?.id : 0,
@@ -570,12 +568,9 @@ exports.addChildInTree = async (req, res) => {
                 }
                 const Groupmap = await addGroupmapping(detail);
               }
-
             }
-
           }
         }
-
       }
 
       return res.json({

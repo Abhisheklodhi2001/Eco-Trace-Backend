@@ -200,8 +200,8 @@ module.exports = {
         return db.query('select * from  `dbo.aspnetroles` where status = 1');
     }),
 
-    fetchAllusers: (async (tenantID) => {
-        return db.query('select A.user_id,A.email,A.user_id,A.tenantID,A.firstname,A.lastname,A.username,B.tenantName,B.companyName,B.licenseType,B.numberOfUserAllowed,B.Email,B.Id as tenant_id,B.Id as companyEmail from `dbo.aspnetusers` A JOIN  `dbo.tenants` B ON A.email = B.Email  where  A.tenantID = ?', [tenantID]);
+    fetchAllusers: (async (tenantID, search) => {
+        return db.query('select A.user_id,A.email,A.user_id,A.tenantID,A.firstname,A.lastname,A.username,B.tenantName,B.companyName,B.licenseType,B.numberOfUserAllowed,B.Email,B.Id as tenant_id,B.Id as companyEmail from `dbo.aspnetusers` A JOIN  `dbo.tenants` B ON A.email = B.Email  where  A.tenantID = ? AND (A.username LIKE ? OR B.tenantName LIKE ? OR B.Email LIKE ?)', [tenantID, `%${search}%`, `%${search}%`, `%${search}%`]);
     }),
 
     getcountries: (async () => {
